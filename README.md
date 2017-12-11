@@ -1,37 +1,46 @@
-## Welcome to GitHub Pages
+# boundary-first-flattening
 
-You can use the [editor on GitHub](https://github.com/GeometryCollective/boundary-first-flattening/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+boundary-first-flattening is an optimized implementation of the publication
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+>    **[Boundary First Flattening](https://arxiv.org/abs/1704.06873)**<br/>
+>    [Sawhney](http://www.rohansawhney.io), [Crane](http://www.cs.cmu.edu/~kmcrane/)<br/>
+>    ACM Transactions on Graphics
 
-### Markdown
+Applications of the Boundary First Flattening algorithm include:
+1. Automatic parameterization with optimal area distortion
+2. Direct manipulation of boundary lengths or angles
+3. Exact preservation of sharp corners
+4. Seamless cone parameterization
+5. Uniformization over the unit disk
+6. Spherical parameterization for genus 0 surfaces
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+# Screenshot
 
-```markdown
-Syntax highlighted code block
+TODO
 
-# Header 1
-## Header 2
-### Header 3
+# Download Executable
 
-- Bulleted
-- List
+TODO
 
-1. Numbered
-2. List
+# Dependencies
 
-**Bold** and _Italic_ and `Code` text
+1. [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html)
+2. OpenGL (version 4.1 or higher)
+3. [OpenGL Mathematics (GLM)](http://glm.g-truc.net/0.9.8/index.html) (included)
+4. [Nanogui](https://github.com/wjakob/nanogui) (included)
 
-[Link](url) and ![Image](src)
+# Compiling
+
+On MacOS, compiling should be as simple as
+
+```
+git clone https://github.com/rohan-sawhney/boundary-first-flattening.git
+cd boundary-first-flattening && git submodule update --init --recursive
+mkdir build && cd build && cmake ..
+make -j 4
+./bff
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+# License
 
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/GeometryCollective/boundary-first-flattening/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Released under the [MIT License](https://opensource.org/licenses/MIT)
