@@ -2,6 +2,7 @@
 #include "DisjointSets.h"
 #include <queue>
 #include <tuple>
+#include <functional>
 
 typedef tuple<double, VertexIter, HalfEdgeIter> VertexEntry;
 

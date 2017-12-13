@@ -1,9 +1,12 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <stdlib.h>
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 #include <iostream>
 #include "math.h"
 #include "Vector.h"
