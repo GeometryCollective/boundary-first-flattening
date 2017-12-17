@@ -60,12 +60,12 @@
 
             <h1>Boundary First Flattening (BFF)</h1>
 
-            <p>Boundary First Flattening (BFF) is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which
-                is updated in real time. The user gains direct control over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps
-                with area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which
-                can dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.</p>
+            <p>Boundary First Flattening is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which is
+                updated in real time. The user gains direct control over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps with
+                area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which can
+                dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.</p>
 
-            <p><img src="imgs/teaser.png" height="475" width="475" align="center" /></p>
+            <img src="imgs/teaser.png" height="475" width="475" align="center" />
 
             <h1 id="features">Feature Gallery</h1>
 
@@ -100,7 +100,7 @@
 
             <h1 id="tutorial">Tutorial</h1>
 
-            <p><img src="imgs/tutorial/bff_edit.gif" width="504" height="291" align="center" /></p>
+            <img src="imgs/tutorial/bff_edit.gif" width="504" height="291" align="center" />
 
             <p>BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one will probably not always stay
                 in sync with the latest software version. Use at your own risk! ;-))</p>
@@ -108,7 +108,7 @@
             <h3 id="tutorial_gui">The BFF interface</h3>
             <p>The BFF interactive tool loads a single triangle mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have either spherical or disk topology, and must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>                (though some of these restrictions may be relaxed in future versions). Initially, the GUI should look something like this:</p>
 
-            <p><img src="imgs/tutorial/bff_gui.jpg" width="648" height="349" align="center" /></p>
+            <img src="imgs/tutorial/bff_gui.jpg" width="648" height="349" align="center" />
 
             <p>The <b>3D View</b> shows the original mesh, the <b>UV view</b> shows the current flattening. Since BFF is incredibly fast, you <em>do not have to take any action</em> to get an updated flattening; the UV view will be automatically refreshed
                 whenever you click on a button or other UI element. The <b>Toolbar</b> provides various options for flattening the surface; pay close attention to the <b>Tool Tips</b>, which can provide useful information about the currently selected
@@ -139,7 +139,7 @@
                 <li><em>Area Distortion</em> &mdash; shows how much area is distorted by the mapping. White means no area distortion, blue means shrinking, and red means expansion. In this mode, the total area distortion will be printed out above the <b>Shading Menu</b>                    (this quantity is the average and maximum <em>log conformal factor</em>, where zero means no distortion).</li>
             </ul>
 
-            <p><img src="imgs/tutorial/bff_shading.jpg" width="743" height="223" align="center" /></p>
+            <img src="imgs/tutorial/bff_shading.jpg" width="743" height="223" align="center" />
 
             <p>The <b>Pattern Menu</b> draws different patterns on the surface. These patterns have been chosen to give a sense of the angle and area distortion in the flattening. For a perfect map (<em>i.e.,</em> no distortion at all) the pattern should
                 look uniform in scale across the whole surface, and circles and squares in the UV view should look like circles and squares in the 3D view (taking perspective distortion into account). These features will give you a sense of how textures
@@ -152,15 +152,15 @@
                 <li><em>Circles</em> &mdash; draws random circles. For a map with low angle distortion, these circles should still look like circles (rather than ellipses) on the 3D surface.</li>
             </ul>
 
-            <p><img src="imgs/tutorial/bff_patterns.jpg" width="626" height="220" align="center" /></p>
+            <img src="imgs/tutorial/bff_patterns.jpg" width="626" height="220" align="center" />
 
             <p>The <b>Pattern Scale Slider</b>, found directly below the <b>Pattern Menu</b>, will adjust the scale of the pattern. Such adjustment can be useful for, <em>e.g.,</em> understanding what's going on in a map with high area distortion.</p>
 
-            <p><img src="imgs/tutorial/bff_scale.gif" width="143" height="184" align="center" /></p>
+            <img src="imgs/tutorial/bff_scale.gif" width="143" height="184" align="center" />
 
             <p>The <b>Show Wireframe</b> checkbox toggles display of a wireframe over the mesh edges, which can be helpful for visualizating the map.</p>
 
-            <p><img src="imgs/tutorial/bff_wireframe.jpg" width="376" height="219" align="center" /></p>
+            <img src="imgs/tutorial/bff_wireframe.jpg" width="376" height="219" align="center" />
 
             <h3 id="tutorial_gui">Target Boundary</h3>
             <p>A key functionality provided by BFF is the ability to change the target shape of the flattening, by manipulating its boundary curve. No matter what target shape is used, BFF will tend to reduce a map with very low distortion, so that textures
@@ -178,7 +178,7 @@
                     As with any polygon, these angles must of course sum to 2&pi;&mdash; the GUI will automatically adjust the angles to preserve this sum at all times, by adjusting the angle at the corner that was least-recently updated.</li>
             </ul>
 
-            <p><img src="imgs/tutorial/bff_targetboundary.jpg" width="743" height="225" align="center" /></p>
+            <img src="imgs/tutorial/bff_targetboundary.jpg" width="743" height="225" align="center" />
 
             <h3 id="tutorial_cones">Cone Singularities</h3>
 
@@ -195,29 +195,29 @@
                 that a <em>poor</em> choice of cones can actually <em>increase</em> area distortion&mdash; some experimentation may be required here. Alternatively, one can try the automatic placement button, as described below. (Cuts are picked automatically
                 in the GUI; the cutting strategy can currently only be changed via source-level modifications to BFF.)</p>
 
-            <p><img src="imgs/tutorial/bff_cones.jpg" width="457" height="205" align="center" /></p>
+            <img src="imgs/tutorial/bff_cones.jpg" width="457" height="205" align="center" />
 
             <p>The <b>Angle Control</b> slider allows the cone angle to be adjusted; alternatively, one may type in a specific cone angle (as a multiple of &pi;). The cone angle can be understood in analogy with &ldquo;darts&rdquo; in dressmaking: smaller
                 angles will typically accommodate less curvature; large angles are helpful for highly curved regions. For spherical surfaces (with no boundary) the total angle sum must be 4&pi; at all times; the GUI will automatically adjust the least-recently
                 updated cone to make sure this sum holds.</p>
 
-            <p><img src="imgs/tutorial/bff_coneangle.jpg" width="490" height="210" align="center" /></p>
+            <img src="imgs/tutorial/bff_coneangle.jpg" width="490" height="210" align="center" />
 
             <h4 id="tutorial_autocones">Automatic Cone Placement</h4>
             <p>A target number of cones can also be placed by simply pressing the <b>Place Cones</b> button. The number of cones can be specified in the <b># Cones</b> field. Note that computing these cones may take some time, especially for meshes with
                 many boundary vertices. (This feature will be improved in future versions; stay tuned!)</p>
 
-            <p><img src="imgs/tutorial/bff_autocones.jpg" width="299" height="206" align="center" /></p>
+            <img src="imgs/tutorial/bff_autocones.jpg" width="299" height="206" align="center" />
 
             <h3 id="tutorial_sphere">Spherical Parameterization</h3>
             <p>For sphere-like surfaces, BFF will also automatically produce a map to the sphere; simply press the <b>Map to Sphere</b> button. For maps to the sphere, there is less control that can be provided to the user since there is no boundary to edit!
                 (Future versions may expose M&ouml;bius degrees of freedom, as with the disk.)</p>
 
-            <p><img src="imgs/tutorial/bff_sphere.jpg" width="516" height="280" align="center" /></p>
+            <img src="imgs/tutorial/bff_sphere.jpg" width="516" height="280" align="center" />
 
             <p>To get a map with lower area distortion, once can again add cone singularities (either automatically or manually) as described above. The surface will automatically be cut into a disk and flattened.</p>
 
-            <p><img src="imgs/tutorial/bff_spherecones.jpg" width="472" height="224" align="center" /></p>
+            <img src="imgs/tutorial/bff_spherecones.jpg" width="472" height="224" align="center" />
 
             <h1 id="compiling">Compiling from source</h1>
 
