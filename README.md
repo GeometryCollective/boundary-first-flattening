@@ -30,11 +30,15 @@ over the shape of the flattened domain, rather than being stuck with whatever th
 
 # Tutorial
 
+<p align="center"><img src="imgs/tutorial/bff_edit.gif" width="500" height="289"></p>
+
 BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one will probably not always stay in sync with the latest software version. Use at your own risk! ;-))
 
 ## The BFF interface
 
 The BFF interactive tool loads a single triangle mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have either spherical or disk topology, and must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though some of these restrictions may be relaxed in future versions). Initially, the GUI should look something like this:
+
+<p align="center"><img src="imgs/tutorial/bff_gui.jpg" width="500" height="269"></p>
 
 The <b>3D View</b> shows the original mesh, the <b>UV view</b> shows the current flattening. Since BFF is incredibly fast, you <em>do not have to take any action</em> to get an updated flattening; the UV view will be automatically refreshed whenever you click on a button or other UI element. The <b>Toolbar</b> provides various options for flattening the surface; pay close attention to the <b>Tool Tips</b>, which can provide useful information about the currently selected tool. By default, the UV map is visualized as a grid on the surface; the shading on the surface is also used to light the UV map, to give a sense of correspondence between 3D and 2D. Additional visualization options are described below.
 
@@ -61,6 +65,8 @@ In addition to visualizing the map itself, BFF provides facilities for inspectin
 <li><em>Area Distortion</em> &mdash; shows how much area is distorted by the mapping. White means no area distortion, blue means shrinking, and red means expansion. In this mode, the total area distortion will be printed out above the <b>Shading Menu</b> (this quantity is the average and maximum <em>log conformal factor</em>, where zero means no distortion).</li>
 </ul>
 
+<p align="center"><img src="imgs/tutorial/bff_shading.jpg" width="500" height="150"></p>
+
 The <b>Pattern Menu</b> draws different patterns on the surface. These patterns have been chosen to give a sense of the angle and area distortion in the flattening. For a perfect map (<em>i.e.,</em> no distortion at all) the pattern should look uniform in scale across the whole surface, and circles and squares in the UV view should look like circles and squares in the 3D view (taking perspective distortion into account). These features will give you a sense of how textures and other data will look when mapped onto the surface. In particular:
 
 <ul>
@@ -70,9 +76,15 @@ The <b>Pattern Menu</b> draws different patterns on the surface. These patterns 
 <li><em>Circles</em> &mdash; draws random circles. For a map with low angle distortion, these circles should still look like circles (rather than ellipses) on the 3D surface.</li>
 </ul>
 
+<p align="center"><img src="imgs/tutorial/bff_patterns.jpg" width="500" height="176"></p>
+
 The <b>Pattern Scale Slider</b>, found directly below the <b>Pattern Menu</b>, will adjust the scale of the pattern. Such adjustment can be useful for, <em>e.g.,</em> understanding what's going on in a map with high area distortion.
 
+<p align="center"><img src="imgs/tutorial/bff_scale.gif" width="143" height="184"></p>
+
 The <b>Show Wireframe</b> checkbox toggles display of a wireframe over the mesh edges, which can be helpful for visualizing the map.
+
+<p align="center"><img src="imgs/tutorial/bff_wireframe.jpg" width="376" height="219"></p>
 
 ## Target Boundary
 
@@ -85,6 +97,8 @@ A key functionality provided by BFF is the ability to change the target shape of
 <li><em>Set Boundary Angles</em> &mdash; allows the corner angles of a polygon to be specified. Angles can be specified using the <b>Angle Control</b> slider, or by typing in the angle box (where the value is interpreted as a multiple of &pi;). As with any polygon, these angles must of course sum to 2&pi;&mdash; the GUI will automatically adjust the angles to preserve this sum at all times, by adjusting the angle at the corner that was least-recently updated.</li>
 </ul>
 
+<p align="center"><img src="imgs/tutorial/bff_targetboundary.jpg" width="500" height="151"></p>
+
 ## Cone Singularities
 
 In general, it is impossible to flatten a surface perfectly. Somewhere, there <em>must</em> be distortion of either angles or areas. BFF can produce flattenings with minimal area distortion and virtually zero angle distortion, but in some situations area distortion is still too high for practical use. One solution is to cut the mesh into smaller pieces, each of which is easier to flatten, but typically this is unnecessarily aggressive. One can instead reduce distortion to more reasonable levels by inserting <em>cone singularities</em>, which play much the same role as &ldquo;darts&rdquo; in garment design. The BFF GUI makes it easy to explore the effect of placing cones, and also provides the ability to place cones automatically in order to reduce area distortion.
@@ -93,17 +107,27 @@ In general, it is impossible to flatten a surface perfectly. Somewhere, there <e
 
 The easiest way to add cones is simply to click on any point of the surface in either the <b>3D View</b> or <b>UV View</b> while the target boundary is set to <b>Automatic</b> or <b>Disk</b>. Doing so will insert a cone at the click location, find a cut from this cone to the boundary, and update the flattening. Additional clicks will add additional cones. To see the effect on area distortion, set the plot mode to <b>Area Distortion</b>, which will show the distribution of area distortion over the surface (as described above). Clicking on regions of high area distortion will tend to reduce it. Drawing a pattern (such as grid or checkerboard) will also provide some sense of how much scale distortion remains. Note that a <em>poor</em> choice of cones can actually <em>increase</em> area distortion&mdash; some experimentation may be required here. Alternatively, one can try the automatic placement button, as described below. (Cuts are picked automatically in the GUI; the cutting strategy can currently only be changed via source-level modifications to BFF.)
 
+<p align="center"><img src="imgs/tutorial/bff_cones.jpg" width="457" height="205"></p>
+
 The <b>Angle Control</b> slider allows the cone angle to be adjusted; alternatively, one may type in a specific cone angle (as a multiple of &pi;). The cone angle can be understood in analogy with &ldquo;darts&rdquo; in dressmaking: smaller angles will typically accommodate less curvature; large angles are helpful for highly curved regions. For spherical surfaces (with no boundary) the total angle sum must be 4&pi; at all times; the GUI will automatically adjust the least-recently updated cone to make sure this sum holds.
+
+<p align="center"><img src="imgs/tutorial/bff_coneangle.jpg" width="490" height="210"></p>
 
 ### Automatic Cone Placement
 
 A target number of cones can also be placed by simply pressing the <b>Place Cones</b> button. The number of cones can be specified in the <b># Cones</b> field. Note that computing these cones may take some time, especially for meshes with many boundary vertices. (This feature will be improved in future versions; stay tuned!)
 
+<p align="center"><img src="imgs/tutorial/bff_autocones.jpg" width="299" height="206"></p>
+
 ## Spherical Parameterization
 
 For sphere-like surfaces, BFF will also automatically produce a map to the sphere; simply press the <b>Map to Sphere</b> button. For maps to the sphere, there is less control that can be provided to the user since there is no boundary to edit! (Future versions may expose M&ouml;bius degrees of freedom, as with the disk.)
 
+<p align="center"><img src="imgs/tutorial/bff_sphere.jpg" width="500" height="271"></p>
+
 To get a map with lower area distortion, once can again add cone singularities (either automatically or manually) as described above. The surface will automatically be cut into a disk and flattened.
+
+<p align="center"><img src="imgs/tutorial/bff_spherecones.jpg" width="500" height="238"></p>
 
 # Dependencies
 
