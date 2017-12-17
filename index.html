@@ -103,7 +103,7 @@
             <p><img src="imgs/tutorial/bff_edit.gif" width="504" height="291"></p>
 
             <p>BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one will probably not always stay
-                in perfect sync with the latest software version. Use at your own risk! ;-))</p>
+                in sync with the latest software version. Use at your own risk! ;-))</p>
 
             <h3 id="tutorial_gui">The BFF interface</h3>
             <p>The BFF interactive tool loads a single triangle mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have either spherical or disk topology, and must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>                (though some of these restrictions may be relaxed in future versions). Initially, the GUI should look something like this:</p>
@@ -115,7 +115,7 @@
                 tool. By default, the UV map is visualized as a grid on the surface; the shading on the surface is also used to light the UV map, to give a sense of correspondence between 3D and 2D. Additional visualization options are described below.
                 Finally, the <b>Reset</b> button will set the current tool (and the correspoding flattening) back to its default parameters.</p>
 
-            <p>New meshes can be loaded by pressing the <b>Load Mesh</b> button; the <b>Export Mesh</b> button allows a mesh to be exported to OBJ format, with the texture coordinates stored in the <tt>vt</tt>field (one per distinct triangle corner in the
+            <p>New meshes can be loaded by pressing the <b>Load Mesh</b> button; the <b>Export Mesh</b> button allows a mesh to be exported to OBJ format, with the texture coordinates stored in the <tt>vt</tt> field (one per distinct triangle corner in the
                 flattened mesh).</p>
 
             <h4 id="tutorial_view">Adjusting the View</h4>
@@ -182,8 +182,8 @@
 
             <h3 id="tutorial_cones">Cone Singularities</h3>
 
-            <p>In general, it is impossible to flatten a surface perfectly: somewhere, there <em>must</em> be distortion of either angles or areas. BFF can produce flattenings with minimal area distortion and virtually zero angle distortion, but in some
-                situations area distortion is still too high for practical use. One solution is to cut the mesh into smaller pieces, each of which is easier to flatten, but typically this is unnecessarily aggressive: one can instead reduce distortion
+            <p>In general, it is impossible to flatten a surface perfectly. Somewhere, there <em>must</em> be distortion of either angles or areas. BFF can produce flattenings with minimal area distortion and virtually zero angle distortion, but in some
+                situations area distortion is still too high for practical use. One solution is to cut the mesh into smaller pieces, each of which is easier to flatten, but typically this is unnecessarily aggressive. One can instead reduce distortion
                 to more reasonable levels by inserting <em>cone singularities</em>, which play much the same role as &ldquo;darts&rdquo; in garment design. The BFF GUI makes it easy to explore the effect of placing cones, and also provides the ability
                 to place cones automatically in order to reduce area distortion.</p>
 
