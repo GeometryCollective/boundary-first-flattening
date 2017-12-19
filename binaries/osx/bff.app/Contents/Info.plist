@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>bff</string>
+	<string>BFF</string>
 	<key>CFBundleDisplayName</key>
-	<string>bff</string>
+	<string>BFF</string>
 	<key>CFBundleIdentifier</key>
 	<string>edu.cmu.cs.geometry.bff</string>
 	<key>CFBundleIconFile</key>

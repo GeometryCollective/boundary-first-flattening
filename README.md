@@ -154,11 +154,19 @@ On Windows, create a Visual Studio project with Cmake after running the first th
 [Rohan Sawhney](http://www.rohansawhney.io)<br/>
 [Keenan Crane](http://www.cs.cmu.edu/~kmcrane/)
 
-# Publication
+# Citation
+
+The BFF application implements the algorithm described in the paper:
 
 >    **[Boundary First Flattening](https://arxiv.org/abs/1704.06873)**<br/>
 >    Sawhney, Crane<br/>
 >    ACM Transactions on Graphics
+
+It also builds on some terrific insights and work done on conformal flattening in recent years, including the automatic cone placement algorithm found in Ben Chen et al, <a href="http://www.cs.technion.ac.il/~gotsman/AmendedPubl/Miri/EG08_Conf.pdf">&ldquo; Conformal Flattening by Curvature Prescription and Metric Scaling&rdquo;</a> and the technique used to make maps globally seamless from Springborn et al, <a href="http://multires.caltech.edu/pubs/ConfEquiv.pdf">&ldquo; Conformal Equivalence of Triangle Meshes&rdquo;</a>.
+
+# Acknowledgements
+
+Development of this software was funded in part by NSF Award 1717320, and gifts from Facebook/Oculus VR and Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 
 # License
 
