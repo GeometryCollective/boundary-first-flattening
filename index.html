@@ -47,15 +47,22 @@
 
             <center><img src="imgs/logo.png" width="190" height="190" /></center>
 
-           <center><div class="title">Boundary First Flattening (BFF)</div></center>
+            <center>
+                <div class="title">Boundary First Flattening (BFF)</div>
+            </center>
 
-           <hr>
+            <hr>
 
-           <p>Boundary First Flattening is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which is updated in real time. The user gains direct control over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps with area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which can dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.</p>
-           
-           <p>The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">&ldquo;Boundary First Flattening&rdquo;</a> (ACM Transactions on Graphics 2017)</p>
+            <p>Boundary First Flattening is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which is
+                updated in real time. The user gains direct control over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps with
+                area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which can
+                dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.</p>
 
-            <div align="right"><p class="view"><a href="https://github.com/GeometryCollective/boundary-first-flattening">View the Project on GitHub <small></small></a></p></div>
+            <p>The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">&ldquo;Boundary First Flattening&rdquo;</a> (ACM Transactions on Graphics 2017).</p>
+
+            <div align="right">
+                <p class="view"><a href="https://github.com/GeometryCollective/boundary-first-flattening">View the Project on GitHub <small></small></a></p>
+            </div>
 
             <h1 id="features">Feature Gallery</h1>
 
@@ -64,19 +71,21 @@
 
             <ol>
                 <li>
-                   <p><b>Minimal Area Distortion</b> &mdash; By default, BFF automatically produces a flattening with minimal area distortion and virtually zero angle distortion.  This map is generally useful for most texturing and surface processing tasks.</p>
+                    <p><b>Minimal Area Distortion</b> &mdash; By default, BFF automatically produces a flattening with minimal area distortion and virtually zero angle distortion. This map is generally useful for most texturing and surface processing tasks.</p>
                 </li>
                 <li>
-                   <p><b>Direct Editing</b> &mdash; The initial map can be edited interactively using handle-based manipulation of the size and orientation of the boundary curve.  This can be useful for packing UVs into a texture atlas, or for emphasizing regions of the surface that should receive more texture area (for instance).</p>
+                    <p><b>Direct Editing</b> &mdash; The initial map can be edited interactively using handle-based manipulation of the size and orientation of the boundary curve. This can be useful for packing UVs into a texture atlas, or for emphasizing
+                        regions of the surface that should receive more texture area (for instance).</p>
                 </li>
                 <li>
-                   <p><b>Sharp Corners</b> &mdash; The domain can also be flattened into a polygon with sharp corners, like a rectangle (useful for, <em>e.g.</em> maximizing use of texture area).</p>
+                    <p><b>Sharp Corners</b> &mdash; The domain can also be flattened into a polygon with sharp corners, like a rectangle (useful for, <em>e.g.</em> maximizing use of texture area).</p>
                 </li>
                 <li>
-                   <p><b>Cone Singularities</b> &mdash; Cone singularities can be used to reduce area distortion in regions of high curvature. Cones can be placed manually or automatically, and can be adjusted interactively. Optionally, the resulting map can be made globally seamless along any cuts caused by the placement of cones.</p>
+                    <p><b>Cone Singularities</b> &mdash; Cone singularities can be used to reduce area distortion in regions of high curvature. Cones can be placed manually or automatically, and can be adjusted interactively. Optionally, the resulting map
+                        can be made globally seamless along any cuts caused by the placement of cones.</p>
                 </li>
                 <li>
-                   <p><b>Uniformization</b> &mdash; The surface can be mapped to a circular disk (or sphere), which is useful for cross-parameterization (mapping one surface to another).</p>
+                    <p><b>Uniformization</b> &mdash; The surface can be mapped to a circular disk (or sphere), which is useful for cross-parameterization (mapping one surface to another).</p>
                 </li>
             </ol>
 
@@ -113,7 +122,7 @@
                 Finally, the <b>Reset</b> button will set the current tool (and the corresponding flattening) back to its default parameters.</p>
 
             <p>New meshes can be loaded by pressing the <b>Load Mesh</b> button; the <b>Export Mesh</b> button allows a mesh to be exported to OBJ format, with the texture coordinates stored in the <tt>vt</tt> field (one per distinct triangle corner in the
-            flattened mesh).  The <b>Export Normalized UVs</b> checkbox will scale the UVs between 0 and 1 in texture space.</p>
+                flattened mesh). The <b>Export Normalized UVs</b> checkbox will scale the UVs between 0 and 1 in texture space.</p>
 
             <h4 id="tutorial_view">Adjusting the View</h4>
             <p>The view can be independently adjusted in both the <b>3D view</b> and the <b>UV view</b>. In particular:</p>
@@ -254,7 +263,7 @@ make -j 4
             <p>Released under the <a href="https://opensource.org/licenses/MIT">MIT License</a></p>
 
             <center>
-            <a href="http://geometry.cs.cmu.edu"><img src="imgs/geometry-collective-production.png" width="190" height="173.2192" /></a>
+                <a href="http://geometry.cs.cmu.edu"><img src="imgs/geometry-collective-production.png" width="190" height="173.2192" /></a>
             </center>
 
         </section>

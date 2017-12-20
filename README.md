@@ -7,6 +7,9 @@
 Boundary First Flattening is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which is updated in real time. The user gains direct control
 over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps with area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which can dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.
 
+The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">&ldquo;Boundary First Flattening&rdquo;</a> (ACM Transactions on Graphics 2017).
+
+
 # Features
 
 <img src="imgs/teaser.png" height="400" width="400" align="right">
@@ -148,7 +151,7 @@ make -j 4
 ./bff
 ```
 
-On Windows, create a Visual Studio project with Cmake after running the first three instructions above.
+On Windows, create a Visual Studio project with Cmake after running the first three instructions.
 
 # Authors
 [Rohan Sawhney](http://www.rohansawhney.io)<br/>
