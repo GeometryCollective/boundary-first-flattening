@@ -442,6 +442,10 @@ img {
     height: auto;
 }
 
+iframe {
+    max-width: 100%;
+}
+
 header {
     width: 270px;
     float: left;
