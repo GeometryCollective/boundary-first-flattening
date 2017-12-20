@@ -398,9 +398,9 @@ void Viewer::initGui()
         }
     });
     
-    Button *removeSeamsButton = new Button(nanoguiWindow, "Remove Seams (BETA)");
+    Button *removeSeamsButton = new Button(nanoguiWindow, "Remove Seams");
     removeSeamsButton->setFixedHeight(25);
-    removeSeamsButton->setEnabled(true);
+    removeSeamsButton->setEnabled(false);
     
     new Label(nanoguiWindow, "Spherical Parameterization");
     Button *sphericalParameterizationButton = new Button(nanoguiWindow, "Map to Sphere");

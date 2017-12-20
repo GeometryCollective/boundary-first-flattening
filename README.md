@@ -4,7 +4,7 @@
 
 <h1 align="center">Boundary First Flattening (BFF)</h1>
 
-Boundary First Flattening (BFF) is a free and open source application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, providing users direct control over the shape of the flattened domain&mdash;rather than being stuck with whatever the algorithm provides.  The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool.  The tool also provides some state-of-the art flattening techniques not available in standard UV mapping software such as <em>cone singularities</em>, which can dramatically reduce area distortion, and <em>seamless maps</em>, which help eliminate artifacts by ensuring identical texture resolution across all cuts.  BFF is highly optimized, allowing interactive editing of meshes with millions of triangles.
+Boundary First Flattening (BFF) is a free and open source application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, providing users direct control over the shape of the flattened domain&mdash;rather than being stuck with whatever the algorithm provides. The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool. The tool also provides some state-of-the art flattening techniques not available in standard UV mapping software such as <em>cone singularities</em>, which can dramatically reduce area distortion, and <em>seamless maps</em>, which help eliminate artifacts by ensuring identical texture resolution across all cuts. BFF is highly optimized, allowing interactive editing of meshes with millions of triangles.
 
 The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">&ldquo;Boundary First Flattening&rdquo;</a> (ACM Transactions on Graphics 2017).
 
@@ -34,7 +34,7 @@ The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://w
 
 <p align="center"><img src="imgs/tutorial/bff_edit.gif" width="500" height="289"></p>
 
-BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one will probably not always stay in sync with the latest software version. Use at your own risk! ;-))
+BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))
 
 ## The BFF interface
 
@@ -120,6 +120,10 @@ The <b>Angle Control</b> slider allows the cone angle to be adjusted; alternativ
 A target number of cones can also be placed by simply pressing the <b>Place Cones</b> button. The number of cones can be specified in the <b># Cones</b> field. Note that computing these cones may take some time, especially for meshes with many boundary vertices. (This feature will be improved in future versions; stay tuned!)
 
 <p align="center"><img src="imgs/tutorial/bff_autocones.jpg" width="299" height="206"></p>
+
+### Seamless Maps (Coming soon!)
+
+Placing cones will make cuts in the surface (indicated by red lines). By default, BFF already guarantees that the UV lengths of edges on either side of the cut is guaranteed to be exactly the same, so there is no jump in texture resolution across the cut. Likewise, the angle in UV space between two cut edges is exactly determined by the cone angle&mdash; for instance, if all cones angles are a multiple of &pi;/2 (<em>i.e.,</em> 90 degrees), then the edges will also be related by 90 degree rotations. To check this, set the drawing pattern to <b>Grid</b>. If all of your cone angles are multiples of &pi;/2, you should see that both the spacing and the direction of grid lines is unchanged as you go across a cut. However, you may also notice that grid lines shift left or right as you cross the cut, resulting in a visible seam. If the surface needs to be covered with a regular pattern (or tessellated into a regular grid), it can be useful to eliminate this seam, which you can do by pressing the <b>Remove Seams</b> button.</p>
 
 ## Spherical Parameterization
 
