@@ -11,23 +11,29 @@ public:
     // constructor
     BFF(Mesh& mesh);
 
-    // normalize curvatures to sum to 2pi
-    void closeCurvatures(DenseMatrix& ktilde) const;
+    // computes automatic flattening with minimal area distortion
+    //    -boundaryData stores either the target angles at boundary vertices (if
+    //     givenScaleFactors is false) -OR- the target scale factors (if givenScaleFactors
+    //     is true)
+    // (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+    void flatten(DenseMatrix& boundaryData, bool givenScaleFactors);
 
-    // computes flattening
-    void flatten(DenseMatrix& target, bool givenScaleFactors);
-
-    // computes flattening with prescribed cone angles
+    // computes flattening with prescribed cones
+    //    - the matrix C is just a Vx1 vector of cone angles (usually zero for most vertices)
+    //    - surfaceHasCut should be set to true if the locations of cones changed
+    // (resulting flattening is stored in Corner::uv for each corner of this->mesh)
     void flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut);
 
     // uniformization over the unit disk
+    // (resulting flattening is stored in Corner::uv for each corner of this->mesh)
     void flattenToDisk();
 
+    // conformally maps a genus 0 mesh to a sphere
+    // (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+    void mapToSphere();
+    
     // flattens to target shape
     void flattenToShape(const vector<Vector>& gamma);
-
-    // conformally maps a genus 0 mesh to a sphere
-    void mapToSphere();
 
     // member that stores the compatible curvatures (scale factors) given target scale factors (curvatures)
     // exposed for direct editing
@@ -35,6 +41,9 @@ public:
 
     // pointer to current bff data
     shared_ptr<BFFData> data;
+    
+    // normalize curvatures to sum to 2pi
+    void closeCurvatures(DenseMatrix& ktilde) const;
 
 protected:
     // Copies scale factors u of the uncut surface into a and g that store the interior

@@ -144,6 +144,39 @@ To get a map with lower area distortion, once can again add cone singularities (
 3. [OpenGL Mathematics (GLM)](http://glm.g-truc.net/0.9.8/index.html) (included)
 4. [Nanogui](https://github.com/wjakob/nanogui) (included)
 
+# Code level interface
+
+The BFF code can be compiled and run independent of the GUI, for easy integration into other software packages / plugins.  The most important methods are described in <tt>project/include/Bff.h</tt>.  These methods assume that a standard triangle mesh has already been loaded into the <tt>Mesh</tt> object, and produce UV coordinates at the corners of each triangle, stored in the <tt>uv</tt> member of each element of <tt>Mesh::corners</tt>.
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+// Computes automatic flattening with minimal area distortion
+//    -boundaryData stores either the target angles at boundary vertices (if
+//     givenScaleFactors is false) -OR- the target scale factors (if givenScaleFactors
+//     is true)
+// (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+void BFF::flatten(DenseMatrix& boundaryData, bool givenScaleFactors);
+
+
+
+// Computes flattening with prescribed cones
+//    - the matrix C is just a Vx1 vector of cone angles (usually zero for most vertices)
+//    - surfaceHasCut should be set to true if the locations of cones changed
+// (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+void BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut);
+
+
+
+// Uniformization over the unit disk
+// (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+void BFF::flattenToDisk();
+
+
+
+// Conformally maps a genus 0 mesh to a sphere
+// (resulting flattening is stored in Corner::uv for each corner of this->mesh)
+void BFF::mapToSphere();
+</code></pre></div></div>
+
 # Compiling
 
 On Mac OSX and Linux, compiling should be as simple as
