@@ -429,7 +429,8 @@ th {
 }
 
 img {
-    max-width: 100%
+    max-width: 100%;
+    height: auto;
 }
 
 header {
@@ -508,7 +509,7 @@ section {
 
 .title {
     color: #000000;
-    font-size: 50px;
+    font-size: 40px;
     font-weight: bold;
 }
 
