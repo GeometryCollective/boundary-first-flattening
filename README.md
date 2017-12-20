@@ -6,7 +6,7 @@
 
 Boundary First Flattening (BFF) is a free and open source application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, providing users direct control over the shape of the flattened domain&mdash;rather than being stuck with whatever the algorithm provides. The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool. The tool also provides some state-of-the art flattening techniques not available in standard UV mapping software such as <em>cone singularities</em>, which can dramatically reduce area distortion, and <em>seamless maps</em>, which help eliminate artifacts by ensuring identical texture resolution across all cuts. BFF is highly optimized, allowing interactive editing of meshes with millions of triangles.
 
-The BFF application is based on the paper, <em>&ldquo;<a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">Boundary First Flattening&rdquo</a></em> by <a href="http://rohansawhney.io">Rohan Sawhney</a> and <a href="http://www.cs.cmu.edu/~kmcrane/">Keenan Crane</a>.
+The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">Boundary First Flattening"</a></em> by <a href="http://rohansawhney.io">Rohan Sawhney</a> and <a href="http://www.cs.cmu.edu/~kmcrane/">Keenan Crane</a>.
 
 
 # Features

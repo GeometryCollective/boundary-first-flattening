@@ -632,3 +632,12 @@ screen and (max-width: 480px) {
         color: #444
     }
 }
+
+figure {
+    display: inline-block;
+}
+
+figure figcaption {
+    text-align: center;
+}
+
