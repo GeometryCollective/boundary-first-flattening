@@ -169,7 +169,7 @@ It also builds on some terrific insights and work done on conformal flattening i
 
 # Acknowledgements
 
-Development of this software was funded in part by NSF Award 1717320, and gifts from Facebook/Oculus VR and Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
+Development of this software was funded in part by NSF Award 1717320, and a gift from Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
 
 # License
 

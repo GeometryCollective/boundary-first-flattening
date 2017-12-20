@@ -366,7 +366,7 @@ a {
 a:hover,
 a:focus {
     color: #069;
-    font-weight: bold
+    text-decoration: underline
 }
 
 a small {
