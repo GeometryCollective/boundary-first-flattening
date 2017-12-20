@@ -125,6 +125,8 @@ A target number of cones can also be placed by simply pressing the <b>Place Cone
 
 Placing cones will make cuts in the surface (indicated by red lines). By default, BFF already guarantees that the UV lengths of edges on either side of the cut is guaranteed to be exactly the same, so there is no jump in texture resolution across the cut. Likewise, the angle in UV space between two cut edges is exactly determined by the cone angle&mdash; for instance, if all cones angles are a multiple of &pi;/2 (<em>i.e.,</em> 90 degrees), then the edges will also be related by 90 degree rotations. To check this, set the drawing pattern to <b>Grid</b>. If all of your cone angles are multiples of &pi;/2, you should see that both the spacing and the direction of grid lines is unchanged as you go across a cut. However, you may also notice that grid lines shift left or right as you cross the cut, resulting in a visible seam. If the surface needs to be covered with a regular pattern (or tessellated into a regular grid), it can be useful to eliminate this seam, which you can do by pressing the <b>Remove Seams</b> button.</p>
 
+<p align="center"><img src="imgs/tutorial/bff_seamless.jpg" width="703" height="256"></p>
+
 ## Spherical Parameterization
 
 For sphere-like surfaces, BFF will also automatically produce a map to the sphere; simply press the <b>Map to Sphere</b> button. For maps to the sphere, there is less control that can be provided to the user since there is no boundary to edit! (Future versions may expose M&ouml;bius degrees of freedom, as with the disk.)
