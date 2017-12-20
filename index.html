@@ -48,15 +48,12 @@
             <center><img src="imgs/logo.png" width="190" height="190" /></center>
 
             <center>
-                <div class="title">Boundary First Flattening (BFF)</div>
+                <div class="title">Boundary First Flattening</div>
             </center>
 
             <hr>
 
-            <p>Boundary First Flattening is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, maintaining a high-quality map which is
-                updated in real time. The user gains direct control over the shape of the flattened domain, rather than being stuck with whatever the algorithm provides. For users seeking an automatic parameterization, BFF can also produce UV maps with
-                area distortion mathematically guaranteed to be lower than any other conformal mapping tool. It also implements some state-of-the art flattening techniques not available in other packages (such as <em>cone singularities</em>, which can
-                dramatically reduce area distortion), and allows real-time editing of meshes with hundreds of thousands of triangles.</p>
+            <p>Boundary First Flattening (BFF) is a blazing fast and user-friendly desktop application for surface parameterization. Unlike other tools for UV mapping BFF allows free-form editing of the flattened mesh, providing users direct control over the shape of the flattened domain&mdash;rather than being stuck with whatever the algorithm provides.  The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool.  The tool also provides some state-of-the art flattening techniques not available in standard UV mapping software (such as <em>cone singularities</em>, which can dramatically reduce area distortion), and allows interactive editing of meshes with millions of triangles.</p>
 
             <p>The BFF application is based on the paper Sawhney &amp; Crane, <a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">&ldquo;Boundary First Flattening&rdquo;</a> (ACM Transactions on Graphics 2017).</p>
 
@@ -100,8 +97,7 @@
 
             <p align="center"><img src="imgs/tutorial/bff_edit.gif" width="500" height="289"></p>
 
-            <p>BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one will probably not always stay
-                in sync with the latest software version. Read at your own risk! ;-))</p>
+            <p>BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))</p>
 
             <h3 id="overview">Overview Video</h3>
 
@@ -138,12 +134,12 @@
             <p align="center"><img src="imgs/tutorial/bff_shading.jpg" width="500" height="150"></p>
 
             <ul>
-                <li><em>Constant</em> &mdash; no special shading; useful for looking at the wireframe or checking for local overlaps. In this view, flipped triangles (which are fairly rare) will be drawn in bright red.</li>
-                <li><em>Shaded</em> &mdash; the mesh in the UV view will be lit using the shading from the 3D view. This shading gives a quick way to see which features get mapped where.</li>
-                <li><em>Conformal Distortion</em> &mdash; shows angle distortion in the mapping. Blue means no angle distortion, green means a little angle distortion, and red means a lot of angle distortion. For reasonably nice meshes (e.g., smallish triangles,
+                <li><div class="featurename">Constant</div> No special shading; useful for looking at the wireframe or checking for local overlaps. In this view, flipped triangles (which are fairly rare) will be drawn in bright red.</li>
+                <li><div class="featurename">Shaded</div> The mesh in the UV view will be lit using the shading from the 3D view. This shading gives a quick way to see which features get mapped where.</li>
+                <li><div class="featurename">Conformal Distortion</div> Shows angle distortion in the mapping. Blue means no angle distortion, green means a little angle distortion, and red means a lot of angle distortion. For reasonably nice meshes (e.g., smallish triangles,
                     not too crazy aspect ratios) you should see very little angle distortion. Large angle distortion on simple models may indicate that there is something wrong with your mesh (e.g., long invisible slivers or near-degenerate elements).
                     In this mode, the total angle distortion will be printed out above the <b>Shading Menu</b> (this quantity is the average and maximum <em>quasi conformal distortion</em>, where 1 means no distortion).</li>
-                <li><em>Area Distortion</em> &mdash; shows how much area is distorted by the mapping. White means no area distortion, blue means shrinking, and red means expansion. In this mode, the total area distortion will be printed out above the <b>Shading Menu</b>                    (this quantity is the average and maximum <em>log conformal factor</em>, where zero means no distortion).</li>
+                <li><div class="featurename">Area Distortion</div> Shows how much area is distorted by the mapping. White means no area distortion, blue means shrinking, and red means expansion. In this mode, the total area distortion will be printed out above the <b>Shading Menu</b>                    (this quantity is the average and maximum <em>log conformal factor</em>, where zero means no distortion).</li>
             </ul>
 
             <p>The <b>Pattern Menu</b> draws different patterns on the surface. These patterns have been chosen to give a sense of the angle and area distortion in the flattening. For a perfect map (<em>i.e.,</em> no distortion at all) the pattern should
@@ -152,10 +148,10 @@
             <p align="center"><img src="imgs/tutorial/bff_patterns.jpg" width="500" height="176"></p>
 
             <ul>
-                <li><em>None</em> &mdash; no pattern is displayed. Useful for getting a clear view of other features of the map (<em>e.g.,</em> area distortion, or the wireframe).</li>
-                <li><em>Grid</em> &mdash; draws a regular grid pattern. (Note that for maps with cones or cuts, grid lines will line up exactly only if the map is made seamless.)</li>
-                <li><em>Checkerboard</em> &mdash; draws a regular checkerboard pattern. (Note that even for seamless maps there may be a jump from black to white, due to parity considerations.)</li>
-                <li><em>Circles</em> &mdash; draws random circles. For a map with low angle distortion, these circles should still look like circles (rather than ellipses) on the 3D surface.</li>
+                <li><div class="featurename">None</div> No pattern is displayed. Useful for getting a clear view of other features of the map (<em>e.g.,</em> area distortion, or the wireframe).</li>
+                <li><div class="featurename">Grid</div> Draws a regular grid pattern. (Note that for maps with cones or cuts, grid lines will line up exactly only if the map is made seamless.)</li>
+                <li><div class="featurename">Checkerboard</div> Draws a regular checkerboard pattern. (Note that even for seamless maps there may be a jump from black to white, due to parity considerations.)</li>
+                <li><div class="featurename">Circles</div> Draws random circles. For a map with low angle distortion, these circles should still look like circles (rather than ellipses) on the 3D surface.</li>
             </ul>
 
             <p>The <b>Pattern Scale Slider</b>, found directly below the <b>Pattern Menu</b>, will adjust the scale of the pattern. Such adjustment can be useful for, <em>e.g.,</em> understanding what's going on in a map with high area distortion.</p>
@@ -170,14 +166,14 @@
             <p align="center"><img src="imgs/tutorial/bff_targetboundary.jpg" width="500" height="151"></p>
 
             <ul>
-                <li><em>Automatic</em> &mdash; if no special control over the boundary is required, BFF automatically produces the flattening with minimal area distortion. (Note that since we mathematically guarantee that this is the lowest area distortion,
+                <li><div class="featurename">Automatic</div> If no special control over the boundary is required, BFF automatically produces the flattening with minimal area distortion. (Note that since we mathematically guarantee that this is the lowest area distortion,
                     it is not possible to reduce area distortion by using different flattening software. However, area distortion <em>can</em> be reduced by adding cuts and cone singularities; see below.)</li>
-                <li><em>Disk</em> &mdash; maps the surface to a circular disk. This map provides an easy way to get a map between two different surfaces (<em>e.g.,</em> two different faces): just map each surface to the disk independently, then to locate
+                <li><div class="featurename">Disk</div> Maps the surface to a circular disk. This map provides an easy way to get a map between two different surfaces (<em>e.g.,</em> two different faces): just map each surface to the disk independently, then to locate
                     a point in the 2nd mesh corresponding to a given point on the 1st mesh, follow the maps from the 1st surface, to the disk, and then back to the 2nd surface. (Expert comment: there are <em>M&ouml;bius</em> degrees of freedom that are
                     not exposed by the GUI; direct control over these degrees of freedom may be supported in a future release.)</li>
-                <li><em>Edit Boundary</em> &mdash; provides direct manipulation of the boundary curve using a user-specified spline. Control points can be added (or removed) by clicking (or ctrl-clicking) points on the boundary. Clicking and dragging on a
+                <li><div class="featurename">Edit Boundary</div> Provides direct manipulation of the boundary curve using a user-specified spline. Control points can be added (or removed) by clicking (or ctrl-clicking) points on the boundary. Clicking and dragging on a
                     handle will change the scale; holding shift will control the angle instead of the scale.</li>
-                <li><em>Set Boundary Angles</em> &mdash; allows the corner angles of a polygon to be specified. Angles can be specified using the <b>Angle Control</b> slider, or by typing in the angle box (where the value is interpreted as a multiple of &pi;).
+                <li><div class="featurename">Set Boundary Angles</div> Allows the corner angles of a polygon to be specified. Angles can be specified using the <b>Angle Control</b> slider, or by typing in the angle box (where the value is interpreted as a multiple of &pi;).
                     As with any polygon, these angles must of course sum to 2&pi;&mdash; the GUI will automatically adjust the angles to preserve this sum at all times, by adjusting the angle at the corner that was least-recently updated.</li>
             </ul>
 

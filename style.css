@@ -314,9 +314,18 @@ body {
     background-color: #fff;
     padding: 50px;
     font: 14px/1.5 "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    color: #727272;
-    font-weight: 400
+    color: #626262;
+    font-weight: 400;
+    text-align: justify;
 }
+
+ul
+{
+   list-style-position: outside;
+   list-style-type: square;
+}
+
+ul li { padding: 10px 0px; }
 
 h1,
 h2,
@@ -324,7 +333,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: #222;
+    color: #000;
     margin: 0 0 20px
 }
 
@@ -359,7 +368,7 @@ h6 {
 }
 
 a {
-    color: #267CB9;
+    color: #7679b9;
     text-decoration: none
 }
 
@@ -486,7 +495,7 @@ header ul a:active {
 }
 
 strong {
-    color: #222;
+    color: #000;
     font-weight: 700
 }
 
@@ -498,7 +507,7 @@ header ul li+li+li {
 header ul a strong {
     font-size: 14px;
     display: block;
-    color: #222
+    color: #000
 }
 
 section {
@@ -509,8 +518,24 @@ section {
 
 .title {
     color: #000000;
-    font-size: 40px;
+    font-size: 50px;
     font-weight: bold;
+}
+
+.featurename
+{
+   color: #7679b9;
+   font-weight: bold;
+   font-variant: small-caps;
+   font-size: 16px;
+}
+
+@media (max-width: 740px) {
+
+   .title { 
+      font-size: 5.5vw; 
+   }
+
 }
 
 small {
