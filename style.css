@@ -381,7 +381,7 @@ a:hover small {
 }
 
 .wrapper {
-    width: 1000px;
+    width: 900px;
     margin: 0 auto
 }
 
@@ -501,9 +501,15 @@ header ul a strong {
 }
 
 section {
-    width: 750px;
+    width: 900px;
     float: right;
     padding-bottom: 50px
+}
+
+.title {
+    color: #000000;
+    font-size: 50px;
+    font-weight: bold;
 }
 
 small {
