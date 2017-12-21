@@ -176,7 +176,7 @@ void BFF::mapToSphere();
 On Mac OSX and Linux, compiling should be as simple as
 
 ```
-git clone https://github.com/rohan-sawhney/boundary-first-flattening.git
+git clone https://github.com/GeometryCollective/boundary-first-flattening.git
 cd boundary-first-flattening && git submodule update --init --recursive
 mkdir build && cd build && cmake ..
 make -j 4
