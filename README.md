@@ -185,9 +185,8 @@ make -j 4
 
 On Windows, create a Visual Studio project with Cmake after running the first three instructions.
 
-# Authors
+# Author
 [Rohan Sawhney](http://www.rohansawhney.io)<br/>
-[Keenan Crane](http://www.cs.cmu.edu/~kmcrane/)
 
 # Citation
 
