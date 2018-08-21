@@ -55,8 +55,8 @@
             <hr>
 
             <p>Boundary First Flattening (BFF) is a free and open source application for surface parameterization. Unlike other tools for UV mapping, BFF allows free-form editing of the flattened mesh, providing users direct control over the shape of the
-                flattened domain&mdash;rather than being stuck with whatever the software provides. The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool. The
-                tool also provides some state-of-the art flattening techniques not available in standard UV mapping software such as <em>cone singularities</em>, which can dramatically reduce area distortion, and <em>seamless maps</em>, which help eliminate
+                flattened domain&mdash;rather than being stuck with whatever the software provides. The initial flattening is fully automatic, with distortion mathematically guaranteed to be as low or lower than any other conformal mapping tool. The tool
+                also provides some state-of-the art flattening techniques not available in standard UV mapping software such as <em>cone singularities</em>, which can dramatically reduce area distortion, and <em>seamless maps</em>, which help eliminate
                 artifacts by ensuring identical texture resolution across all cuts. BFF is highly optimized, allowing interactive editing of meshes with millions of triangles.</p>
 
             <p>The BFF application is based on the paper, <em>&ldquo;<a href="http://www.cs.cmu.edu/~kmcrane/Projects/BoundaryFirstFlattening/paper.pdf">Boundary First Flattening&rdquo;</a></em> by <a href="http://rohansawhney.io">Rohan Sawhney</a> and
@@ -111,10 +111,13 @@
 
             <h3 id="overview">Overview Video</h3>
 
-            <p>To get started, take a look at our short (10min.) overview video. More detailed descriptions of individual features are found below.</p>
+            <p>To get started, take a look at our short (10min.) overview video. More detailed descriptions of individual features are found below. The second video dives more into the technical details.</p>
 
             <p align="center">
                 <iframe width="560" height="315" src="https://www.youtube.com/embed/h_iJFQEb-_A" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
+            </p>
+            <p align="center">
+                <iframe width="560" height="315" src="https://www.youtube.com/watch?v=cdecFvUMX4w&t=1s" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
             </p>
 
             <h3 id="tutorial_gui">The BFF interface</h3>
@@ -308,30 +311,31 @@ void BFF::mapToSphere();
             <p><a href="http://www.rohansawhney.io">Rohan Sawhney</a><br />
 
 
-            <h1 id="publication">Citation</h1>
+                <h1 id="publication">Citation</h1>
 
-            <p>The BFF application implements the algorithm described in the paper:</p>
+                <p>The BFF application implements the algorithm described in the paper:</p>
 
-            <p>
-                <blockquote>
-                    <p><strong><a href="https://arxiv.org/abs/1704.06873">Boundary First Flattening</a></strong><br /> Sawhney, Crane<br /> ACM Transactions on Graphics</p>
-                </blockquote>
-            </p>
+                <p>
+                    <blockquote>
+                        <p><strong><a href="https://arxiv.org/abs/1704.06873">Boundary First Flattening</a></strong><br /> Sawhney, Crane<br /> ACM Transactions on Graphics</p>
+                    </blockquote>
+                </p>
 
-            <p>Our application builds on some terrific insights and work done on conformal flattening in recent years, including the automatic cone placement algorithm found in Ben Chen et al, <a href="http://www.cs.technion.ac.il/~gotsman/AmendedPubl/Miri/EG08_Conf.pdf">&ldquo;Conformal Flattening by Curvature Prescription and Metric Scaling&rdquo;</a> and the technique used to make maps globally seamless from Springborn et al, <a href="http://multires.caltech.edu/pubs/ConfEquiv.pdf">&ldquo;Conformal Equivalence of Triangle Meshes&rdquo;</a>. We are also indebted to the work of Kharevych et al, <a href="http://multires.caltech.edu/pubs/CircleParamTOG.pdf">&ldquo;Discrete Conformal Mappings via Circle Patterns&rdquo;</a>, which introduced the idea of cone singularities into practical conformal parameterization algorithms.</p>
+                <p>Our application builds on some terrific insights and work done on conformal flattening in recent years, including the automatic cone placement algorithm found in Ben Chen et al, <a href="http://www.cs.technion.ac.il/~gotsman/AmendedPubl/Miri/EG08_Conf.pdf">&ldquo;Conformal Flattening by Curvature Prescription and Metric Scaling&rdquo;</a>                    and the technique used to make maps globally seamless from Springborn et al, <a href="http://multires.caltech.edu/pubs/ConfEquiv.pdf">&ldquo;Conformal Equivalence of Triangle Meshes&rdquo;</a>. We are also indebted to the work of Kharevych
+                    et al, <a href="http://multires.caltech.edu/pubs/CircleParamTOG.pdf">&ldquo;Discrete Conformal Mappings via Circle Patterns&rdquo;</a>, which introduced the idea of cone singularities into practical conformal parameterization algorithms.</p>
 
-            <h1 id="publication">Acknowledgements</h1>
+                <h1 id="publication">Acknowledgements</h1>
 
-            <p>Development of this software was funded in part by NSF Award 1717320, and a gift from Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions
-                or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</p>
+                <p>Development of this software was funded in part by NSF Award 1717320, and a gift from Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions
+                    or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</p>
 
-            <h1 id="license">License</h1>
+                <h1 id="license">License</h1>
 
-            <p>Released under the <a href="https://opensource.org/licenses/MIT">MIT License</a></p>
+                <p>Released under the <a href="https://opensource.org/licenses/MIT">MIT License</a></p>
 
-            <center>
-                <a href="http://geometry.cs.cmu.edu"><img src="imgs/geometry-collective-production.png" width="190" height="173.2192" /></a>
-            </center>
+                <center>
+                    <a href="http://geometry.cs.cmu.edu"><img src="imgs/geometry-collective-production.png" width="190" height="173.2192" /></a>
+                </center>
 
         </section>
     </div>
