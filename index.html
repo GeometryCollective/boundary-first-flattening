@@ -127,8 +127,34 @@
                 <iframe width="560" height="315" src="https://www.youtube.com/embed/cdecFvUMX4w?ecver=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </p>
 
-            <h3 id="tutorial_gui">The BFF interface</h3>
-            <p>The BFF interactive tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>; meshes that do not have disk or sphere topology will be automatically cut for flattening. Initially, the GUI should look something like this:</p>
+BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a single polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>; meshes that do not have disk or sphere topology will be automatically cut for flattening. 
+
+<br>&nbsp;<p>
+
+<h3 id="tutorial_gui">Command Line Interface</h3>
+
+To run the command line interface, simply navigate into the directory containing the executable <tt>bff-command-line</tt> and type
+
+<br>&nbsp;<p>
+<tt>./bff-command-line in.obj out.obj</tt>
+</p> 
+
+where <tt>in.obj</tt> is the mesh you want to flatten, and <tt>out.obj</tt> is the same mesh with the output UV coordinates.
+
+<br>&nbsp;<p>
+
+Some optional flags:
+
+<li><tt>--nCones=N_CONES</tt> Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)</li>
+<li><tt>--normalizeUVs</tt> Scale all UVs so that they are in the range [0,1] x [0,1].</li>
+<li><tt>--mapToSphere</tt> For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)</li>
+<li><tt>--flattenToDisk</tt> For a topological disk, maps to the unit circular disk. (See below for more detail.)</li>
+
+<br>&nbsp;<p>
+            
+<h3 id="tutorial_gui">Interactive Graphical Interface</h3>
+            
+Initially, the GUI should look something like this:</p>
 
             <p align="center"><img src="imgs/tutorial/bff_gui.jpg" width="500" height="269"></p>
 

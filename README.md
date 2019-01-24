@@ -30,15 +30,37 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 >    [Mac OSX](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
 >    [Windows](http://geometry.cs.cmu.edu/software/BFFWindows.zip)
 
+# Release History
+
+* **v1.0** (December 2017) &mdash; Initial release.
+* **v1.1** (January 2019) &mdash; Adds support for arbitrary topology (holes, handles, <em>etc.</em>; not just disk and sphere), quad and polygon meshes, command-line interface with no GUI build dependencies, and 3x overall speedup across load/solve/write operations.
+
 # Tutorial
 
 <p align="center"><img src="imgs/tutorial/bff_edit.gif" width="500" height="289"></p>
 
 BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))
 
-## The BFF interface
+BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a single polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>; meshes that do not have disk or sphere topology will be automatically cut for flattening. 
 
-The BFF interactive tool loads a single triangle mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have either spherical or disk topology, and must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though some of these restrictions may be relaxed in future versions). Initially, the GUI should look something like this:
+## Command Line Interface
+
+To run the command line interface, simply navigate into the directory containing the executable `bff-command-line` and type
+
+`./bff-command-line in.obj out.obj`
+
+where `in.obj` is the mesh you want to flatten, and `out.obj` is the same mesh with the output UV coordinates.
+
+Some optional flags:
+
+* `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)
+* `--normalizeUVs` Scale all UVs so that they are in the range [0,1] x [0,1].
+* `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)
+* `--flattenToDisk` For a topological disk, maps to the unit circular disk. (See below for more detail.)
+
+## Interactive Graphical Interface
+
+Initially, the GUI should look something like this:
 
 <p align="center"><img src="imgs/tutorial/bff_gui.jpg" width="500" height="269"></p>
 
@@ -139,7 +161,12 @@ To get a map with lower area distortion, once can again add cone singularities (
 
 # Dependencies
 
+The command line version has the following dependencies:
+
 1. [SuiteSparse](http://faculty.cse.tamu.edu/davis/suitesparse.html) (instructions to build SuiteSparse on Windows can be found [here](https://github.com/jlblancoc/suitesparse-metis-for-windows))
+
+The GUI version also requires some additional dependencies:
+
 2. OpenGL (version 4.1 or higher)
 3. [OpenGL Mathematics (GLM)](http://glm.g-truc.net/0.9.8/index.html) (included)
 4. [Nanogui](https://github.com/wjakob/nanogui) (included)
