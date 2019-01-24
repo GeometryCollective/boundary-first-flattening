@@ -10,64 +10,64 @@ fragment(0)
 
 Shader::~Shader()
 {
-    if (vertex) {
-        glDetachShader(program, vertex);
-        glDeleteShader(vertex);
-    }
+	if (vertex) {
+		glDetachShader(program, vertex);
+		glDeleteShader(vertex);
+	}
 
-    if (fragment) {
-        glDetachShader(program, fragment);
-        glDeleteShader(fragment);
-    }
+	if (fragment) {
+		glDetachShader(program, fragment);
+		glDeleteShader(fragment);
+	}
 
-    if (program) {
-        glDeleteProgram(program);
-    }
+	if (program) {
+		glDeleteProgram(program);
+	}
 }
 
-void Shader::load(const string& vertexSource, const string& fragmentSource)
+void Shader::load(const std::string& vertexSource, const std::string& fragmentSource)
 {
-    vertex = compileShader(vertexSource, GL_VERTEX_SHADER);
-    fragment = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
+	vertex = compileShader(vertexSource, GL_VERTEX_SHADER);
+	fragment = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
 
-    // create program and attach shaders
-    program = glCreateProgram();
-    if (vertex) glAttachShader(program, vertex);
-    if (fragment) glAttachShader(program, fragment);
+	// create program and attach shaders
+	program = glCreateProgram();
+	if (vertex) glAttachShader(program, vertex);
+	if (fragment) glAttachShader(program, fragment);
 
-    GLint success;
-    GLchar infoLog[512];
+	GLint success;
+	GLchar infoLog[512];
 
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        cerr << infoLog << endl;
-    }
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		std::cerr << infoLog << std::endl;
+	}
 }
 
 void Shader::use()
 {
-    glUseProgram(program);
+	glUseProgram(program);
 }
 
-GLuint Shader::compileShader(const string& code, GLenum type)
+GLuint Shader::compileShader(const std::string& code, GLenum type)
 {
-    GLint success;
-    GLchar infoLog[512];
-    GLuint shader = 0;
+	GLint success;
+	GLchar infoLog[512];
+	GLuint shader = 0;
 
-    const GLchar *shaderCode = code.c_str();
-    shader = glCreateShader(type);
-    glShaderSource(shader, 1, &shaderCode, NULL);
-    glCompileShader(shader);
+	const GLchar *shaderCode = code.c_str();
+	shader = glCreateShader(type);
+	glShaderSource(shader, 1, &shaderCode, NULL);
+	glCompileShader(shader);
 
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        cerr << infoLog << endl;
-        shader = 0;
-    }
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		std::cerr << infoLog << std::endl;
+		shader = 0;
+	}
 
-    return shader;
+	return shader;
 }

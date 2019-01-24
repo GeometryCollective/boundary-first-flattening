@@ -2,28 +2,38 @@
 
 #include "Types.h"
 
+namespace bff {
+
 class Edge {
 public:
-    // constructor
-    Edge();
+	// constructor
+	Edge();
 
-    // one of the halfedges associated with this edge
-    HalfEdgeIter he;
+	// one of the halfedges associated with this edge
+	HalfEdgeIter he;
 
-    // boolean flag to indicate if edge is on a cut
-    bool onCut;
+	// boolean flag to indicate if edge is on a generator
+	bool onGenerator;
 
-    // id between 0 and |E|-1
-    int index;
+	// boolean flag to indicate if edge is on a cut
+	bool onCut;
 
-    // returns edge length
-    double length() const;
+	// boolean flag to indicate if cut can pass through edge
+	bool isCuttable;
 
-    // returns cotan weight associated with this edge
-    double cotan() const;
+	// id between 0 and |E|-1
+	int index;
 
-    // checks if this edge is on the boundary
-    bool onBoundary() const;
+	// returns edge length
+	double length() const;
+
+	// returns cotan weight associated with this edge
+	double cotan() const;
+
+	// checks if this edge is on the boundary
+	bool onBoundary() const;
 };
+
+} // namespace bff
 
 #include "Edge.inl"

@@ -1,5 +1,9 @@
+namespace bff {
+
 inline Edge::Edge():
+onGenerator(false),
 onCut(false),
+isCuttable(true),
 index(-1)
 {
 
@@ -7,18 +11,20 @@ index(-1)
 
 inline double Edge::length() const
 {
-    const Vector& a = he->vertex->position;
-    const Vector& b = he->next->vertex->position;
+	const Vector& a = he->vertex->position;
+	const Vector& b = he->next->vertex->position;
 
-    return (b - a).norm();
+	return (b - a).norm();
 }
 
 inline double Edge::cotan() const
 {
-    return 0.5*(he->cotan() + he->flip->cotan());
+	return 0.5*(he->cotan() + he->flip->cotan());
 }
 
 inline bool Edge::onBoundary() const
 {
-    return he->onBoundary || he->flip->onBoundary;
+	return he->onBoundary || he->flip->onBoundary;
 }
+
+} // namespace bff

@@ -1,139 +1,139 @@
 #include "Mesh.h"
-#include "MeshIO.h"
-#include "FaceMesh.h"
+#include <limits>
 
-Mesh::Mesh()
+namespace bff {
+
+Mesh::Mesh():
+radius(0.0)
 {
 
 }
 
-Mesh::Mesh(const Mesh& mesh)
+Mesh::Mesh(const Mesh& mesh):
+radius(mesh.radius)
 {
-    *this = mesh;
-}
+	// allocate halfEdges
+	halfEdges.reserve(mesh.halfEdges.size());
+	for (HalfEdgeCIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
+		halfEdges.insert(halfEdges.end(), HalfEdge());
+	}
 
-bool Mesh::read(const string& fileName)
-{
-    static bool firstRead = true;
-    ifstream in(fileName.c_str());
-    istringstream buffer;
-    
-    if (firstRead && fileName.empty()) {
-        buffer.str(faceMesh);
-    
-    } else if (!in.is_open()) {
-        return false;
-    
-    } else {
-        buffer.str(string(istreambuf_iterator<char>(in), istreambuf_iterator<char>()));
-    }
+	// initialize vertices
+	vertices.reserve(mesh.vertices.size());
+	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
+		VertexIter vNew = vertices.insert(vertices.end(), Vertex());
+		vNew->he = halfEdges.begin() + v->he->index;
+		vNew->position = v->position;
+		vNew->inNorthPoleVicinity = v->inNorthPoleVicinity;
+		vNew->index = v->index;
+		vNew->referenceIndex = v->referenceIndex;
+	}
 
-    bool success = false;
-    if ((success = MeshIO::read(buffer, *this))) {
-        indexElements();
-        normalize();
-    }
-    
-    firstRead = false;
-    in.close();
+	// initialize edges
+	edges.reserve(mesh.edges.size());
+	for (EdgeCIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
+		EdgeIter eNew = edges.insert(edges.end(), Edge());
+		eNew->he = halfEdges.begin() + e->he->index;
+		eNew->onGenerator = e->onGenerator;
+		eNew->onCut = e->onCut;
+		eNew->isCuttable = e->isCuttable;
+		eNew->index = e->index;
+	}
 
-    return success;
-}
+	// initialize faces
+	faces.reserve(mesh.faces.size());
+	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+		FaceIter fNew = faces.insert(faces.end(), Face());
+		fNew->he = halfEdges.begin() + f->he->index;
+		fNew->fillsHole = f->fillsHole;
+		fNew->inNorthPoleVicinity = f->inNorthPoleVicinity;
+		fNew->index = f->index;
+	}
 
-bool Mesh::write(const string& fileName, bool mappedToSphere, bool normalize) const
-{
-    ofstream out(fileName.c_str());
+	// initialize corners
+	corners.reserve(mesh.corners.size());
+	for (CornerCIter c = mesh.corners.begin(); c != mesh.corners.end(); c++) {
+		CornerIter cNew = corners.insert(corners.end(), Corner());
+		cNew->he = halfEdges.begin() + c->he->index;
+		cNew->uv = c->uv;
+		cNew->inNorthPoleVicinity = c->inNorthPoleVicinity;
+		cNew->index = c->index;
+	}
 
-    if (!out.is_open()) {
-        return false;
-    }
+	// initialize boundaries
+	boundaries.reserve(mesh.boundaries.size());
+	for (BoundaryCIter b = mesh.boundaries.begin(); b != mesh.boundaries.end(); b++) {
+		BoundaryIter bNew = boundaries.insert(boundaries.end(), Face());
+		bNew->he = halfEdges.begin() + b->he->index;
+		bNew->fillsHole = b->fillsHole;
+		bNew->inNorthPoleVicinity = b->inNorthPoleVicinity;
+		bNew->index = b->index;
+	}
 
-    MeshIO::write(out, *this, mappedToSphere, normalize);
-    out.close();
-
-    return true;
+	// initialize halfEdges
+	for (HalfEdgeCIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
+		HalfEdgeIter hNew = halfEdges.begin() + h->index;
+		hNew->next = halfEdges.begin() + h->next->index;
+		hNew->prev = halfEdges.begin() + h->prev->index;
+		hNew->flip = halfEdges.begin() + h->flip->index;
+		hNew->vertex = vertices.begin() + h->vertex->index;
+		hNew->edge = edges.begin() + h->edge->index;
+		hNew->face = faces.begin() + h->face->index;
+		if (!h->onBoundary) hNew->corner = corners.begin() + h->corner->index;
+		hNew->index = h->index;
+		hNew->onBoundary = h->onBoundary;
+	}
 }
 
 int Mesh::eulerCharacteristic() const
 {
-    return (int)(vertices.size() - edges.size() + faces.size());
+	return (int)(vertices.size() - edges.size() + faces.size());
 }
+
+double Mesh::diameter() const
+ {
+	double maxLimit = std::numeric_limits<double>::max();
+	double minLimit = std::numeric_limits<double>::min();
+	Vector minBounds(maxLimit, maxLimit, maxLimit);
+	Vector maxBounds(minLimit, minLimit, minLimit);
+
+	for (VertexCIter v = vertices.begin(); v != vertices.end(); v++) {
+		const Vector& p = v->position;
+
+		minBounds.x = std::min(p.x, minBounds.x);
+		minBounds.y = std::min(p.y, minBounds.y);
+		minBounds.z = std::min(p.z, minBounds.z);
+		maxBounds.x = std::max(p.x, maxBounds.x);
+		maxBounds.y = std::max(p.y, maxBounds.y);
+		maxBounds.z = std::max(p.z, maxBounds.z);
+	}
+
+	return (maxBounds - minBounds).norm();
+ }
 
 CutPtrSet Mesh::cutBoundary()
 {
-    if (boundaries.size() == 0) {
-        // if there is no boundary, initialize the iterator with the first edge on the cut
-        for (EdgeCIter e = edges.begin(); e != edges.end(); e++) {
-            if (e->onCut) return CutPtrSet(e->he);
-        }
+	if (boundaries.size() == 0) {
+		// if there is no boundary, initialize the iterator with the first edge
+		// on the cut
+		for (EdgeCIter e = edges.begin(); e != edges.end(); e++) {
+			if (e->onCut) return CutPtrSet(e->he);
+		}
 
-        return CutPtrSet();
-    }
+		return CutPtrSet();
+	}
 
-    return CutPtrSet(boundaries[0].he);
+	return CutPtrSet(boundaries[0].he);
 }
 
-vector<Wedge>& Mesh::wedges()
+std::vector<Wedge>& Mesh::wedges()
 {
-    return corners;
+	return corners;
 }
 
-const vector<Wedge>& Mesh::wedges() const
+const std::vector<Wedge>& Mesh::wedges() const
 {
-    return corners;
+	return corners;
 }
 
-void Mesh::indexElements()
-{
-    int index = 0;
-    for (VertexIter v = vertices.begin(); v != vertices.end(); v++) {
-        v->index = index++;
-    }
-
-    index = 0;
-    for (EdgeIter e = edges.begin(); e != edges.end(); e++) {
-        e->index = index++;
-    }
-
-    index = 0;
-    for (FaceIter f = faces.begin(); f != faces.end(); f++) {
-        f->index = index++;
-    }
-
-    index = 0;
-    for (CornerIter c = corners.begin(); c != corners.end(); c++) {
-        c->index = index++;
-    }
-
-    index = 0;
-    for (HalfEdgeIter h = halfEdges.begin(); h != halfEdges.end(); h++) {
-        h->index = index++;
-    }
-
-    index = 0;
-    for (BoundaryIter b = boundaries.begin(); b != boundaries.end(); b++) {
-        b->index = index++;
-    }
-}
-
-void Mesh::normalize()
-{
-    // compute center of mass
-    Vector cm;
-    for (VertexCIter v = vertices.begin(); v != vertices.end(); v++) {
-        cm += v->position;
-    }
-    cm /= vertices.size();
-
-    // translate to origin and determine radius
-    double radius = -1;
-    for (VertexIter v = vertices.begin(); v != vertices.end(); v++) {
-        v->position -= cm;
-        radius = max(radius, v->position.norm());
-    }
-
-    // rescale to unit radius
-    for (VertexIter v = vertices.begin(); v != vertices.end(); v++) {
-        v->position /= radius;
-    }
-}
+} // namespace bff
