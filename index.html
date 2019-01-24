@@ -102,6 +102,13 @@
                 <figcaption><a href="http://geometry.cs.cmu.edu/software/BFFWindows.zip">Windows</a></figcaption>
             </figure>
 
+            <h1 id="tutorial">Release History</h1>
+
+            <ul>
+               <li><b>v1.0</b> (December 2017) &mdash; Initial release.</li>
+               <li><b>v1.1</b> (January 2019) &mdash; Adds support for arbitrary topology (holes, handles, <em>etc.</em>; not just disk and sphere), quad and polygon meshes, command-line interface with no GUI build dependencies, and 3x overall speedup across load/solve/write operations.</li>
+            </ul>
+
             <h1 id="tutorial">Tutorial</h1>
 
             <p align="center"><img src="imgs/tutorial/bff_edit.gif" width="500" height="289"></p>
@@ -118,7 +125,7 @@
             </p>
 
             <h3 id="tutorial_gui">The BFF interface</h3>
-            <p>The BFF interactive tool loads a single triangle mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have either spherical or disk topology, and must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>                (though some of these restrictions may be relaxed in future versions). Initially, the GUI should look something like this:</p>
+            <p>The BFF interactive tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>; meshes that do not have disk or sphere topology will be automatically cut for flattening. Initially, the GUI should look something like this:</p>
 
             <p align="center"><img src="imgs/tutorial/bff_gui.jpg" width="500" height="269"></p>
 
