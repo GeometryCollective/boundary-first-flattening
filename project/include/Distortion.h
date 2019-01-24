@@ -1,19 +1,26 @@
 #pragma once
 
-#include "Types.h"
+#include "MeshData.h"
+
+namespace bff {
 
 class Distortion {
 public:
-    // computes quasi conformal error; returns average qc error
-    static Vector computeQuasiConformalError(const vector<Face>& faces);
+	// computes quasi conformal error; returns average qc error
+	static Vector computeQuasiConformalError(const std::vector<Mesh>& model);
 
-    // computes area distortion; returns average area distortion
-    static Vector computeAreaScaling(const vector<Face>& faces);
+	// computes area distortion; returns average area distortion
+	static Vector computeAreaScaling(const std::vector<Face>& faces);
 
-    // returns face color
-    static Vector color(int faceIndex, bool conformalColors);
+	// computes area distortion; returns average area distortion
+	static Vector computeAreaScaling(const std::vector<Mesh>& model);
+
+	// returns face color
+	static Vector color(FaceCIter f, int meshIndex, bool conformalColors);
 
 private:
-    // member
-    static vector<double> distortion;
+	// member
+	static std::vector<FaceData<double>> distortion;
 };
+
+} // namespace bff

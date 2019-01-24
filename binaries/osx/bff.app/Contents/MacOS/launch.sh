@@ -1,3 +1,3 @@
 #!/bin/bash
 cd "${0%/*}"
-./bff
+./bff-viewer face.obj

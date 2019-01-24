@@ -41,22 +41,10 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))
 
-BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a single polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Currently this mesh must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a>; meshes that do not have disk or sphere topology will be automatically cut for flattening. 
+BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles and multiple components are supported. The only restriction is that meshes must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though this may be relaxed in future versions). Meshes that do not have disk or sphere topology will be automatically cut for flattening. 
 
-## Command Line Interface
-
-To run the command line interface, simply navigate into the directory containing the executable `bff-command-line` and type
-
-`./bff-command-line in.obj out.obj`
-
-where `in.obj` is the mesh you want to flatten, and `out.obj` is the same mesh with the output UV coordinates.
-
-Some optional flags:
-
-* `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)
-* `--normalizeUVs` Scale all UVs so that they are in the range [0,1] x [0,1].
-* `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)
-* `--flattenToDisk` For a topological disk, maps to the unit circular disk. (See below for more detail.)
+<p align="center"><img src="imgs/tutorial/bff_meshsupport.jpg" width="750" height="237.34"></p>
+<p align="center"><img src="imgs/tutorial/bff_multiplecomponents.gif" width="500" height="250"></p>
 
 ## Interactive Graphical Interface
 
@@ -155,9 +143,23 @@ For sphere-like surfaces, BFF will also automatically produce a map to the spher
 
 <p align="center"><img src="imgs/tutorial/bff_sphere.jpg" width="500" height="271"></p>
 
-To get a map with lower area distortion, once can again add cone singularities (either automatically or manually) as described above. The surface will automatically be cut into a disk and flattened.
+To get a map with lower area distortion, one can again add cone singularities (either automatically or manually) as described above. The surface will automatically be cut into a disk and flattened.
 
 <p align="center"><img src="imgs/tutorial/bff_spherecones.jpg" width="500" height="238"></p>
+
+# Compiling from source
+
+On Mac OSX and Linux, compiling should be as simple as
+
+```
+git clone https://github.com/GeometryCollective/boundary-first-flattening.git
+cd boundary-first-flattening && git submodule update --init --recursive
+mkdir build && cd build && cmake ..
+make -j 4
+```
+
+These instructions will create both a command line and GUI application. On Windows, create a Visual Studio project with Cmake. The Windows binary shared above was built by linking with the version of
+OpenBlas included in the deps folder. You will need to include the libopenblas.dll.a static library in your Visual Studio project.
 
 # Dependencies
 
@@ -168,12 +170,29 @@ The command line version has the following dependencies:
 The GUI version also requires some additional dependencies:
 
 2. OpenGL (version 4.1 or higher)
-3. [OpenGL Mathematics (GLM)](http://glm.g-truc.net/0.9.8/index.html) (included)
-4. [Nanogui](https://github.com/wjakob/nanogui) (included)
+3. [OpenGL Mathematics (GLM)](http://glm.g-truc.net/0.9.8/index.html) (included but not required for command line application)
+4. [Nanogui](https://github.com/wjakob/nanogui) (included but not required for command line application)
+
+## Command Line Interface
+
+The BFF code can be compiled and run independent of the GUI, for easy integration into other software packages / plugins.  To run the command line interface, simply navigate into the directory containing the executable `bff-command-line` and type
+
+`./bff-command-line in.obj out.obj`
+
+where `in.obj` is the mesh you want to flatten, and `out.obj` is the same mesh with the output UV coordinates.
+
+Some optional flags:
+
+* `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)
+* `--normalizeUVs` Scale all UVs so that they are in the range [0,1] x [0,1].
+* `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)
+* `--flattenToDisk` For a topological disk, maps to the unit circular disk. (See below for more detail.)
+
+Unlike the GUI, the command line application does not expose some of the interactive features of BFF such editing of boundary lengths, corner angles and cone angles.  These features can still be accessed via the code level interface (see below).
 
 # Code level interface
 
-The BFF code can be compiled and run independent of the GUI, for easy integration into other software packages / plugins.  The most important methods are described in <tt>project/include/Bff.h</tt>.  These methods assume that a standard triangle mesh has already been loaded into the <tt>Mesh</tt> object, and produce UV coordinates at the corners of each triangle, stored in the <tt>uv</tt> member of each element of <tt>Mesh::corners</tt>.
+All features of BFF can be accessed directly through a static library by compiling the code. The most important methods are described in <tt>project/include/Bff.h</tt>. These methods assume that a standard triangle mesh has already been loaded into the <tt>Mesh</tt> object, and produce UV coordinates at the corners of each triangle, stored in the <tt>uv</tt> member of each element of <tt>Mesh::corners</tt>.
 
 ```
 // Computes automatic flattening with minimal area distortion
@@ -198,22 +217,9 @@ void BFF::flattenToDisk();
 void BFF::mapToSphere();
 ```
 
-# Compiling
-
-On Mac OSX and Linux, compiling should be as simple as
-
-```
-git clone https://github.com/GeometryCollective/boundary-first-flattening.git
-cd boundary-first-flattening && git submodule update --init --recursive
-mkdir build && cd build && cmake ..
-make -j 4
-./bff
-```
-
-On Windows, create a Visual Studio project with Cmake after running the first three instructions.
-
-# Author
+# Authors
 [Rohan Sawhney](http://www.rohansawhney.io)<br/>
+[Keenan Crane](http://www.cs.cmu.edu/~kmcrane/)
 
 # Citation
 

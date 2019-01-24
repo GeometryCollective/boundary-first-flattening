@@ -13,7 +13,7 @@
 	<key>CFBundleExecutable</key>
 	<string>launch.sh</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1</string>
+	<string>1.0</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
@@ -23,7 +23,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleVersion</key>
-	<string>0.1</string>
+	<string>1.0</string>
 	<key>NSSupportsSuddenTermination</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
