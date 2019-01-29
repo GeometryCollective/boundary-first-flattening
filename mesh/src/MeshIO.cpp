@@ -382,6 +382,8 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 				bH->index = (int)mesh.halfEdges.size() - 1;
 				boundaryCycle.push_back(bH);
 
+				end = mesh.halfEdges.end();
+
 				// grab the next halfedge along the boundary that does not have a
 				// flip halfedge
 				HalfEdgeIter nextHe = he->next;
@@ -534,7 +536,7 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 	return true;
 }
 
-void MeshIO::normalize(std::vector<Mesh>& model)
+Vector MeshIO::normalize(std::vector<Mesh>& model)
 {
 	// compute center of mass
 	Vector cm;
@@ -564,6 +566,8 @@ void MeshIO::normalize(std::vector<Mesh>& model)
 
 		model[i].radius = radius;
 	}
+
+	return cm;
 }
 
 bool MeshIO::read(const std::string& fileName, std::vector<Mesh>& model,

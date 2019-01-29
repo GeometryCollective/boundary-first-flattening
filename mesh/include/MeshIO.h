@@ -54,7 +54,7 @@ public:
 						  Mesh& mesh, std::string& error);
 
 	// centers model around origin and records radius
-	static void normalize(std::vector<Mesh>& model);
+	static Vector normalize(std::vector<Mesh>& model);
 
 private:
 	// preallocates mesh elements
