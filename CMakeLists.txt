@@ -3,6 +3,7 @@ project(bff)
 
 option(BUILD_CLI  "Build BFF command line" ON)
 option(BUILD_GUI  "Build BFF GUI"          ON)
+option(WITH_OPENMESH_INTERFACE "Build with OpenMesh interface" OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,9 +37,33 @@ file(GLOB BFF_SOURCES
 	"mesh/src/*.cpp" "mesh/include/*.h"
 	"project/src/*.cpp" "project/include/*.h")
 
+if(${WITH_OPENMESH_INTERFACE})
+	find_package(OpenMesh REQUIRED)
+	add_library(bff-openmesh-interface INTERFACE)
+	target_link_libraries(bff-openmesh-interface INTERFACE
+		bff
+		${OPENMESH_LIBRARIES}
+	)
+	target_include_directories(bff-openmesh-interface INTERFACE
+		${OPENMESH_INCLUDE_DIR}
+	)
+endif()
+
 # create bff static library
 add_library(bff ${BFF_SOURCES})
 target_link_libraries(bff ${SuiteSparse_LIBRARIES})
+if(${WITH_OPENMESH_INTERFACE})
+	target_link_libraries(bff
+		PUBLIC
+		${OPENMESH_LIBRARIES}
+		openmesh_structures
+	)
+	target_include_directories(bff
+		PUBLIC
+		${OPENMESH_INCLUDE_DIR}
+	)
+endif()
+
 target_include_directories(bff
 	PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/deps/rectangle-bin-pack/include>
@@ -101,5 +126,6 @@ install(DIRECTORY project/include/ DESTINATION include FILES_MATCHING PATTERN "*
 install(DIRECTORY mesh/include/ DESTINATION include FILES_MATCHING PATTERN "*.inl")
 install(DIRECTORY linear-algebra/include/ DESTINATION include FILES_MATCHING PATTERN "*.inl")
 install(DIRECTORY project/include/ DESTINATION include FILES_MATCHING PATTERN "*.inl")
-install(EXPORT bff-targets FILE bffTargets.cmake DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/boundary-first-flattening/cmake)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bffConfig.cmake DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/boundary-first-flattening/cmake)
+if(${WITH_OPENMESH_INTERFACE})
+	install(DIRECTORY openmesh-interface/include/ DESTINATION include FILES_MATCHING PATTERN "*.hpp")
+endif()
