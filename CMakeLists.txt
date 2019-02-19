@@ -32,7 +32,11 @@ list(APPEND BFF_INCLUDE_DIRS "mesh/include")
 list(APPEND BFF_INCLUDE_DIRS "project/include")
 include_directories(${BFF_INCLUDE_DIRS})
 
-file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/src/*.cpp" "linear-algebra/src/*.cpp" "mesh/src/*.cpp" "project/src/*.cpp")
+file(GLOB BFF_SOURCES
+	"deps/rectangle-bin-pack/src/*.cpp" "deps/rectangle-bin-pack/include/*.h"
+	"linear-algebra/src/*.cpp" "linear-algebra/include/*.h"
+	"mesh/src/*.cpp" "mesh/include/*.h"
+	"project/src/*.cpp" "project/include/*.h")
 
 # create bff static library
 add_library(bff ${BFF_SOURCES})
@@ -61,7 +65,7 @@ if (BUILD_GUI)
 	list(APPEND VIEWER_INCLUDE_DIRS "viewer/include")
 	include_directories(${VIEWER_INCLUDE_DIRS})
 
-	file(GLOB VIEWER_SOURCES "viewer/src/*.cpp")
+	file(GLOB VIEWER_SOURCES "viewer/src/*.cpp" "viewer/include/*.h")
 
 	# build viewer app
 	add_executable(bff-viewer ${VIEWER_SOURCES})
