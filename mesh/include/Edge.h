@@ -7,10 +7,28 @@ namespace bff {
 class Edge {
 public:
 	// constructor
-	Edge();
+	Edge(Mesh *mesh);
 
-	// one of the halfedges associated with this edge
-	HalfEdgeIter he;
+	// copy constructor
+	Edge(const Edge& e);
+
+	// returns one of the halfedges associated with this edge
+	HalfEdgeIter halfEdge() const;
+
+	// sets halfedge
+	void setHalfEdge(HalfEdgeCIter he);
+
+	// sets mesh
+	void setMesh(Mesh *mesh);
+
+	// returns edge length
+	double length() const;
+
+	// returns cotan weight associated with this edge
+	double cotan() const;
+
+	// checks if this edge is on the boundary
+	bool onBoundary() const;
 
 	// boolean flag to indicate if edge is on a generator
 	bool onGenerator;
@@ -24,16 +42,12 @@ public:
 	// id between 0 and |E|-1
 	int index;
 
-	// returns edge length
-	double length() const;
+private:
+	// index of one of the halfedges associated with this edge
+	int halfEdgeIndex;
 
-	// returns cotan weight associated with this edge
-	double cotan() const;
-
-	// checks if this edge is on the boundary
-	bool onBoundary() const;
+	// pointer to mesh this edge belongs to
+	Mesh *mesh;
 };
 
 } // namespace bff
-
-#include "Edge.inl"

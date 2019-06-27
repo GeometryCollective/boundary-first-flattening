@@ -6,8 +6,8 @@ namespace bff {
 
 class HoleFiller {
 public:
-	// fills holes. When fillAll is false, all holes except the largest are filled.
-	// However, the length of the largest hole must be larger than 50% of the mesh
+	// fills holes. When fillAll is false, all holes except the longest are filled.
+	// However, the length of the longest hole must be larger than 50% of the mesh
 	// diameter for it not to be filled. Returns true if all holes are filled and
 	// false otherwise.
 	static bool fill(Mesh& mesh, bool fillAll = false);
@@ -19,8 +19,7 @@ private:
 								   const std::vector<Face>& boundaries);
 
 	// fill hole
-	static void fill(FaceIter b, const std::vector<HalfEdgeIter>& boundaryHalfEdges,
-					 Mesh& mesh);
+	static void fill(const std::vector<HalfEdgeIter>& boundaryHalfEdges, Mesh& mesh);
 };
 
 } // namespace bff

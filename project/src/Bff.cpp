@@ -115,7 +115,7 @@ double BFF::computeTargetDualBoundaryLengthsUV(DenseMatrix& ldual) const
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int j = data->bIndex[w->prev()];
 
-		Vector uvi = nextWedge(w)->uv;
+		Vector uvi = w->nextWedge()->uv;
 		Vector uvj = w->uv;
 		Vector uvk = w->prev()->uv;
 		ldual(j) = 0.5*((uvj - uvi).norm() + (uvk - uvj).norm());
@@ -165,8 +165,8 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 									  // the boundary and a shared index to
 									  // wedges on opposite sides of a cut
 	for (WedgeCIter w: mesh.cutBoundary()) {
-		if (indexMap[w->he->next->edge] == -1) {
-			indexMap[w->he->next->edge] = eN++;
+		if (indexMap[w->halfEdge()->next()->edge()] == -1) {
+			indexMap[w->halfEdge()->next()->edge()] = eN++;
 		}
 	}
 
@@ -174,7 +174,7 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 	DenseMatrix L(eN), diagNinv(eN), T(2, eN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = data->bIndex[w];
-		int ii = indexMap[w->he->next->edge];
+		int ii = indexMap[w->halfEdge()->next()->edge()];
 
 		L(ii) = lstar(i);
 		diagNinv(ii) += 1.0/data->l(i);
@@ -197,7 +197,7 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 	ltilde = DenseMatrix(data->bN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = data->bIndex[w];
-		int ii = indexMap[w->he->next->edge];
+		int ii = indexMap[w->halfEdge()->next()->edge()];
 
 		ltilde(i) = L(ii);
 	}
@@ -257,7 +257,7 @@ void BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
 		for (WedgeCIter w: mesh.cutBoundary()) {
 			int i = data->index[w->prev()];
 			int j = data->index[w];
-			int k = data->index[nextWedge(w)];
+			int k = data->index[w->nextWedge()];
 
 			h(j) = 0.5*(a(k) - a(i));
 		}
@@ -491,7 +491,7 @@ void BFF::flattenToShape(const std::vector<Vector>& gamma)
 		// compute ktilde, which is the (integrated) curvature of the sampled curve z
 		double sum = 0.0;
 		for (WedgeCIter w: mesh.cutBoundary()) {
-			int i = data->bIndex[nextWedge(w)];
+			int i = data->bIndex[w->nextWedge()];
 			int j = data->bIndex[w];
 			int k = data->bIndex[w->prev()];
 
@@ -535,12 +535,12 @@ void BFF::projectStereographically(VertexCIter pole, double radius,
 		}
 
 		// set uv coordinates
-		HalfEdgeIter he = v->he;
+		HalfEdgeIter he = v->halfEdge();
 		do {
-			he->next->wedge()->uv = projection;
+			he->next()->wedge()->uv = projection;
 
-			he = he->flip->next;
-		} while (he != v->he);
+			he = he->flip()->next();
+		} while (he != v->halfEdge());
 	}
 }
 
@@ -556,20 +556,20 @@ void BFF::mapToSphere()
 	}
 
 	pole->inNorthPoleVicinity = true;
-	HalfEdgeIter he = pole->he;
+	HalfEdgeIter he = pole->halfEdge();
 	do {
-		he->face->inNorthPoleVicinity = true;
+		he->face()->inNorthPoleVicinity = true;
 
-		HalfEdgeIter next = he->next;
-		next->edge->onCut = true;
-		next->edge->he = next;
+		HalfEdgeIter next = he->next();
+		next->edge()->onCut = true;
+		next->edge()->setHalfEdge(next);
 
 		he->wedge()->inNorthPoleVicinity = true;
 		next->wedge()->inNorthPoleVicinity = true;
-		next->next->wedge()->inNorthPoleVicinity = true;
+		next->next()->wedge()->inNorthPoleVicinity = true;
 
-		he = he->flip->next;
-	} while (he != pole->he);
+		he = he->flip()->next();
+	} while (he != pole->halfEdge());
 
 	// initialize data class for this new surface without the vertex star
 	std::shared_ptr<BFFData> sphericalSurfaceData(new BFFData(mesh));
@@ -608,19 +608,19 @@ void BFF::mapToSphere()
 
 	// restore vertex star
 	pole->inNorthPoleVicinity = false;
-	he = pole->he;
+	he = pole->halfEdge();
 	do {
-		he->face->inNorthPoleVicinity = false;
+		he->face()->inNorthPoleVicinity = false;
 
-		HalfEdgeIter next = he->next;
-		next->edge->onCut = false;
+		HalfEdgeIter next = he->next();
+		next->edge()->onCut = false;
 
 		he->wedge()->inNorthPoleVicinity = false;
 		next->wedge()->inNorthPoleVicinity = false;
-		next->next->wedge()->inNorthPoleVicinity = false;
+		next->next()->wedge()->inNorthPoleVicinity = false;
 
-		he = he->flip->next;
-	} while (he != pole->he);
+		he = he->flip()->next();
+	} while (he != pole->halfEdge());
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;
@@ -643,14 +643,14 @@ void BFFData::indexWedges()
 	iN = 0;
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 		if (!v->onBoundary()) {
-			HalfEdgeCIter he = v->he;
+			HalfEdgeCIter he = v->halfEdge();
 			do {
-				WedgeCIter w = he->next->wedge();
+				WedgeCIter w = he->next()->wedge();
 				bIndex[w] = -1;
 				index[w] = iN;
 
-				he = he->flip->next;
-			} while (he != v->he);
+				he = he->flip()->next();
+			} while (he != v->halfEdge());
 
 			iN++;
 		}
@@ -659,14 +659,14 @@ void BFFData::indexWedges()
 	// index boundary wedges
 	bN = 0;
 	for (WedgeCIter w: mesh.cutBoundary()) {
-		HalfEdgeCIter he = w->he->prev;
+		HalfEdgeCIter he = w->halfEdge()->prev();
 		do {
-			WedgeCIter w = he->next->wedge();
+			WedgeCIter w = he->next()->wedge();
 			bIndex[w] = bN;
 			index[w] = iN + bN;
 
-			if (he->edge->onCut) break;
-			he = he->flip->next;
+			if (he->edge()->onCut) break;
+			he = he->flip()->next();
 		} while (!he->onBoundary);
 
 		bN++;
@@ -692,7 +692,7 @@ void BFFData::computeIntegratedCurvatures()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		k(i) = exteriorAngle(w);
+		k(i) = w->exteriorAngle();
 	}
 }
 
@@ -702,7 +702,7 @@ void BFFData::computeBoundaryLengths()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		l(i) = w->he->next->edge->length();
+		l(i) = w->halfEdge()->next()->edge()->length();
 	}
 }
 
@@ -711,10 +711,10 @@ void BFFData::buildLaplace()
 	Triplet T(N, N);
 	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
 		if (f->isReal()) {
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				int i = index[he->next->wedge()];
-				int j = index[he->prev->wedge()];
+				int i = index[he->next()->wedge()];
+				int j = index[he->prev()->wedge()];
 				double w = 0.5*he->cotan();
 
 				T.add(i, i, w);
@@ -722,8 +722,8 @@ void BFFData::buildLaplace()
 				T.add(i, j, -w);
 				T.add(j, i, -w);
 
-				he = he->next;
-			} while (he != f->he);
+				he = he->next();
+			} while (he != f->halfEdge());
 		}
 	}
 

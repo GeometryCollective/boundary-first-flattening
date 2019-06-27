@@ -61,7 +61,7 @@ inline KnotIter Spline::addKnot(double t, double p)
 		return k;
 	}
 
-	return (knots.insert(std::make_pair(t, p))).first;
+	return (knots.emplace(std::make_pair(t, p))).first;
 }
 
 inline bool Spline::removeKnot(double t, double tolerance)

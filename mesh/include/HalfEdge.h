@@ -7,42 +7,81 @@ namespace bff {
 class HalfEdge {
 public:
 	// constructor
-	HalfEdge();
+	HalfEdge(Mesh *mesh);
 
-	// next halfegde (in CCW order) associated with this halfedge's face
-	HalfEdgeIter next;
+	// copy constructor
+	HalfEdge(const HalfEdge& he);
 
-	// prev halfegde associated with this halfedge's face
-	HalfEdgeIter prev;
+	// returns the next halfedge (in CCW order) associated with this halfedge's face
+	HalfEdgeIter next() const;
 
-	// other halfedge associated with this halfedge's edge
-	HalfEdgeIter flip;
+	// returns the prev halfedge associated with this halfedge's face
+	HalfEdgeIter prev() const;
 
-	// vertex at the base of this halfedge
-	VertexIter vertex;
+	// returns the other halfedge associated with this halfedge's edge
+	HalfEdgeIter flip() const;
 
-	// edge associated with this halfedge
-	EdgeIter edge;
+	// returns the vertex at the base of this halfedge
+	VertexIter vertex() const;
 
-	// face associated with this halfedge
-	FaceIter face;
+	// returns the edge associated with this halfedge
+	EdgeIter edge() const;
 
-	// corner opposite to this halfedge. Undefined if this halfedge is on the boundary
-	CornerIter corner;
+	// returns the face associated with this halfedge
+	FaceIter face() const;
 
-	// id between 0 and |H|-1
-	int index;
+	// returns the corner opposite to this halfedge. Undefined if this halfedge
+	// is on the boundary
+	CornerIter corner() const;
+
+	// returns the wedge (a.k.a. corner) associated with this halfedge
+	WedgeIter wedge() const;
+
+	// sets next halfedge
+	void setNext(HalfEdgeCIter he);
+
+	// sets prev halfedge
+	void setPrev(HalfEdgeCIter he);
+
+	// sets flip halfedge
+	void setFlip(HalfEdgeCIter he);
+
+	// sets vertex
+	void setVertex(VertexCIter v);
+
+	// sets edge
+	void setEdge(EdgeCIter e);
+
+	// sets face
+	void setFace(FaceCIter f);
+
+	// sets corner
+	void setCorner(CornerCIter c);
+
+	// sets mesh
+	void setMesh(Mesh *mesh);
+
+	// returns the cotan weight associated with this halfedge
+	double cotan() const;
 
 	// boolean flag to indicate if halfedge is on the boundary
 	bool onBoundary;
 
-	// returns wedge (a.k.a. corner) associated with this halfedge
-	WedgeIter wedge() const;
+	// id between 0 and |H|-1
+	int index;
 
-	// returns cotan weight associated with this halfedge
-	double cotan() const;
+private:
+	// indices of adjacent mesh elements
+	int nextIndex;
+	int prevIndex;
+	int flipIndex;
+	int vertexIndex;
+	int edgeIndex;
+	int faceIndex;
+	int cornerIndex;
+
+	// pointer to mesh this halfedge belongs to
+	Mesh *mesh;
 };
 
 } // namespace bff
-
-#include "HalfEdge.inl"
