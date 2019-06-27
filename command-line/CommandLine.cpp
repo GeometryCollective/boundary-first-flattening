@@ -36,7 +36,7 @@ bool parseArg(const std::string& arg, const std::string& searchStr, std::string&
 }
 
 void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string& outputPath,
-		   	   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs)
+			   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs)
 {
 	if (argc < 3) {
 		// input and/or output path not specified
@@ -124,9 +124,12 @@ void flatten(std::vector<Mesh>& model, const std::vector<bool>& surfaceIsClosed,
 		if (nCones > 0) {
 			std::vector<VertexIter> cones;
 			DenseMatrix coneAngles(bff.data->iN);
-			ConePlacement::findConesAndPrescribeAngles(nCones, cones, coneAngles, bff.data, mesh);
-			Cutter::cut(cones, mesh);
-			bff.flattenWithCones(coneAngles, true);
+			int S = std::min(nCones, (int)mesh.vertices.size() - bff.data->bN);
+			ConePlacement::findConesAndPrescribeAngles(S, cones, coneAngles, bff.data, mesh);
+			if (!surfaceIsClosed[i] || cones.size() > 0) {
+				Cutter::cut(cones, mesh);
+				bff.flattenWithCones(coneAngles, true);
+			}
 
 		} else {
 			if (surfaceIsClosed[i]) {

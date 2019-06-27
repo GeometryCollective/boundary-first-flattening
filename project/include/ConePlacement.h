@@ -14,18 +14,49 @@ public:
 private:
 	// initializes the set of cones based on whether the mesh has a boundary
 	// or its euler characteristic is non zero
-	static void initializeConeSet(std::vector<VertexIter>& cones, Mesh& mesh);
+	static int initializeConeSet(VertexData<int>& isCone, Mesh& mesh);
+
+	// collects cone and non-cone indices
+	static void separateConeIndices(std::vector<int>& s, std::vector<int>& n,
+									const VertexData<int>& isCone,
+									const WedgeData<int>& index, const Mesh& mesh,
+									bool ignoreBoundary = false);
 
 	// computes target curvatures for the cone set
 	static void computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 									const SparseMatrix& A,
-									const std::vector<VertexIter>& cones,
-									VertexData<int>& isCone,
-									WedgeData<int>& index, Mesh& mesh);
+									const VertexData<int>& isCone,
+									const WedgeData<int>& index, const Mesh& mesh);
+
+	// computes target curvatures for the cone set
+	static void computeTargetAngles(DenseMatrix& C, const DenseMatrix& un,
+									const DenseMatrix& K, const DenseMatrix& k,
+									const SparseMatrix& A, const std::vector<int>& s,
+									const std::vector<int>& n, const std::vector<int>& b);
 
 	// computes scale factors
 	static void computeScaleFactors(DenseMatrix& u, const DenseMatrix& C,
 									const DenseMatrix& K, SparseMatrix& A);
+
+	// adds cone with largest scale factor
+	static bool addConeWithLargestScaleFactor(VertexData<int>& isCone,
+											  const DenseMatrix u,
+											  const WedgeData<int>& index,
+											  const Mesh& mesh);
+
+	// chooses cones using CPMS strategy
+	// Section 3.2: http://www.cs.technion.ac.il/~gotsman/AmendedPubl/Miri/EG08_Conf.pdf
+	static bool useCpmsStrategy(int S, VertexData<int>& isCone,
+								DenseMatrix& C, const DenseMatrix& K,
+								SparseMatrix& A, const WedgeData<int>& index,
+								Mesh& mesh);
+
+	// chooses cones using CETM strategy
+	// Section 5.1: http://multires.caltech.edu/pubs/ConfEquiv.pdf
+	static bool useCetmStrategy(int S, VertexData<int>& isCone,
+								DenseMatrix& C, const DenseMatrix& K,
+								const DenseMatrix& k, const SparseMatrix& A,
+								const WedgeData<int>& index, Mesh& mesh);
 
 	// normalizes cone angles to sum to 2pi times euler characteristic
 	static void normalizeAngles(DenseMatrix& C, double normalizationFactor);

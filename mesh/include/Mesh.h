@@ -1,5 +1,10 @@
 #pragma once
 
+#include "HalfEdge.h"
+#include "Vertex.h"
+#include "Edge.h"
+#include "Face.h"
+#include "Corner.h"
 #include "CutIterator.h"
 
 namespace bff {
@@ -25,6 +30,14 @@ public:
 	std::vector<Wedge>& wedges();
 	const std::vector<Wedge>& wedges() const;
 
+	// error (and warning) codes
+	enum class ErrorCode {
+		ok,
+		nonManifoldEdges,
+		nonManifoldVertices,
+		isolatedVertices
+	};
+
 	// member variables
 	std::vector<Vertex> vertices;
 	std::vector<Edge> edges;
@@ -33,6 +46,8 @@ public:
 	std::vector<HalfEdge> halfEdges;
 	std::vector<Face> boundaries;
 	double radius;
+	Vector cm;
+	ErrorCode status;
 };
 
 } // namespace bff

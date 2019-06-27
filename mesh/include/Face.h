@@ -7,10 +7,28 @@ namespace bff {
 class Face {
 public:
 	// constructor
-	Face();
+	Face(Mesh *mesh);
+
+	// copy constructor
+	Face(const Face& f);
 
 	// one of the halfedges associated with this face
-	HalfEdgeIter he;
+	HalfEdgeIter halfEdge() const;
+
+	// sets halfedge
+	void setHalfEdge(HalfEdgeCIter he);
+
+	// sets mesh
+	void setMesh(Mesh *mesh);
+
+	// returns face normal
+	Vector normal(bool normalize = true) const;
+
+	// returns face area
+	double area() const;
+
+	// checks if this face is real
+	bool isReal() const;
 
 	// flag to indicate whether this face fills a hole
 	bool fillsHole;
@@ -22,16 +40,12 @@ public:
 	// id between 0 and |F|-1
 	int index;
 
-	// returns face normal
-	Vector normal(bool normalize = true) const;
+private:
+	// index of one of the halfedges associated with this face
+	int halfEdgeIndex;
 
-	// returns face area
-	double area() const;
-
-	// checks if this face is real
-	bool isReal() const;
+	// pointer to mesh this face belongs to
+	Mesh *mesh;
 };
 
 } // namespace bff
-
-#include "Face.inl"

@@ -122,19 +122,19 @@ Vector Distortion::computeQuasiConformalError(const std::vector<Mesh>& model)
 
 	for (int i = 0; i < (int)model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
-		distortion.push_back(FaceData<double>(model[i]));
+		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);
 
 		for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 			int j = 0;
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				p[j] = he->vertex->position;
-				q[j] = he->next->corner->uv;
+				p[j] = he->vertex()->position;
+				q[j] = he->next()->corner()->uv;
 				j++;
 
-				he = he->next;
-			} while(he != f->he);
+				he = he->next();
+			} while(he != f->halfEdge());
 
 			double qc = bff::computeQuasiConformalError(p, q);
 			double area = f->area();
@@ -701,14 +701,14 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		int i = 0;
-		HalfEdgeCIter he = f->he;
+		HalfEdgeCIter he = f->halfEdge();
 		do {
-			p[i] = he->vertex->position;
-			q[i] = he->next->corner->uv;
+			p[i] = he->vertex()->position;
+			q[i] = he->next()->corner()->uv;
 			i++;
 
-			he = he->next;
-		} while(he != f->he);
+			he = he->next();
+		} while(he != f->halfEdge());
 
 		double u = bff::computeAreaScaling(p, q);
 		maxU = std::max(maxU, u);
@@ -733,19 +733,19 @@ Vector Distortion::computeAreaScaling(const std::vector<Mesh>& model)
 
 	for (int i = 0; i < (int)model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
-		distortion.push_back(FaceData<double>(model[i]));
+		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);
 
 		for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 			int j = 0;
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				p[j] = he->vertex->position;
-				q[j] = he->next->corner->uv;
+				p[j] = he->vertex()->position;
+				q[j] = he->next()->corner()->uv;
 				j++;
 
-				he = he->next;
-			} while(he != f->he);
+				he = he->next();
+			} while(he != f->halfEdge());
 
 			double u = bff::computeAreaScaling(p, q);
 			maxU = std::max(maxU, u);

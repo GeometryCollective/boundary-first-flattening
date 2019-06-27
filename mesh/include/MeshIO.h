@@ -60,9 +60,6 @@ private:
 	// preallocates mesh elements
 	static void preallocateElements(const PolygonSoup& soup, Mesh& mesh);
 
-	// assigns indices to mesh elements
-	static void indexElements(Mesh& mesh);
-
 	// checks if mesh has isolated vertices
 	static bool hasIsolatedVertices(const Mesh& mesh);
 
