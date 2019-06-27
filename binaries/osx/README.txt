@@ -1,4 +1,4 @@
-Boundary First Flattening v1.1 (January 2019)
+Boundary First Flattening v1.2 (June 2019)
 
 authors: Rohan Sawhney and Keenan Crane
 
