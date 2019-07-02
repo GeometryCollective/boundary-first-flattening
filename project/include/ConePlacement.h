@@ -29,14 +29,15 @@ private:
 									const WedgeData<int>& index, const Mesh& mesh);
 
 	// computes target curvatures for the cone set
-	static void computeTargetAngles(DenseMatrix& C, const DenseMatrix& un,
+	static void computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
 									const DenseMatrix& K, const DenseMatrix& k,
-									const SparseMatrix& A, const std::vector<int>& s,
-									const std::vector<int>& n, const std::vector<int>& b);
+									const SparseMatrix& A, const VertexData<int>& isCone,
+									const WedgeData<int>& index, Mesh& mesh);
 
 	// computes scale factors
-	static void computeScaleFactors(DenseMatrix& u, const DenseMatrix& C,
-									const DenseMatrix& K, SparseMatrix& A);
+	static void computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
+									const SparseMatrix& A, const VertexData<int>& isCone,
+									const WedgeData<int>& index, const Mesh& mesh);
 
 	// adds cone with largest scale factor
 	static bool addConeWithLargestScaleFactor(VertexData<int>& isCone,

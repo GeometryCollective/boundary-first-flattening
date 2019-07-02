@@ -73,62 +73,68 @@ void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 
 	int S = (int)s.size();
 	if (S > 0) {
-		// extract submatrices
-		SparseMatrix Ann = A.submatrix(n, n);
-		SparseMatrix Ans = A.submatrix(n, s);
-		DenseMatrix Kn = K.submatrix(n);
+		// initialize cone angles
 		DenseMatrix Ks = K.submatrix(s);
+		for (int i = 0; i < S; i++) C(s[i]) = Ks(i);
 
-		// compute target curvatures
-		for (int i = 0; i < S; i++) {
-			int I = s[i];
+		if (n.size() > 0) {
+			// extract submatrices
+			SparseMatrix Ann = A.submatrix(n, n);
+			SparseMatrix Ans = A.submatrix(n, s);
+			DenseMatrix Kn = K.submatrix(n);
 
-			// solve LGn = δn
-			DenseMatrix Gn, Gs(S);
-			Gs(i) = 1;
-			DenseMatrix delta = -(Ans*Gs);
-			Ann.L.solvePositiveDefinite(Gn, delta);
+			// compute target curvatures
+			for (int i = 0; i < S; i++) {
+				int I = s[i];
 
-			// Cs = Ks + Gn^T Kn
-			C(I) = Ks(i);
-			if (n.size() > 0) C(I) += (Gn.transpose()*Kn)(0);
+				// solve LGn = δn
+				DenseMatrix Gn, Gs(S);
+				Gs(i) = 1;
+				DenseMatrix delta = -(Ans*Gs);
+				Ann.L.solvePositiveDefinite(Gn, delta);
+
+				// Cs = Ks + Gn^T Kn
+				C(I) += (Gn.transpose()*Kn)(0);
+			}
 		}
 	}
 }
 
-void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& un,
+void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
 										const DenseMatrix& K, const DenseMatrix& k,
-										const SparseMatrix& A, const std::vector<int>& s,
-										const std::vector<int>& n, const std::vector<int>& b)
+										const SparseMatrix& A, const VertexData<int>& isCone,
+										const WedgeData<int>& index, Mesh& mesh)
 {
-	// initialize
+	// collect cone, non-cone and boundary indices indices
+	std::vector<int> s, n, b;
+	separateConeIndices(s, n, isCone, index, mesh, true);
+	for (WedgeCIter w: mesh.cutBoundary()) b.emplace_back(index[w]);
+
 	int I = (int)K.nRows();
 	int B = (int)k.nRows();
 	int S = (int)s.size();
 
-	// extract submatrices
-	SparseMatrix Asn = A.submatrix(s, n);
-	SparseMatrix Abn = A.submatrix(b, n);
-	DenseMatrix Ks = K.submatrix(s);
+	if (S > 0) {
+		// initialize cone angles
+		DenseMatrix Ks = K.submatrix(s);
+		for (int i = 0; i < S; i++) C(s[i]) = Ks(i);
+		for (int i = 0; i < B; i++) C(b[i]) = k(b[i] - I);
 
-	// compute interior cone angles
-	DenseMatrix Cs = -(Asn*un);
-	for (int i = 0; i < S; i++) {
-		C(s[i]) = Ks(i) - Cs(i);
+		if (n.size() > 0) {
+			// extract submatrices
+			SparseMatrix Asn = A.submatrix(s, n);
+			SparseMatrix Abn = A.submatrix(b, n);
+			DenseMatrix un = u.submatrix(n);
+
+			// compute interior cone angles
+			DenseMatrix Cs = -(Asn*un);
+			for (int i = 0; i < S; i++) C(s[i]) -= Cs(i);
+
+			// compute boundary cone angles
+			DenseMatrix h = -(Abn*un);
+			for (int i = 0; i < B; i++) C(b[i]) -= h(i);
+		}
 	}
-
-	// compute boundary cone angles
-	DenseMatrix h = -(Abn*un);
-	for (int i = 0; i < B; i++) {
-		C(b[i]) = k(b[i] - I) - h(i);
-	}
-}
-
-void ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& C,
-										const DenseMatrix& K, SparseMatrix& A)
-{
-	DenseMatrix rhs = -(K - C);
-	A.L.solvePositiveDefinite(u, rhs);
 }
 
 bool ConePlacement::addConeWithLargestScaleFactor(VertexData<int>& isCone,
@@ -161,6 +167,33 @@ bool ConePlacement::addConeWithLargestScaleFactor(VertexData<int>& isCone,
 
 	isCone[cone] = 1;
 	return true;
+}
+
+void ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
+										const SparseMatrix& A, const VertexData<int>& isCone,
+										const WedgeData<int>& index, const Mesh& mesh)
+{
+	// collect cone and non-cone indices
+	std::vector<int> s, n;
+	separateConeIndices(s, n, isCone, index, mesh, true);
+
+	// initialize scale factors
+	u = DenseMatrix(K.nRows());
+
+	if (n.size() > 0) {
+		// extract submatrices
+		DenseMatrix Kn = -K.submatrix(n);
+		SparseMatrix Ann = A.submatrix(n, n);
+
+		// compute scale factors
+		DenseMatrix un;
+		Ann.L.solvePositiveDefinite(un, Kn);
+
+		// collect scale factors
+		for (int i = 0; i < (int)n.size(); i++) {
+			u(n[i]) = un(i);
+		}
+	}
 }
 
 bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
@@ -202,38 +235,22 @@ bool ConePlacement::useCetmStrategy(int S, VertexData<int>& isCone,
 	int cones = initializeConeSet(isCone, mesh);
 	if (mesh.boundaries.size() == 0) S -= cones;
 
-	// collect cone and non-cone indices
-	std::vector<int> s, n, b;
-	separateConeIndices(s, n, isCone, index, mesh, true);
-	for (WedgeCIter w: mesh.cutBoundary()) b.emplace_back(index[w]);
-
-	// extract submatrices and compute scale factors
-	DenseMatrix un;
-	DenseMatrix Kn = -K.submatrix(n);
-	SparseMatrix Ann = A.submatrix(n, n);
-	Ann.L.solvePositiveDefinite(un, Kn);
+	// compute scale factors
+	DenseMatrix u;
+	computeScaleFactors(u, K, A, isCone, index, mesh);
 
 	for (int i = 0; i < S; i++) {
-		// collect scale factors
-		DenseMatrix u(K.nRows());
-		for (int i = 0; i < (int)n.size(); i++) u(n[i]) = un(i);
-
 		// add vertex with maximum (abs.) scaling to cone set
 		if (!addConeWithLargestScaleFactor(isCone, u, index, mesh)) {
 			return false;
 		}
 
-		// collect cone and non-cone indices
-		separateConeIndices(s, n, isCone, index, mesh, true);
-
-		// extract submatrices and compute scale factors
-		DenseMatrix Kn = -K.submatrix(n);
-		SparseMatrix Ann = A.submatrix(n, n);
-		Ann.L.solvePositiveDefinite(un, Kn);
+		// compute scale factors
+		computeScaleFactors(u, K, A, isCone, index, mesh);
 	}
 
 	// compute cone angles
-	computeTargetAngles(C, un, K, k, A, s, n, b);
+	computeTargetAngles(C, u, K, k, A, isCone, index, mesh);
 
 	return true;
 }
