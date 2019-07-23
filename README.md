@@ -42,7 +42,7 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))
 
-BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles and multiple components are supported. The only restriction is that meshes must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though this may be relaxed in future versions). Meshes that do not have disk or sphere topology will be automatically cut for flattening. 
+BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles and multiple components are supported. The only restriction is that meshes must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though this may be relaxed in future versions). Meshes that do not have disk or sphere topology will be automatically cut for flattening.
 
 <p align="center"><img src="imgs/tutorial/bff_meshsupport.jpg" width="750" height="237.34"></p>
 <p align="center"><img src="imgs/tutorial/bff_multiplecomponents.gif" width="500" height="250"></p>
@@ -235,6 +235,10 @@ Our application builds on some terrific insights and work done on conformal flat
 # Acknowledgements
 
 Development of this software was funded in part by NSF Award 1717320, and a gift from Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
+
+# Awards
+
+BFF is the recipient of the [SGP 2019 Outstanding Software Project Award](http://awards.geometryprocessing.org)!
 
 # License
 
