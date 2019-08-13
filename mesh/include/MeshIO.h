@@ -35,18 +35,19 @@ public:
 class MeshIO {
 public:
 	// reads model from obj file
-	static bool read(const std::string& fileName, std::vector<Mesh>& model,
-					 std::string& error);
+	static bool read(const std::string& fileName, Model& model, std::string& error);
 
 	// writes data to obj file
-	static bool write(const std::string& fileName, std::vector<Mesh>& model,
+	static bool write(const std::string& fileName, Model& model,
 					  const std::vector<bool>& mappedToSphere, bool normalize);
 
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,
 								   const std::vector<int>& isCuttableEdge,
 								   std::vector<PolygonSoup>& soups,
-								   std::vector<std::vector<int>>& isCuttableEdgeSoups);
+								   std::vector<std::vector<int>>& isCuttableEdgeSoups,
+								   std::vector<std::pair<int, int>>& modelToMeshMap,
+								   std::vector<std::vector<int>>& meshToModelMap);
 
 	// builds a halfedge mesh
 	static bool buildMesh(const PolygonSoup& soup,
@@ -54,7 +55,7 @@ public:
 						  Mesh& mesh, std::string& error);
 
 	// centers model around origin and records radius
-	static void normalize(std::vector<Mesh>& model);
+	static void normalize(Model& model);
 
 private:
 	// preallocates mesh elements
@@ -67,11 +68,10 @@ private:
 	static bool hasNonManifoldVertices(const Mesh& mesh);
 
 	// reads data from obj file
-	static bool read(std::istringstream& in, std::vector<Mesh>& model,
-					 std::string& error);
+	static bool read(std::istringstream& in, Model& model, std::string& error);
 
 	// writes data to obj file
-	static void write(std::ofstream& out, std::vector<Mesh>& model,
+	static void write(std::ofstream& out, Model& model,
 					  const std::vector<bool>& mappedToSphere, bool normalize);
 };
 

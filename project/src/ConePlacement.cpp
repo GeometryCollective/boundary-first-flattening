@@ -62,7 +62,7 @@ void ConePlacement::separateConeIndices(std::vector<int>& s, std::vector<int>& n
 	}
 }
 
-void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
+bool ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 										const SparseMatrix& A,
 										const VertexData<int>& isCone,
 										const WedgeData<int>& index, const Mesh& mesh)
@@ -91,13 +91,15 @@ void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 				DenseMatrix Gn, Gs(S);
 				Gs(i) = 1;
 				DenseMatrix delta = -(Ans*Gs);
-				Ann.L.solvePositiveDefinite(Gn, delta);
+				if (!Ann.L.solvePositiveDefinite(Gn, delta)) return false;
 
 				// Cs = Ks + Gn^T Kn
 				C(I) += (Gn.transpose()*Kn)(0);
 			}
 		}
 	}
+
+	return true;
 }
 
 void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
@@ -169,7 +171,7 @@ bool ConePlacement::addConeWithLargestScaleFactor(VertexData<int>& isCone,
 	return true;
 }
 
-void ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
+bool ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
 										const SparseMatrix& A, const VertexData<int>& isCone,
 										const WedgeData<int>& index, const Mesh& mesh)
 {
@@ -187,13 +189,15 @@ void ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
 
 		// compute scale factors
 		DenseMatrix un;
-		Ann.L.solvePositiveDefinite(un, Kn);
+		if (!Ann.L.solvePositiveDefinite(un, Kn)) return false;
 
 		// collect scale factors
 		for (int i = 0; i < (int)n.size(); i++) {
 			u(n[i]) = un(i);
 		}
 	}
+
+	return true;
 }
 
 bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
@@ -206,13 +210,13 @@ bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
 	if (mesh.boundaries.size() == 0) S -= cones;
 
 	// compute target angles
-	computeTargetAngles(C, K, A, isCone, index, mesh);
+	if (!computeTargetAngles(C, K, A, isCone, index, mesh)) return false;
 
 	for (int i = 0; i < S; i++) {
 		// compute scale factors
 		DenseMatrix u;
 		DenseMatrix rhs = -(K - C);
-		A.L.solvePositiveDefinite(u, rhs);
+		if (!A.L.solvePositiveDefinite(u, rhs)) return false;
 
 		// add vertex with maximum (abs.) scaling to cone set
 		if (!addConeWithLargestScaleFactor(isCone, u, index, mesh)) {
@@ -220,7 +224,7 @@ bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
 		}
 
 		// compute target angles
-		computeTargetAngles(C, K, A, isCone, index, mesh);
+		if (!computeTargetAngles(C, K, A, isCone, index, mesh)) return false;
 	}
 
 	return true;
@@ -237,7 +241,7 @@ bool ConePlacement::useCetmStrategy(int S, VertexData<int>& isCone,
 
 	// compute scale factors
 	DenseMatrix u;
-	computeScaleFactors(u, K, A, isCone, index, mesh);
+	if (!computeScaleFactors(u, K, A, isCone, index, mesh)) return false;
 
 	for (int i = 0; i < S; i++) {
 		// add vertex with maximum (abs.) scaling to cone set
@@ -246,7 +250,7 @@ bool ConePlacement::useCetmStrategy(int S, VertexData<int>& isCone,
 		}
 
 		// compute scale factors
-		computeScaleFactors(u, K, A, isCone, index, mesh);
+		if (!computeScaleFactors(u, K, A, isCone, index, mesh)) return false;
 	}
 
 	// compute cone angles
@@ -260,16 +264,17 @@ void ConePlacement::normalizeAngles(DenseMatrix& C, double normalizationFactor)
 	C *= (normalizationFactor/C.sum());
 }
 
-void ConePlacement::findConesAndPrescribeAngles(int S, std::vector<VertexIter>& cones,
-												DenseMatrix& coneAngles,
-												std::shared_ptr<BFFData> data,
-												Mesh& mesh)
+ConePlacement::ErrorCode ConePlacement::findConesAndPrescribeAngles(
+											int S, std::vector<VertexIter>& cones,
+											DenseMatrix& coneAngles,
+											std::shared_ptr<BFFData> data, Mesh& mesh)
 {
 	VertexData<int> isCone(mesh, 0);
 	DenseMatrix C(data->N);
 	DenseMatrix K = vcat(data->K, data->k);
+	bool success = true;
 
-	if (useCetmStrategy(S, isCone, C, data->K, data->k, data->A, data->index, mesh)) {
+	if ((success = useCetmStrategy(S, isCone, C, data->K, data->k, data->A, data->index, mesh))) {
 		// set cones
 		cones.reserve(S);
 		for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
@@ -284,6 +289,8 @@ void ConePlacement::findConesAndPrescribeAngles(int S, std::vector<VertexIter>& 
 
 	// set cone angles
 	coneAngles = C.submatrix(0, data->iN);
+	return success ? ConePlacement::ErrorCode::ok :
+					 ConePlacement::ErrorCode::factorizationFailed;
 }
 
 } // namespace bff

@@ -27,6 +27,9 @@ public:
 	// returns face area
 	double area() const;
 
+	// returns face area in uv plane
+	double areaUV() const;
+
 	// checks if this face is real
 	bool isReal() const;
 

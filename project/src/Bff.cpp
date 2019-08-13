@@ -5,6 +5,7 @@
 namespace bff {
 
 BFF::BFF(Mesh& mesh_):
+status(ErrorCode::ok),
 mesh(mesh_),
 inputSurfaceData(std::shared_ptr<BFFData>(new BFFData(mesh))),
 cutSurfaceData(NULL)
@@ -42,25 +43,33 @@ void BFF::computeBoundaryScaleFactors(const DenseMatrix& ltilde, DenseMatrix& u)
 	}
 }
 
-void BFF::convertDirichletToNeumann(const DenseMatrix& phi, DenseMatrix& g,
+bool BFF::convertDirichletToNeumann(const DenseMatrix& phi, DenseMatrix& g,
 									DenseMatrix& h, bool surfaceHasCut)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = phi - data->Aib*g;
-	data->Aii.L.solvePositiveDefinite(a, rhs);
+	if (!data->Aii.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 	if (surfaceHasCut) processCut(vcat(a, g), a, g);
 
 	h = -(data->Aib.transpose()*a + data->Abb*g);
+	return true;
 }
 
-void BFF::convertNeumannToDirichlet(const DenseMatrix& phi, const DenseMatrix& h,
+bool BFF::convertNeumannToDirichlet(const DenseMatrix& phi, const DenseMatrix& h,
 									DenseMatrix& g)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = vcat(phi, -h);
-	data->A.L.solvePositiveDefinite(a, rhs);
+	if (!data->A.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 
 	g = a.submatrix(data->iN, data->N);
+	return true;
 }
 
 double BFF::computeTargetBoundaryLengths(const DenseMatrix& u, DenseMatrix& lstar) const
@@ -236,20 +245,24 @@ void BFF::constructBestFitCurve(const DenseMatrix& lstar, const DenseMatrix& kti
 	}
 }
 
-void BFF::extendHarmonic(const DenseMatrix& g, DenseMatrix& h)
+bool BFF::extendHarmonic(const DenseMatrix& g, DenseMatrix& h)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = -(data->Aib*g);
-	data->Aii.L.solvePositiveDefinite(a, rhs);
+	if (!data->Aii.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 
 	h = vcat(a, g);
+	return true;
 }
 
-void BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
+bool BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
 					  DenseMatrix& a, DenseMatrix& b, bool conjugate)
 {
 	// extend real component of gamma
-	extendHarmonic(gammaRe, a);
+	if (!extendHarmonic(gammaRe, a)) return false;
 
 	if (conjugate) {
 		// conjugate imaginary component of gamma
@@ -262,12 +275,17 @@ void BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
 			h(j) = 0.5*(a(k) - a(i));
 		}
 
-		data->A.L.solvePositiveDefinite(b, h);
+		if (!data->A.L.solvePositiveDefinite(b, h)) {
+			status = ErrorCode::factorizationFailed;
+			return false;
+		}
 
 	} else {
 		// extend imaginary component of gamma
-		extendHarmonic(gammaIm, b);
+		if (!extendHarmonic(gammaIm, b)) return false;
 	}
+
+	return true;
 }
 
 void BFF::normalize()
@@ -302,7 +320,7 @@ void BFF::normalize()
 	}
 }
 
-void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugate)
+bool BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugate)
 {
 	// compute target lengths
 	DenseMatrix lstar;
@@ -314,7 +332,7 @@ void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugat
 
 	// extend
 	DenseMatrix flatteningRe, flatteningIm;
-	extendCurve(gammaRe, gammaIm, flatteningRe, flatteningIm, conjugate);
+	if (!extendCurve(gammaRe, gammaIm, flatteningRe, flatteningIm, conjugate)) return false;
 
 	// set uv coordinates
 	for (WedgeIter w = mesh.wedges().begin(); w != mesh.wedges().end(); w++) {
@@ -328,9 +346,10 @@ void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugat
 	}
 
 	normalize();
+	return true;
 }
 
-void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
+bool BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 {
 	if (givenScaleFactors) {
 		// compute mean scaling
@@ -338,17 +357,17 @@ void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 
 		// compute normal derivative of boundary scale factors
 		DenseMatrix dudn;
-		convertDirichletToNeumann(-data->K, target, dudn);
+		if (!convertDirichletToNeumann(-data->K, target, dudn)) return false;
 
 		// compute target boundary curvatures
 		compatibleTarget = data->k - dudn;
 
 		// flatten with scale factors u and compatible curvatures ktilde
-		flatten(target, compatibleTarget, true);
+		if (!flatten(target, compatibleTarget, true)) return false;
 
 	} else {
 		// given target boundary curvatures, compute target boundary scale factors
-		convertNeumannToDirichlet(-data->K, data->k - target, compatibleTarget);
+		if (!convertNeumannToDirichlet(-data->K, data->k - target, compatibleTarget)) return false;
 
 		// the scale factors provided by the user and those computed from the neumann
 		// to dirichlet map might differ by a constant, so adjust these scale factors by
@@ -358,11 +377,13 @@ void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 		for (int i = 0; i < data->bN; i++) compatibleTarget(i) += constantOffset;
 
 		// flatten with compatible target scale factors u and curvatures ktilde
-		flatten(compatibleTarget, target, false);
+		if (!flatten(compatibleTarget, target, false)) return false;
 	}
+
+	return true;
 }
 
-void BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
+bool BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
 {
 	if (surfaceHasNewCut) cutSurfaceData = std::shared_ptr<BFFData>(new BFFData(mesh));
 
@@ -372,19 +393,20 @@ void BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
 
 	// compute normal derivative of boundary scale factors
 	DenseMatrix dudn;
-	convertDirichletToNeumann(-(data->K - C), u, dudn, true);
+	if (!convertDirichletToNeumann(-(data->K - C), u, dudn, true)) return false;
 
 	// compute target boundary curvatures
 	DenseMatrix ktilde = data->k - dudn;
 
 	// flatten with compatible target scale factors u and curvatures ktilde
-	flatten(u, ktilde, false);
+	if (!flatten(u, ktilde, false)) return false;
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;
+	return true;
 }
 
-void BFF::flattenToDisk()
+bool BFF::flattenToDisk()
 {
 	DenseMatrix u(data->bN), ktilde(data->bN);
 	for (int iter = 0; iter < 10; iter++) {
@@ -402,11 +424,11 @@ void BFF::flattenToDisk()
 		}
 
 		// compute target scale factors
-		convertNeumannToDirichlet(-data->K, data->k - ktilde, u);
+		if (!convertNeumannToDirichlet(-data->K, data->k - ktilde, u)) return false;
 	}
 
 	// flatten with compatible target scale factors u and curvatures ktilde
-	flatten(u, ktilde, false);
+	return flatten(u, ktilde, false);
 }
 
 int sample(const std::vector<Vector>& gamma,
@@ -446,7 +468,7 @@ double angle(const Vector& a, const Vector& b, const Vector& c) {
 	return theta;
 }
 
-void BFF::flattenToShape(const std::vector<Vector>& gamma)
+bool BFF::flattenToShape(const std::vector<Vector>& gamma)
 {
 	int n = (int)gamma.size(); // number of vertices in target curve
 	int nB = (int)data->bN; // number of vertices on domain boundary
@@ -514,11 +536,13 @@ void BFF::flattenToShape(const std::vector<Vector>& gamma)
 		if (iter == 0) closeCurvatures(ktilde);
 
 		// compute target scale factors
-		convertNeumannToDirichlet(-data->K, data->k - ktilde, u);
+		if (!convertNeumannToDirichlet(-data->K, data->k - ktilde, u)) return false;
 
 		// flatten with compatible target scale factors u and curvatures ktilde
-		flatten(u, ktilde, false);
+		if (!flatten(u, ktilde, false)) return false;
 	}
+
+	return true;
 }
 
 void BFF::projectStereographically(VertexCIter pole, double radius,
@@ -544,7 +568,7 @@ void BFF::projectStereographically(VertexCIter pole, double radius,
 	}
 }
 
-void BFF::mapToSphere()
+bool BFF::mapToSphere()
 {
 	// remove an arbitrary vertex star
 	VertexIter pole;
@@ -576,7 +600,7 @@ void BFF::mapToSphere()
 	data = sphericalSurfaceData;
 
 	// flatten this surface to a disk
-	flattenToDisk();
+	if (!flattenToDisk()) return false;
 
 	// stereographically project the disk to a sphere
 	// since we do not know beforehand what the radius of our disk
@@ -624,6 +648,7 @@ void BFF::mapToSphere()
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;
+	return true;
 }
 
 BFFData::BFFData(Mesh& mesh_):

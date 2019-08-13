@@ -6,7 +6,6 @@
 #include "Cutter.h"
 #include "Distortion.h"
 #include "ShadersSource.h"
-#include "Eigen/Eigenvalues"
 #include <iomanip>
 #include <limits>
 
@@ -60,7 +59,7 @@ bool Viewer::ctrlClick = false;
 bool Viewer::altClick = false;
 
 std::string Viewer::objPath;
-std::vector<Mesh> Viewer::model;
+Model Viewer::model;
 std::vector<ModelState> Viewer::modelStates;
 Mesh* Viewer::mesh = NULL;
 ModelState* Viewer::state = NULL;
@@ -189,7 +188,7 @@ void Viewer::initGui()
 		if (file.empty()) return;
 		try {
 			std::vector<bool> mappedToSphere;
-			for (int i = 0; i < (int)model.size(); i++) {
+			for (int i = 0; i < model.size(); i++) {
 				mappedToSphere.push_back(modelStates[i].mappedToSphere);
 			}
 
@@ -202,7 +201,7 @@ void Viewer::initGui()
 		}
 	});
 
-	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Export Normalized UVs");
+	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Export UVs to [0, 1]");
 	exportNormalizedUVsCheckBox->setFixedHeight(14);
 
 	// plot
@@ -532,7 +531,7 @@ void Viewer::initModel()
 	std::string error;
 	if ((loadedModel = MeshIO::read(objPath, model, error))) {
 		modelStates.resize(model.size());
-		for (int i = 0; i < (int)model.size(); i++) {
+		for (int i = 0; i < model.size(); i++) {
 			if (model[i].boundaries.size() >= 1) {
 				// mesh has boundaries
 				int eulerPlusBoundaries = model[i].eulerCharacteristic() + (int)model[i].boundaries.size();
@@ -595,7 +594,7 @@ void Viewer::initRenderMeshes()
 	if (loadedModel) {
 		int nVertices = 0;
 
-		for (int i = 0; i < (int)model.size(); i++) {
+		for (int i = 0; i < model.size(); i++) {
 			for (int j = 0; j < 2; j++) {
 				modelStates[i].renderMeshes.emplace_back(std::shared_ptr<RenderMesh>(new RenderMesh()));
 			}
@@ -711,7 +710,7 @@ void Viewer::initSpline()
 void Viewer::initBFF()
 {
 	if (loadedModel) {
-		for (int i = (int)model.size() - 1; i >= 0; i--) {
+		for (int i = model.size() - 1; i >= 0; i--) {
 			mesh = &model[i];
 			state = &modelStates[i];
 
@@ -855,7 +854,7 @@ void Viewer::updateUniforms(int index, int width, int height)
 
 void Viewer::updateRenderMeshes()
 {
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// set uvs for the 1st rendermesh and positions and colors for 2nd rendermesh
 		std::shared_ptr<Buffer> uvs = modelStates[i].renderMeshes[0]->uvs;
 		for (FaceCIter f = model[i].faces.begin(); f != model[i].faces.end(); f++) {
@@ -1487,28 +1486,6 @@ std::vector<VertexIter> Viewer::getHandleVertices()
 	return handleVertices;
 }
 
-void Viewer::performPCA()
-{
-	int wN = 0;
-	Eigen::Matrix2d covariance;
-	covariance.setZero();
-	for (WedgeIter w = mesh->wedges().begin(); w != mesh->wedges().end(); w++) {
-		Eigen::Vector2d uv(w->uv.x, w->uv.y);
-		covariance += uv * uv.transpose();
-		wN++;
-	}
-
-	covariance /= (double)wN;
-	Eigen::EigenSolver<Eigen::Matrix2d> solver(covariance);
-	Eigen::Matrix2d eigenVectors = -solver.eigenvectors().real();
-
-	for (WedgeIter w = mesh->wedges().begin(); w != mesh->wedges().end(); w++) {
-		Eigen::Vector2d uv(w->uv.x, w->uv.y);
-		w->uv.x = eigenVectors.col(0).dot(uv);
-		w->uv.y = eigenVectors.col(1).dot(uv);
-	}
-}
-
 void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
 {
 	if (loadedModel && !state->surfaceIsClosed) {
@@ -1519,7 +1496,7 @@ void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
 			removeVertexHandles();
 			DenseMatrix u(state->bff->data->bN);
 			state->bff->flatten(u, true);
-			performPCA();
+			mesh->projectUvsToPcaAxis();
 			update();
 
 		} else if (type == BoundaryType::setBoundaryAngles) {
@@ -1530,7 +1507,7 @@ void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
 			removeVertexHandles();
 			state->bff->flattenToDisk();
 			state->flattenedToDisk = true;
-			performPCA();
+			mesh->projectUvsToPcaAxis();
 			update();
 		}
 	}
@@ -1840,12 +1817,12 @@ void Viewer::keyCallback(GLFWwindow *w, int key, int scancode, int action, int m
 	} else if (model.size() > 1 && loadedModel) {
 		if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE) {
 			selectedMesh--;
-			if (selectedMesh < 0) selectedMesh = (int)model.size() - 1;
+			if (selectedMesh < 0) selectedMesh = model.size() - 1;
 			updateSelectedMesh();
 
 		} else if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE) {
 			selectedMesh++;
-			if (selectedMesh == (int)model.size()) selectedMesh = 0;
+			if (selectedMesh == model.size()) selectedMesh = 0;
 			updateSelectedMesh();
 		}
 	}
@@ -1961,7 +1938,7 @@ bool Viewer::pickVertexHandle(const ViewPane& pane)
 void Viewer::processPickedElement(int index, int pickedId)
 {
 	int nVertices = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		int nV = (int)model[i].vertices.size();
 
 		if (pickedId < nVertices + nV) {
@@ -1988,7 +1965,7 @@ void Viewer::processPickedElement(int index, int pickedId)
 void Viewer::pick(int index)
 {
 	// draw
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		modelStates[i].renderMeshes[index]->draw(flatShader, true);
 	}
 
@@ -2032,7 +2009,7 @@ void Viewer::drawRenderMeshes(const ViewPane& pane, int index)
 	clearViewport(pane);
 
 	// draw model
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// draw all meshes in 3D pane and only the selected mesh in the UV pane
 		if (index == 0 || (index == 1 && i == selectedMesh)) {
 			// update per mesh uniforms

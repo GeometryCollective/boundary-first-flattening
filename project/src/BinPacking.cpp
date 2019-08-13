@@ -7,15 +7,48 @@ namespace bff {
 
 using namespace rbp;
 
-void BinPacking::pack(const std::vector<Mesh>& model,
-					  const std::vector<bool>& mappedToSphere,
-					  std::vector<Vector>& originalCenters,
-					  std::vector<Vector>& newCenters,
-					  std::vector<bool>& flippedBins,
-					  Vector& modelMinBounds, Vector& modelMaxBounds)
+bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& rectangles,
+					std::vector<Vector>& newCenters, std::vector<bool>& flippedBins,
+					Vector& modelMinBounds, Vector& modelMaxBounds)
+{
+	int n = (int)rectangles.size();
+	modelMinBounds = Vector(std::numeric_limits<double>::max(),
+							std::numeric_limits<double>::max());
+	modelMaxBounds = Vector(std::numeric_limits<double>::min(),
+							std::numeric_limits<double>::min());
+	GuillotineBinPack packer(boxLength, boxLength);
+
+	for (int i = 0; i < n; i++) {
+		Rect rect = packer.Insert(rectangles[i].width, rectangles[i].height, true,
+								  GuillotineBinPack::FreeRectChoiceHeuristic::RectBestAreaFit,
+								  GuillotineBinPack::GuillotineSplitHeuristic::SplitMinimizeArea);
+
+		// check for failure
+		if (rect.width == 0 || rect.height == 0) {
+			return false;
+		}
+
+		// check if flipped
+		flippedBins[i] = rect.width == rectangles[i].width ? false : true;
+
+		// compute new centers
+		newCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
+		newCenters[i] *= unitsPerInt;
+		modelMinBounds.x = std::min((double)rect.x, modelMinBounds.x);
+		modelMinBounds.y = std::min((double)rect.y, modelMinBounds.y);
+		modelMaxBounds.x = std::max((double)(rect.x + rect.width), modelMaxBounds.x);
+		modelMaxBounds.y = std::max((double)(rect.y + rect.height), modelMaxBounds.y);
+	}
+
+	return true;
+}
+
+void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
+					  std::vector<Vector>& originalCenters, std::vector<Vector>& newCenters,
+					  std::vector<bool>& flippedBins, Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	// compute bounding boxes
-	int n = (int)model.size();
+	int n = model.size();
 	double totalArea = 0.0;
 	std::vector<Vector> minBounds(n, Vector(std::numeric_limits<double>::max(),
 											std::numeric_limits<double>::max()));
@@ -23,8 +56,11 @@ void BinPacking::pack(const std::vector<Mesh>& model,
 											std::numeric_limits<double>::min()));
 
 	for (int i = 0; i < n; i++) {
+		// if more than 1 mesh, project uvs to pca axis for better packing efficiency
+		if (n > 1) model[i].projectUvsToPcaAxis();
+
 		// compute component radius
-		double radius = 0.0;
+		double radius = 1e-8;
 		if (mappedToSphere[i]) {
 			for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 				radius = std::max(w->uv.norm(), radius);
@@ -58,8 +94,9 @@ void BinPacking::pack(const std::vector<Mesh>& model,
 	// quantize boxes
 	originalCenters.resize(n);
 	std::vector<Rect> rectangles(n);
-	int boxLength = 10000;
-	double unitsPerInt = sqrt(totalArea)/(double)boxLength;
+	int minBoxLength = 10000;
+	int maxBoxLength = 10000;
+	double unitsPerInt = sqrt(totalArea)/(double)maxBoxLength;
 
 	for (int i = 0; i < n; i++) {
 		int minX = static_cast<int>(floor(minBounds[i].x/unitsPerInt));
@@ -78,43 +115,33 @@ void BinPacking::pack(const std::vector<Mesh>& model,
 	// pack
 	newCenters.resize(n);
 	flippedBins.resize(n);
+	int iter = 0;
 
 	do {
-		bool success = true;
-		modelMinBounds = Vector(std::numeric_limits<double>::max(),
-								std::numeric_limits<double>::max());
-		modelMaxBounds = Vector(std::numeric_limits<double>::min(),
-								std::numeric_limits<double>::min());
-		GuillotineBinPack packer(boxLength, boxLength);
+		if (attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
+						   flippedBins, modelMinBounds, modelMaxBounds)) break;
 
-		for (int i = 0; i < n; i++) {
-			Rect rect = packer.Insert(rectangles[i].width, rectangles[i].height, true,
-									  GuillotineBinPack::FreeRectChoiceHeuristic::RectBestAreaFit,
-									  GuillotineBinPack::GuillotineSplitHeuristic::SplitMinimizeArea);
+		minBoxLength = maxBoxLength;
+		maxBoxLength = static_cast<int>(ceil(minBoxLength*1.2));
+		iter++;
+	} while (iter < 100);
 
-			// check for failure
-			if (rect.width == 0 || rect.height == 0) {
-				success = false;
-				break;
-			}
+	// binary search on box length
+	while (minBoxLength <= maxBoxLength) {
+		int boxLength = (minBoxLength + maxBoxLength)/2;
+		if (boxLength == minBoxLength) break;
 
-			// check if flipped
-			flippedBins[i] = rect.width == rectangles[i].width ? false : true;
+		if (attemptPacking(boxLength, unitsPerInt, rectangles, newCenters,
+						   flippedBins, modelMinBounds, modelMaxBounds)) {
+			maxBoxLength = boxLength;
 
-			// compute new centers
-			newCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
-			newCenters[i] *= unitsPerInt;
-			modelMinBounds.x = std::min((double)rect.x, modelMinBounds.x);
-			modelMinBounds.y = std::min((double)rect.y, modelMinBounds.y);
-			modelMaxBounds.x = std::max((double)(rect.x + rect.width), modelMaxBounds.x);
-			modelMaxBounds.y = std::max((double)(rect.y + rect.height), modelMaxBounds.y);
+		} else {
+			minBoxLength = boxLength;
 		}
+	}
 
-		// if successful break, otherwise increase the box size and retry
-		if (success) break;
-		boxLength = static_cast<int>(ceil(boxLength*1.2));
-
-	} while (true);
+	attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
+				   flippedBins, modelMinBounds, modelMaxBounds);
 
 	modelMinBounds *= unitsPerInt;
 	modelMaxBounds *= unitsPerInt;

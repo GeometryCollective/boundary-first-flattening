@@ -6,10 +6,16 @@ namespace bff {
 
 class ConePlacement {
 public:
+	// error (and warning) codes
+	enum class ErrorCode {
+		ok,
+		factorizationFailed
+	};
+
 	// finds S cone singularities and prescibes angles
-	static void findConesAndPrescribeAngles(int S, std::vector<VertexIter>& cones,
-											DenseMatrix& coneAngles,
-											std::shared_ptr<BFFData> data, Mesh& mesh);
+	static ErrorCode findConesAndPrescribeAngles(int S, std::vector<VertexIter>& cones,
+												 DenseMatrix& coneAngles,
+												 std::shared_ptr<BFFData> data, Mesh& mesh);
 
 private:
 	// initializes the set of cones based on whether the mesh has a boundary
@@ -23,7 +29,7 @@ private:
 									bool ignoreBoundary = false);
 
 	// computes target curvatures for the cone set
-	static void computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
+	static bool computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 									const SparseMatrix& A,
 									const VertexData<int>& isCone,
 									const WedgeData<int>& index, const Mesh& mesh);
@@ -35,7 +41,7 @@ private:
 									const WedgeData<int>& index, Mesh& mesh);
 
 	// computes scale factors
-	static void computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
+	static bool computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
 									const SparseMatrix& A, const VertexData<int>& isCone,
 									const WedgeData<int>& index, const Mesh& mesh);
 

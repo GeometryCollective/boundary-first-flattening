@@ -110,17 +110,17 @@ Vector hsv(double h, double s, double v)
 	return Vector(r, g, b);
 }
 
-Vector Distortion::computeQuasiConformalError(const std::vector<Mesh>& model)
+Vector Distortion::computeQuasiConformalError(const Model& model)
 {
 	double totalQc = 0.0;
 	double minQc = std::numeric_limits<double>::infinity();
 	double maxQc = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 
 	distortion.clear();
 	distortion.reserve(model.size());
 
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
 		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);
@@ -696,7 +696,7 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 	double totalU = 0.0;
 	double minU = std::numeric_limits<double>::infinity();
 	double maxU = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 	std::vector<Vector> p(3), q(3);
 
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
@@ -721,17 +721,17 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 	return Vector(minU, maxU, totalU/totalArea);
 }
 
-Vector Distortion::computeAreaScaling(const std::vector<Mesh>& model)
+Vector Distortion::computeAreaScaling(const Model& model)
 {
 	double totalU = 0.0;
 	double minU = std::numeric_limits<double>::infinity();
 	double maxU = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 
 	distortion.clear();
 	distortion.reserve(model.size());
 
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
 		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);

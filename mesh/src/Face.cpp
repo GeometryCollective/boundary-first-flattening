@@ -57,6 +57,18 @@ double Face::area() const
 	return 0.5*normal(false).norm();
 }
 
+double Face::areaUV() const
+{
+	if (!isReal()) return 0.0;
+
+	const Vector& a = halfEdge()->next()->wedge()->uv;
+	const Vector& b = halfEdge()->prev()->wedge()->uv;
+	const Vector& c = halfEdge()->wedge()->uv;
+
+	Vector n = cross(b - a, c - a);
+	return 0.5*n.norm();
+}
+
 bool Face::isReal() const
 {
 	return !halfEdge()->onBoundary && !inNorthPoleVicinity;

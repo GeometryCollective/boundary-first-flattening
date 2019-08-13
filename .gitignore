@@ -1,0 +1,18 @@
+# Build directories
+build/
+build_debug/
+
+# Editor and OS things
+.DS_Store
+.vscode
+*.swp
+tags
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj

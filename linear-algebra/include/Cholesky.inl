@@ -54,10 +54,12 @@ inline void Cholesky::update()
 	if (!validNumeric) buildNumeric(C);
 }
 
-inline void Cholesky::solvePositiveDefinite(DenseMatrix& x, DenseMatrix& b)
+inline bool Cholesky::solvePositiveDefinite(DenseMatrix& x, DenseMatrix& b)
 {
 	update();
 	if (factor) x = cholmod_l_solve(CHOLMOD_A, factor, b.toCholmod(), common);
+
+	return common.status() == Common::ErrorCode::ok;
 }
 
 } // namespace bff

@@ -52,10 +52,13 @@ int AdjacencyTable::getSize() const
 void MeshIO::separateComponents(const PolygonSoup& soup,
 								const std::vector<int>& isCuttableEdge,
 								std::vector<PolygonSoup>& soups,
-								std::vector<std::vector<int>>& isCuttableEdgeSoups)
+								std::vector<std::vector<int>>& isCuttableEdgeSoups,
+								std::vector<std::pair<int, int>>& modelToMeshMap,
+								std::vector<std::vector<int>>& meshToModelMap)
 {
 	// create an edge face adjacency map
 	int nIndices = (int)soup.indices.size();
+	int nVertices = (int)soup.positions.size();
 	std::vector<std::vector<int>> adjacentFaces(soup.table.getSize());
 	for (int I = 0; I < nIndices; I += 3) {
 		for (int J = 0; J < 3; J++) {
@@ -118,16 +121,22 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 		components++;
 	}
 
+	meshToModelMap.resize(components);
 	if (components == 1) {
 		soups.emplace_back(soup);
 		isCuttableEdgeSoups.emplace_back(isCuttableEdge);
+
+		for (int i = 0; i < nVertices; i++) {
+			meshToModelMap[0].emplace_back(i);
+			modelToMeshMap.emplace_back(std::make_pair(0, i));
+		}
 
 	} else {
 		// create soups
 		soups.resize(components);
 		isCuttableEdgeSoups.resize(components);
-		std::vector<std::vector<int>> seenVertex(components,
-			std::vector<int>(soup.positions.size(), -1));
+		std::vector<std::vector<int>> seenVertex(components, std::vector<int>(nVertices, -1));
+		modelToMeshMap.resize(nVertices);
 
 		for (int I = 0; I < nIndices; I += 3) {
 			int c = faceComponent[I];
@@ -137,8 +146,11 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 				// insert vertex if it hasn't been seen
 				if (seenVertex[c][i] == -1) {
-					seenVertex[c][i] = (int)soups[c].positions.size();
+					int index = (int)soups[c].positions.size();
+					seenVertex[c][i] = index;
 					soups[c].positions.emplace_back(soup.positions[i]);
+					meshToModelMap[c].emplace_back(i);
+					modelToMeshMap[i] = std::make_pair(c, index);
 				}
 
 				// add index
@@ -414,8 +426,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	return true;
 }
 
-bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
-				  std::string& error)
+bool MeshIO::read(std::istringstream& in, Model& model, std::string& error)
 {
 	PolygonSoup soup;
 	std::string line;
@@ -493,10 +504,11 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<int>> isCuttableEdgeSoups;
-	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups);
+	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups,
+					   model.modelToMeshMap, model.meshToModelMap);
 
 	// build halfedge meshes
-	model.resize(soups.size());
+	model.meshes.resize(soups.size());
 	for (int i = 0; i < (int)soups.size(); i++) {
 		if (!buildMesh(soups[i], isCuttableEdgeSoups[i], model[i], error)) {
 			return false;
@@ -506,12 +518,12 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 	return true;
 }
 
-void MeshIO::normalize(std::vector<Mesh>& model)
+void MeshIO::normalize(Model& model)
 {
 	// compute center of mass
 	Vector cm;
 	int nVertices = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			cm += v->position;
 			nVertices++;
@@ -520,8 +532,8 @@ void MeshIO::normalize(std::vector<Mesh>& model)
 	cm /= nVertices;
 
 	// translate to origin and determine radius
-	double radius = 0.0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	double radius = 1e-8;
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			v->position -= cm;
 			radius = std::max(radius, v->position.norm());
@@ -529,7 +541,7 @@ void MeshIO::normalize(std::vector<Mesh>& model)
 	}
 
 	// rescale to unit radius
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			v->position /= radius;
 		}
@@ -539,8 +551,7 @@ void MeshIO::normalize(std::vector<Mesh>& model)
 	}
 }
 
-bool MeshIO::read(const std::string& fileName, std::vector<Mesh>& model,
-				  std::string& error)
+bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	std::ifstream in(fileName.c_str());
 	std::istringstream buffer;
@@ -594,7 +605,7 @@ void writeUV(std::ofstream& out, Vector uv, bool mapToSphere, double sphereRadiu
 							 std::to_string(uv.y) + "\n");
 }
 
-void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
+void MeshIO::write(std::ofstream& out, Model& model,
 				   const std::vector<bool>& mappedToSphere, bool normalize)
 {
 	// pack
@@ -604,9 +615,21 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 	BinPacking::pack(model, mappedToSphere, originalCenters, newCenters,
 					 flippedBins, modelMinBounds, modelMaxBounds);
 
-	int nVertices = 0;
+	// write vertex positions
+	for (int i = 0; i < model.nVertices(); i++) {
+		std::pair<int, int> vData = model.localVertexIndex(i);
+		const Mesh& mesh = model[vData.first];
+		VertexCIter v = mesh.vertices.begin() + vData.second;
+
+		Vector p = v->position*mesh.radius + mesh.cm;
+		writeString(out, "v " + std::to_string(p.x) + " " +
+								std::to_string(p.y) + " " +
+								std::to_string(p.z) + "\n");
+	}
+
+	// write uvs and indices
 	int nUvs = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// compute uv radius and shift
 		Vector minExtent(modelMinBounds.x, modelMinBounds.y);
 		double dx = modelMaxBounds.x - minExtent.x;
@@ -624,19 +647,10 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 		}
 
 		// write vertices and interior uvs
-		int vertexCount = 0;
 		int uvCount = 0;
 		HalfEdgeData<int> uvIndexMap(model[i]);
 
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
-			if (v->referenceIndex == -1) {
-				Vector p = v->position*model[i].radius + model[i].cm;
-				writeString(out, "v " + std::to_string(p.x) + " " +
-										std::to_string(p.y) + " " +
-										std::to_string(p.z) + "\n");
-				vertexCount++;
-			}
-
 			if (!v->onBoundary()) {
 				writeUV(out, v->wedge()->uv, mappedToSphere[i], sphereRadius,
 						model[i].radius, originalCenters[i], newCenters[i],
@@ -689,7 +703,7 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 				do {
 					VertexCIter v = he->vertex();
 					int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
-					writeString(out, " " + std::to_string(nVertices + vIndex + 1) + "/" +
+					writeString(out, " " + std::to_string(model.globalVertexIndex(i, vIndex) + 1) + "/" +
 										   std::to_string(nUvs + uvIndexMap[he->next()] + 1));
 
 					he = he->next();
@@ -706,12 +720,11 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 			}
 		}
 
-		nVertices += vertexCount;
 		nUvs += uvCount;
 	}
 }
 
-bool MeshIO::write(const std::string& fileName, std::vector<Mesh>& model,
+bool MeshIO::write(const std::string& fileName, Model& model,
 				   const std::vector<bool>& mappedToSphere, bool normalize)
 {
 	std::ofstream out(fileName.c_str());

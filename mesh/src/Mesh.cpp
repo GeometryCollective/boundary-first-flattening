@@ -65,7 +65,7 @@ int Mesh::eulerCharacteristic() const
 }
 
 double Mesh::diameter() const
- {
+{
 	double maxLimit = std::numeric_limits<double>::max();
 	double minLimit = std::numeric_limits<double>::min();
 	Vector minBounds(maxLimit, maxLimit, maxLimit);
@@ -83,7 +83,39 @@ double Mesh::diameter() const
 	}
 
 	return (maxBounds - minBounds).norm();
- }
+}
+
+void computeEigenvectors2x2(double a, double b, double c, Vector& v1, Vector& v2)
+{
+	double disc = std::sqrt((a - c)*(a - c) + 4.0*b*b)/2.0;
+	double lambda1 = (a + c)/2.0 - disc;
+	double lambda2 = (a + c)/2.0 + disc;
+
+	v1 = b < 0.0 ? Vector(-b, a - lambda1) : Vector(b, lambda2 - a);
+	double v1Norm = v1.norm();
+	if (v1Norm > 0) v1 /= v1Norm;
+	v2 = Vector(-v1.y, v1.x);
+}
+
+void Mesh::projectUvsToPcaAxis()
+{
+	double a = 0, b = 0, c = 0;
+	for (WedgeIter w: cutBoundary()) {
+		const Vector& uv = w->uv;
+		a += uv.x*uv.x;
+		b += uv.x*uv.y;
+		c += uv.y*uv.y;
+	}
+
+	Vector v1, v2;
+	computeEigenvectors2x2(a, b, c, v1, v2);
+
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		Vector uv = w->uv;
+		w->uv.x = dot(v1, uv);
+		w->uv.y = dot(v2, uv);
+	}
+}
 
 CutPtrSet Mesh::cutBoundary()
 {
