@@ -57,6 +57,17 @@ double Face::area() const
 	return 0.5*normal(false).norm();
 }
 
+Vector Face::centroidUV() const
+{
+	if (!isReal()) return Vector();
+
+	const Vector& a = halfEdge()->next()->wedge()->uv;
+	const Vector& b = halfEdge()->prev()->wedge()->uv;
+	const Vector& c = halfEdge()->wedge()->uv;
+
+	return (a + b + c)/3.0;
+}
+
 double Face::areaUV() const
 {
 	if (!isReal()) return 0.0;

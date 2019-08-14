@@ -56,9 +56,6 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 											std::numeric_limits<double>::min()));
 
 	for (int i = 0; i < n; i++) {
-		// if more than 1 mesh, project uvs to pca axis for better packing efficiency
-		if (n > 1) model[i].projectUvsToPcaAxis();
-
 		// compute component radius
 		double radius = 1e-8;
 		if (mappedToSphere[i]) {
@@ -68,6 +65,9 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 
 		} else {
 			radius = model[i].radius;
+
+			// project uvs to pca axis for better packing efficiency
+			if (n > 1) model[i].projectUvsToPcaAxis();
 		}
 
 		// scale uvs by radius and compute bounds

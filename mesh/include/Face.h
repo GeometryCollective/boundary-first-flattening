@@ -27,6 +27,9 @@ public:
 	// returns face area
 	double area() const;
 
+	// returns face centroid in uv plane
+	Vector centroidUV() const;
+
 	// returns face area in uv plane
 	double areaUV() const;
 

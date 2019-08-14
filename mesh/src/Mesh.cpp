@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "MeshData.h"
 #include <limits>
 
 namespace bff {
@@ -99,21 +99,51 @@ void computeEigenvectors2x2(double a, double b, double c, Vector& v1, Vector& v2
 
 void Mesh::projectUvsToPcaAxis()
 {
-	double a = 0, b = 0, c = 0;
-	for (WedgeIter w: cutBoundary()) {
-		const Vector& uv = w->uv;
-		a += uv.x*uv.x;
-		b += uv.x*uv.y;
-		c += uv.y*uv.y;
+	// compute center of mass
+	Vector cm;
+	double totalArea = 1e-8;
+	FaceData<double> areaUV(*this);
+	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
+		if (f->isReal() && !f->fillsHole) {
+			Vector centroid = f->centroidUV();
+			areaUV[f] = f->areaUV();
+
+			cm += centroid*areaUV[f];
+			totalArea += areaUV[f];
+		}
+	}
+	cm /= totalArea;
+
+	// translate uvs to origin
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		if (w->isReal()) {
+			w->uv -= cm;
+		}
 	}
 
+	// build covariance matrix
+	double a = 0, b = 0, c = 0;
+	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
+		if (f->isReal() && !f->fillsHole) {
+			Vector centroid = f->centroidUV();
+			double area = areaUV[f];
+
+			a += centroid.x*centroid.x*area;
+			b += centroid.x*centroid.y*area;
+			c += centroid.y*centroid.y*area;
+		}
+	}
+
+	// compute eigenvectors
 	Vector v1, v2;
 	computeEigenvectors2x2(a, b, c, v1, v2);
 
+	// project uvs onto principal axes
 	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
-		Vector uv = w->uv;
-		w->uv.x = dot(v1, uv);
-		w->uv.y = dot(v2, uv);
+		if (w->isReal()) {
+			Vector& uv = w->uv;
+			uv = Vector(dot(v1, uv), dot(v2, uv));
+		}
 	}
 }
 

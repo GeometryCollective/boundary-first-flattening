@@ -304,7 +304,7 @@ void BFF::normalize()
 	}
 	cm /= wN;
 
-	// translate to origin and determine radius
+	// translate to origin
 	for (WedgeIter w = mesh.wedges().begin(); w != mesh.wedges().end(); w++) {
 		if (w->isReal()) {
 			w->uv -= cm;
