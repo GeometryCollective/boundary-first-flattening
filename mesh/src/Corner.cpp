@@ -1,5 +1,5 @@
 #include "Corner.h"
-#include "Mesh.h"
+#include "BFFMesh.h"
 
 namespace bff {
 
