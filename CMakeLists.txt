@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_DEBUG_POSTFIX "-debug")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
