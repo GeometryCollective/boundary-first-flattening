@@ -67,7 +67,7 @@ int Mesh::eulerCharacteristic() const
 double Mesh::diameter() const
 {
 	double maxLimit = std::numeric_limits<double>::max();
-	double minLimit = std::numeric_limits<double>::min();
+	double minLimit = std::numeric_limits<double>::lowest();
 	Vector minBounds(maxLimit, maxLimit, maxLimit);
 	Vector maxBounds(minLimit, minLimit, minLimit);
 
@@ -143,6 +143,7 @@ void Mesh::projectUvsToPcaAxis()
 		if (w->isReal()) {
 			Vector& uv = w->uv;
 			uv = Vector(dot(v1, uv), dot(v2, uv));
+			uv += cm;
 		}
 	}
 }

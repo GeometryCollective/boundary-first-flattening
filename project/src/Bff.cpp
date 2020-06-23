@@ -164,6 +164,26 @@ void invert2x2(DenseMatrix& m)
 	m *= 1.0/det;
 }
 
+void invert3x3(DenseMatrix& m)
+{
+	double det = m(0, 0)*(m(1, 1)*m(2, 2) - m(2, 1)*m(1, 2)) -
+				 m(0, 1)*(m(1, 0)*m(2, 2) - m(1, 2)*m(2, 0)) +
+				 m(0, 2)*(m(1, 0)*m(2, 1) - m(1, 1)*m(2, 0));
+
+	DenseMatrix mInv(3, 3); // inverse of matrix m
+	mInv(0, 0) = (m(1, 1)*m(2, 2) - m(2, 1)*m(1, 2));
+	mInv(0, 1) = (m(0, 2)*m(2, 1) - m(0, 1)*m(2, 2));
+	mInv(0, 2) = (m(0, 1)*m(1, 2) - m(0, 2)*m(1, 1));
+	mInv(1, 0) = (m(1, 2)*m(2, 0) - m(1, 0)*m(2, 2));
+	mInv(1, 1) = (m(0, 0)*m(2, 2) - m(0, 2)*m(2, 0));
+	mInv(1, 2) = (m(1, 0)*m(0, 2) - m(0, 0)*m(1, 2));
+	mInv(2, 0) = (m(1, 0)*m(2, 1) - m(2, 0)*m(1, 1));
+	mInv(2, 1) = (m(2, 0)*m(0, 1) - m(0, 0)*m(2, 1));
+	mInv(2, 2) = (m(0, 0)*m(1, 1) - m(1, 0)*m(0, 1));
+
+	m = mInv*(1.0/det);
+}
+
 void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 					   DenseMatrix& ltilde) const
 {
@@ -568,6 +588,73 @@ void BFF::projectStereographically(VertexCIter pole, double radius,
 	}
 }
 
+void BFF::centerMobius()
+{
+	// source: Algorithm 1, http://www.cs.cmu.edu/~kmcrane/Projects/MobiusRegistration/paper.pdf
+	FaceData<Vector> centroids(mesh);
+	FaceData<double> areas(mesh);
+
+	// perform centering
+	for (int iter = 0; iter < 1000; iter++) {
+		// compute face centroids and areas
+		double totalArea = 0.0;
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			centroids[f] = f->centroidUV();
+			areas[f] = f->areaUV();
+			totalArea += areas[f];
+		}
+
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			areas[f] /= totalArea;
+		}
+
+		// compute center of mass
+		Vector cm;
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			cm += areas[f]*centroids[f];
+		}
+
+		// terminate if center is near zero
+		if (cm.norm() < 1e-3) break;
+
+		// build Jacobian
+		DenseMatrix J(3, 3);
+		DenseMatrix Id = DenseMatrix::identity(3, 3);
+
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 3; j++) {
+					J(i, j) += 2.0*areas[f]*(Id(i, j) - centroids[f][i]*centroids[f][j]);
+				}
+			}
+		}
+
+		// compute inversion center
+		invert3x3(J);
+		Vector inversionCenter(J(0, 0)*cm.x + J(0, 1)*cm.y + J(0, 2)*cm.z,
+							   J(1, 0)*cm.x + J(1, 1)*cm.y + J(1, 2)*cm.z,
+							   J(2, 0)*cm.x + J(2, 1)*cm.y + J(2, 2)*cm.z);
+		inversionCenter *= -1.0;
+		double scale = 1.0 - inversionCenter.norm2();
+
+		// apply inversion
+		for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
+			const Vector& uv = v->halfEdge()->next()->wedge()->uv;
+			Vector reflection = uv + inversionCenter;
+			reflection /= reflection.norm2();
+			Vector uvInv = scale*reflection + inversionCenter;
+
+			// set uv coordinates
+			HalfEdgeIter he = v->halfEdge();
+			do {
+				he->next()->wedge()->uv = uvInv;
+
+				he = he->flip()->next();
+			} while (he != v->halfEdge());
+		}
+	}
+}
+
 bool BFF::mapToSphere()
 {
 	// remove an arbitrary vertex star
@@ -645,6 +732,9 @@ bool BFF::mapToSphere()
 
 		he = he->flip()->next();
 	} while (he != pole->halfEdge());
+
+	// perform mobius centering
+	centerMobius();
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;

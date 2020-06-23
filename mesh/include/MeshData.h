@@ -5,8 +5,7 @@
 namespace bff {
 
 template<typename Element, std::vector<Element> Mesh::*meshList, typename ElementIter, typename T>
-class MeshData
-{
+class MeshData {
 public:
 	// constructor
 	MeshData(const Mesh& mesh);

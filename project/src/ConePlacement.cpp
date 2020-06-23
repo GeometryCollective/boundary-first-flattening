@@ -261,7 +261,8 @@ bool ConePlacement::useCetmStrategy(int S, VertexData<int>& isCone,
 
 void ConePlacement::normalizeAngles(DenseMatrix& C, double normalizationFactor)
 {
-	C *= (normalizationFactor/C.sum());
+	double sum = C.sum();
+	if (sum > 1e-8) C *= (normalizationFactor/sum);
 }
 
 ConePlacement::ErrorCode ConePlacement::findConesAndPrescribeAngles(

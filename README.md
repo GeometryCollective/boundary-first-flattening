@@ -27,7 +27,7 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 # Download Application
 
->    [Mac OSX v1.3](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
+>    [Mac OSX v1.4](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
 >    [Windows v1.1](http://geometry.cs.cmu.edu/software/BFFWindows.zip)
 
 # Release History
@@ -36,6 +36,7 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 * **v1.1** (January 2019) &mdash; Adds support for arbitrary topology (holes, handles, <em>etc.</em>; not just disk and sphere), quad and polygon meshes, command-line interface with no GUI build dependencies, and 3x overall speedup across load/solve/write operations.
 * **v1.2** (June 2019) &mdash; Ensures that vertex ordering in the input/output meshes agree; accelerates cone computation for surfaces with boundary; minor accelerations and bug fixes.
 * **v1.3** (August 2019) &mdash; Adds support for tighter bin packing; ensures vertex ordering is preserved; more error logging and bug fixes.
+* **v1.4** (June 2020) &mdash; Improved spherical parameterization; bin packing related bugfixes and more efficient loading of models with many components.
 
 # Tutorial
 

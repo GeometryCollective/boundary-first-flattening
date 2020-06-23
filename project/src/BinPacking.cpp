@@ -14,8 +14,8 @@ bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& 
 	int n = (int)rectangles.size();
 	modelMinBounds = Vector(std::numeric_limits<double>::max(),
 							std::numeric_limits<double>::max());
-	modelMaxBounds = Vector(std::numeric_limits<double>::min(),
-							std::numeric_limits<double>::min());
+	modelMaxBounds = Vector(std::numeric_limits<double>::lowest(),
+							std::numeric_limits<double>::lowest());
 	GuillotineBinPack packer(boxLength, boxLength);
 
 	for (int i = 0; i < n; i++) {
@@ -25,7 +25,9 @@ bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& 
 
 		// check for failure
 		if (rect.width == 0 || rect.height == 0) {
-			return false;
+			if (rectangles[i].width != 0 && rectangles[i].height != 0) {
+				return false;
+			}
 		}
 
 		// check if flipped
@@ -52,8 +54,8 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 	double totalArea = 0.0;
 	std::vector<Vector> minBounds(n, Vector(std::numeric_limits<double>::max(),
 											std::numeric_limits<double>::max()));
-	std::vector<Vector> maxBounds(n, Vector(std::numeric_limits<double>::min(),
-											std::numeric_limits<double>::min()));
+	std::vector<Vector> maxBounds(n, Vector(std::numeric_limits<double>::lowest(),
+											std::numeric_limits<double>::lowest()));
 
 	for (int i = 0; i < n; i++) {
 		// compute component radius
@@ -124,24 +126,29 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 		minBoxLength = maxBoxLength;
 		maxBoxLength = static_cast<int>(ceil(minBoxLength*1.2));
 		iter++;
-	} while (iter < 100);
+	} while (iter < 50);
 
-	// binary search on box length
-	while (minBoxLength <= maxBoxLength) {
-		int boxLength = (minBoxLength + maxBoxLength)/2;
-		if (boxLength == minBoxLength) break;
+	if (iter < 50 && n < 5000) {
+		// binary search on box length
+		minBoxLength = 5000;
+		maxBoxLength += 1;
 
-		if (attemptPacking(boxLength, unitsPerInt, rectangles, newCenters,
-						   flippedBins, modelMinBounds, modelMaxBounds)) {
-			maxBoxLength = boxLength;
+		while (minBoxLength <= maxBoxLength) {
+			int boxLength = (minBoxLength + maxBoxLength)/2;
+			if (boxLength == minBoxLength) break;
 
-		} else {
-			minBoxLength = boxLength;
+			if (attemptPacking(boxLength, unitsPerInt, rectangles, newCenters,
+							   flippedBins, modelMinBounds, modelMaxBounds)) {
+				maxBoxLength = boxLength;
+
+			} else {
+				minBoxLength = boxLength;
+			}
 		}
-	}
 
-	attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
-				   flippedBins, modelMinBounds, modelMaxBounds);
+		attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
+					   flippedBins, modelMinBounds, modelMaxBounds);
+	}
 
 	modelMinBounds *= unitsPerInt;
 	modelMaxBounds *= unitsPerInt;

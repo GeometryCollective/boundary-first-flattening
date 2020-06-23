@@ -109,6 +109,9 @@ protected:
 	void projectStereographically(VertexCIter pole, double radius,
 								  const VertexData<Vector>& uvs);
 
+	// performs Mobius centering to reduce area distortion in conformal map to the sphere
+	void centerMobius();
+
 	// members
 	Mesh& mesh;
 	double meanScaling;
