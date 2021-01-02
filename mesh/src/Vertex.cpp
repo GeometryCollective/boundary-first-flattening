@@ -1,5 +1,5 @@
 #include "Vertex.h"
-#include "Mesh.h"
+#include "BFFMesh.h"
 
 namespace bff {
 

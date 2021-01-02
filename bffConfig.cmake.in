@@ -1,0 +1,4 @@
+@PACKAGE_INIT@
+get_filename_component(@PROJECT_NAME@_CMAKE_DIR "@CMAKE_CURRENT_LIST_FILE@" PATH)
+get_filename_component(LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+include(${LIST_DIR}/bffTargets.cmake)
