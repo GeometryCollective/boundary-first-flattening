@@ -1,3 +1,5 @@
+#include "Edge.h"
+
 namespace bff {
 
 inline CutPtrIterator::CutPtrIterator(HalfEdgeIter he, bool justStarted_):
@@ -10,11 +12,11 @@ justStarted(justStarted_)
 inline const CutPtrIterator& CutPtrIterator::operator++()
 {
 	justStarted = false;
-	HalfEdgeIter h = currHe->flip;
+	HalfEdgeIter h = currHe->flip();
 	do {
 
-		h = h->prev->flip; // loop around one ring counter clockwise
-	} while (!h->onBoundary && !h->edge->onCut);
+		h = h->prev()->flip(); // loop around one ring counter clockwise
+	} while (!h->onBoundary && !h->edge()->onCut);
 
 	currHe = h;
 	return *this;
@@ -32,7 +34,7 @@ inline bool CutPtrIterator::operator!=(const CutPtrIterator& other) const
 
 inline WedgeIter CutPtrIterator::operator*() const
 {
-	return currHe->flip->prev->corner;
+	return currHe->flip()->prev()->corner();
 }
 
 inline CutPtrSet::CutPtrSet():

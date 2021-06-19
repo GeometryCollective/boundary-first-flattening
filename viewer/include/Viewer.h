@@ -238,7 +238,7 @@ private:
 	static bool altClick;
 
 	static std::string objPath;
-	static std::vector<Mesh> model;
+	static Model model;
 	static std::vector<ModelState> modelStates;
 	static Mesh *mesh;
 	static ModelState *state;

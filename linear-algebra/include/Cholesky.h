@@ -25,7 +25,7 @@ public:
 	void clearNumeric();
 
 	// solves positive definite
-	void solvePositiveDefinite(DenseMatrix& x, DenseMatrix& b);
+	bool solvePositiveDefinite(DenseMatrix& x, DenseMatrix& b);
 
 protected:
 	// builds symbolic factorization

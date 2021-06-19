@@ -27,13 +27,16 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 # Download Application
 
->    [Mac OSX](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
->    [Windows](http://geometry.cs.cmu.edu/software/BFFWindows.zip)
+>    [Mac OSX v1.4](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
+>    [Windows v1.1](http://geometry.cs.cmu.edu/software/BFFWindows.zip)
 
 # Release History
 
 * **v1.0** (December 2017) &mdash; Initial release.
 * **v1.1** (January 2019) &mdash; Adds support for arbitrary topology (holes, handles, <em>etc.</em>; not just disk and sphere), quad and polygon meshes, command-line interface with no GUI build dependencies, and 3x overall speedup across load/solve/write operations.
+* **v1.2** (June 2019) &mdash; Ensures that vertex ordering in the input/output meshes agree; accelerates cone computation for surfaces with boundary; minor accelerations and bug fixes.
+* **v1.3** (August 2019) &mdash; Adds support for tighter bin packing; ensures vertex ordering is preserved; more error logging and bug fixes.
+* **v1.4** (June 2020) &mdash; Improved spherical parameterization; bin packing related bugfixes and more efficient loading of models with many components.
 
 # Tutorial
 
@@ -41,7 +44,7 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))
 
-BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles and multiple components are supported. The only restriction is that meshes must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though this may be relaxed in future versions). Meshes that do not have disk or sphere topology will be automatically cut for flattening. 
+BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles and multiple components are supported. The only restriction is that meshes must have <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">manifold connectivity</a> (though this may be relaxed in future versions). Meshes that do not have disk or sphere topology will be automatically cut for flattening.
 
 <p align="center"><img src="imgs/tutorial/bff_meshsupport.jpg" width="750" height="237.34"></p>
 <p align="center"><img src="imgs/tutorial/bff_multiplecomponents.gif" width="500" height="250"></p>
@@ -234,6 +237,10 @@ Our application builds on some terrific insights and work done on conformal flat
 # Acknowledgements
 
 Development of this software was funded in part by NSF Award 1717320, and a gift from Autodesk, Inc. Thanks to Tim Davis for help with block reordering and supernodal subfactor extraction in CHOLMOD. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.
+
+# Awards
+
+BFF is the recipient of the [SGP 2019 Outstanding Software Project Award](http://awards.geometryprocessing.org)!
 
 # License
 

@@ -20,7 +20,7 @@ void AdjacencyTable::construct(int n, const std::vector<int>& indices)
 			int j = indices[I + K];
 
 			if (i > j) std::swap(i, j);
-			data[i].insert(j);
+			data[i].emplace(j);
 		}
 	}
 
@@ -52,10 +52,13 @@ int AdjacencyTable::getSize() const
 void MeshIO::separateComponents(const PolygonSoup& soup,
 								const std::vector<int>& isCuttableEdge,
 								std::vector<PolygonSoup>& soups,
-								std::vector<std::vector<int>>& isCuttableEdgeSoups)
+								std::vector<std::vector<int>>& isCuttableEdgeSoups,
+								std::vector<std::pair<int, int>>& modelToMeshMap,
+								std::vector<std::vector<int>>& meshToModelMap)
 {
 	// create an edge face adjacency map
 	int nIndices = (int)soup.indices.size();
+	int nVertices = (int)soup.positions.size();
 	std::vector<std::vector<int>> adjacentFaces(soup.table.getSize());
 	for (int I = 0; I < nIndices; I += 3) {
 		for (int J = 0; J < 3; J++) {
@@ -64,12 +67,12 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 			int j = soup.indices[I + K];
 
 			int eIndex = soup.table.getIndex(i, j);
-			adjacentFaces[eIndex].push_back(I);
+			adjacentFaces[eIndex].emplace_back(I);
 
 			// check for non-manifold edges
 			if (adjacentFaces[eIndex].size() > 2) {
-				soups.push_back(soup);
-				isCuttableEdgeSoups.push_back(isCuttableEdge);
+				soups.emplace_back(soup);
+				isCuttableEdgeSoups.emplace_back(isCuttableEdge);
 				return;
 			}
 		}
@@ -118,15 +121,23 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 		components++;
 	}
 
+	meshToModelMap.resize(components);
 	if (components == 1) {
-		soups.push_back(soup);
-		isCuttableEdgeSoups.push_back(isCuttableEdge);
+		soups.emplace_back(soup);
+		isCuttableEdgeSoups.emplace_back(isCuttableEdge);
+
+		for (int i = 0; i < nVertices; i++) {
+			meshToModelMap[0].emplace_back(i);
+			modelToMeshMap.emplace_back(std::make_pair(0, i));
+		}
 
 	} else {
 		// create soups
 		soups.resize(components);
 		isCuttableEdgeSoups.resize(components);
-		std::vector<int> seenVertex(soup.positions.size(), -1);
+		std::vector<std::unordered_map<int, int>> seenVertex(components);
+		modelToMeshMap.resize(nVertices);
+
 		for (int I = 0; I < nIndices; I += 3) {
 			int c = faceComponent[I];
 
@@ -134,13 +145,16 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[I + J];
 
 				// insert vertex if it hasn't been seen
-				if (seenVertex[i] == -1) {
-					seenVertex[i] = (int)soups[c].positions.size();
-					soups[c].positions.push_back(soup.positions[i]);
+				if (seenVertex[c].find(i) == seenVertex[c].end()) {
+					int index = (int)soups[c].positions.size();
+					seenVertex[c][i] = index;
+					soups[c].positions.emplace_back(soup.positions[i]);
+					meshToModelMap[c].emplace_back(i);
+					modelToMeshMap[i] = std::make_pair(c, index);
 				}
 
 				// add index
-				soups[c].indices.push_back(seenVertex[i]);
+				soups[c].indices.emplace_back(seenVertex[c][i]);
 			}
 		}
 
@@ -163,8 +177,8 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 				// add edge if uncuttable
 				if (!isCuttableEdge[eIndex]) {
-					int ii = seenVertex[i];
-					int jj = seenVertex[j];
+					int ii = seenVertex[c][i];
+					int jj = seenVertex[c][j];
 
 					int eIndexSoup = soups[c].table.getIndex(ii, jj);
 					isCuttableEdgeSoups[c][eIndexSoup] = 0;
@@ -198,43 +212,10 @@ void MeshIO::preallocateElements(const PolygonSoup& soup, Mesh& mesh)
 	mesh.halfEdges.reserve(2*nHalfedges);
 }
 
-void MeshIO::indexElements(Mesh& mesh)
-{
-	int index = 0;
-	for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-		v->index = index++;
-	}
-
-	index = 0;
-	for (EdgeIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
-		e->index = index++;
-	}
-
-	index = 0;
-	for (FaceIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
-		f->index = index++;
-	}
-
-	index = 0;
-	for (CornerIter c = mesh.corners.begin(); c != mesh.corners.end(); c++) {
-		c->index = index++;
-	}
-
-	index = 0;
-	for (HalfEdgeIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
-		h->index = index++;
-	}
-
-	index = 0;
-	for (BoundaryIter b = mesh.boundaries.begin(); b != mesh.boundaries.end(); b++) {
-		b->index = index++;
-	}
-}
-
 bool MeshIO::hasIsolatedVertices(const Mesh& mesh)
 {
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-		if (v->he == mesh.halfEdges.end()) {
+		if (v->isIsolated()) {
 			return true;
 		}
 	}
@@ -246,21 +227,21 @@ bool MeshIO::hasNonManifoldVertices(const Mesh& mesh)
 {
 	VertexData<int> adjacentFaces(mesh, 0);
 	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
-		HalfEdgeCIter h = f->he;
+		HalfEdgeCIter h = f->halfEdge();
 		do {
-			adjacentFaces[h->vertex]++;
+			adjacentFaces[h->vertex()]++;
 
-			h = h->next;
-		} while (h != f->he);
+			h = h->next();
+		} while (h != f->halfEdge());
 	}
 
 	for (BoundaryCIter b = mesh.boundaries.begin(); b != mesh.boundaries.end(); b++) {
-		HalfEdgeCIter h = b->he;
+		HalfEdgeCIter h = b->halfEdge();
 		do {
-			adjacentFaces[h->vertex]++;
+			adjacentFaces[h->vertex()]++;
 
-			h = h->next;
-		} while (h != b->he);
+			h = h->next();
+		} while (h != b->halfEdge());
 	}
 
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
@@ -283,9 +264,9 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	int nVertices = (int)soup.positions.size();
 	std::vector<VertexIter> indexToVertex(nVertices);
 	for (int i = 0; i < nVertices; i++) {
-		VertexIter v = mesh.vertices.insert(mesh.vertices.end(), Vertex());
+		VertexIter v = mesh.vertices.emplace(mesh.vertices.end(), Vertex(&mesh));
 		v->position = soup.positions[i];
-		v->he = mesh.halfEdges.end();
+		v->index = (int)mesh.vertices.size() - 1;
 		indexToVertex[i] = v;
 	}
 
@@ -297,12 +278,13 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 
 	for (int I = 0; I < (int)soup.indices.size(); I += 3) {
 		// create new face
-		FaceIter f = mesh.faces.insert(mesh.faces.end(), Face());
+		FaceIter f = mesh.faces.emplace(mesh.faces.end(), Face(&mesh));
+		f->index = (int)mesh.faces.size() - 1;
 
 		// create a halfedge for each edge of the newly created face
 		std::vector<HalfEdgeIter> halfEdges(3);
 		for (int J = 0; J < 3; J++) {
-			halfEdges[J] = mesh.halfEdges.insert(mesh.halfEdges.end(), HalfEdge());
+			halfEdges[J] = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
 			halfEdges[J]->index = (int)mesh.halfEdges.size() - 1;
 		}
 
@@ -315,28 +297,28 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 
 			// set the current halfedge's attributes
 			HalfEdgeIter h = halfEdges[J];
-			h->next = halfEdges[K];
-			h->prev = halfEdges[(J + 3 - 1) % 3];
+			h->setNext(halfEdges[K]);
+			h->setPrev(halfEdges[(J + 3 - 1) % 3]);
 			h->onBoundary = false;
 			hasFlipEdge[h->index] = 0;
 
 			// point the new halfedge and vertex i to each other
 			VertexIter v = indexToVertex[i];
-			h->vertex = v;
-			v->he = h;
+			h->setVertex(v);
+			v->setHalfEdge(h);
 
 			// point the new halfedge and face to each other
-			h->face = f;
-			f->he = h;
+			h->setFace(f);
+			f->setHalfEdge(h);
 
 			int eIndex = soup.table.getIndex(i, j);
 			if (edgeCount[eIndex] > 0) {
 				// if a halfedge between vertex i and j has been created in the past,
 				// then it is the flip halfedge of the current halfedge
 				HalfEdgeIter flip = existingHalfEdges[eIndex];
-				h->flip = flip;
-				flip->flip = h;
-				h->edge = flip->edge;
+				h->setFlip(flip);
+				flip->setFlip(h);
+				h->setEdge(flip->edge());
 
 				hasFlipEdge[h->index] = 1;
 				hasFlipEdge[flip->index] = 1;
@@ -344,9 +326,10 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 
 			} else {
 				// create an edge and set its halfedge
-				EdgeIter e = mesh.edges.insert(mesh.edges.end(), Edge());
-				h->edge = e;
-				e->he = h;
+				EdgeIter e = mesh.edges.emplace(mesh.edges.end(), Edge(&mesh));
+				e->index = (int)mesh.edges.size() - 1;
+				h->setEdge(e);
+				e->setHalfEdge(h);
 				e->isCuttable = isCuttableEdge[eIndex];
 
 				// record the newly created edge and halfedge from vertex i to j
@@ -356,6 +339,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 
 			// check for non-manifold edges
 			if (edgeCount[eIndex] > 2) {
+				mesh.status = Mesh::ErrorCode::nonManifoldEdges;
 				error = "Mesh has non-manifold edges.";
 				return false;
 			}
@@ -364,13 +348,13 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 
 	// create and insert boundary halfedges and "imaginary" faces for boundary cycles
 	// also create and insert corners
-	HalfEdgeIter end = mesh.halfEdges.end();
-	for (HalfEdgeIter h = mesh.halfEdges.begin(); h != end; h++) {
+	for (HalfEdgeIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
 		// if a halfedge has no flip halfedge, create a new face and
 		// link it the corresponding boundary cycle
 		if (!hasFlipEdge[h->index]) {
 			// create new face
-			FaceIter f = mesh.boundaries.insert(mesh.boundaries.end(), Face());
+			FaceIter f = mesh.boundaries.emplace(mesh.boundaries.end(), Face(&mesh));
+			f->index = (int)mesh.boundaries.size() - 1;
 
 			// walk along boundary cycle
 			std::vector<HalfEdgeIter> boundaryCycle;
@@ -378,31 +362,29 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 			HalfEdgeIter he = h;
 			do {
 				// create a new halfedge
-				HalfEdgeIter bH = mesh.halfEdges.insert(mesh.halfEdges.end(), HalfEdge());
+				HalfEdgeIter bH = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
 				bH->index = (int)mesh.halfEdges.size() - 1;
-				boundaryCycle.push_back(bH);
-
-				end = mesh.halfEdges.end();
+				boundaryCycle.emplace_back(bH);
 
 				// grab the next halfedge along the boundary that does not have a
 				// flip halfedge
-				HalfEdgeIter nextHe = he->next;
+				HalfEdgeIter nextHe = he->next();
 				while (hasFlipEdge[nextHe->index]) {
-					nextHe = nextHe->flip->next;
+					nextHe = nextHe->flip()->next();
 				}
 
 				// set the current halfedge's attributes
-				bH->vertex = nextHe->vertex;
-				bH->edge = he->edge;
+				bH->setVertex(nextHe->vertex());
+				bH->setEdge(he->edge());
 				bH->onBoundary = true;
 
 				// point the new halfedge and face to each other
-				bH->face = f;
-				f->he = bH;
+				bH->setFace(f);
+				f->setHalfEdge(bH);
 
 				// point the new halfedge and he to each other
-				bH->flip = he;
-				he->flip = bH;
+				bH->setFlip(he);
+				he->setFlip(bH);
 
 				// continue walk
 				he = nextHe;
@@ -411,32 +393,32 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 			// link the cycle of boundary halfedges together
 			int n = (int)boundaryCycle.size();
 			for (int i = 0; i < n; i++) {
-				boundaryCycle[i]->next = boundaryCycle[(i + n - 1) % n]; // boundary halfedges are linked in clockwise order
-				boundaryCycle[i]->prev = boundaryCycle[(i + 1) % n];
+				boundaryCycle[i]->setNext(boundaryCycle[(i + n - 1) % n]); // boundary halfedges are linked in clockwise order
+				boundaryCycle[i]->setPrev(boundaryCycle[(i + 1) % n]);
 				hasFlipEdge[boundaryCycle[i]->index] = 1;
-				hasFlipEdge[boundaryCycle[i]->flip->index] = 1;
+				hasFlipEdge[boundaryCycle[i]->flip()->index] = 1;
 			}
 		}
 
 		// point the newly created corner and its halfedge to each other
 		if (!h->onBoundary) {
-			CornerIter c = mesh.corners.insert(mesh.corners.end(), Corner());
-			c->he = h;
-			h->corner = c;
+			CornerIter c = mesh.corners.emplace(mesh.corners.end(), Corner(&mesh));
+			c->index = (int)mesh.corners.size() - 1;
+			c->setHalfEdge(h);
+			h->setCorner(c);
 		}
 	}
 
-	// index mesh elements
-	indexElements(mesh);
-
 	// check if mesh has isolated vertices
 	if (hasIsolatedVertices(mesh)) {
+		mesh.status = Mesh::ErrorCode::isolatedVertices;
 		error = "Mesh has isolated vertices.";
 		return false;
 	}
 
 	// check if mesh has non-manifold vertices
 	if (hasNonManifoldVertices(mesh)) {
+		mesh.status = Mesh::ErrorCode::nonManifoldVertices;
 		error = "Mesh has non manifold vertices.";
 		return false;
 	}
@@ -444,8 +426,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	return true;
 }
 
-bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
-				  std::string& error)
+bool MeshIO::read(std::istringstream& in, Model& model, std::string& error)
 {
 	PolygonSoup soup;
 	std::string line;
@@ -461,7 +442,7 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 		if (token == "v") {
 			double x, y, z;
 			ss >> x >> y >> z;
-			soup.positions.push_back(Vector(x, y, z));
+			soup.positions.emplace_back(Vector(x, y, z));
 
 			if (seenFace) {
 				nVertices = 0;
@@ -489,19 +470,19 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 					vertexCount++;
 					if (vertexCount > 3) {
 						// triangulate polygon if vertexCount > 3
-						soup.indices.push_back(rootIndex);
-						soup.indices.push_back(prevIndex);
-						soup.indices.push_back(index);
+						soup.indices.emplace_back(rootIndex);
+						soup.indices.emplace_back(prevIndex);
+						soup.indices.emplace_back(index);
 
 						// tag edge as uncuttable
 						int i = rootIndex;
 						int j = prevIndex;
 						if (i > j) std::swap(i, j);
 						std::pair<int, int> edge(i, j);
-						uncuttableEdges.insert(edge);
+						uncuttableEdges.emplace(edge);
 
 					} else {
-						soup.indices.push_back(index);
+						soup.indices.emplace_back(index);
 					}
 
 					prevIndex = index;
@@ -523,10 +504,11 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<int>> isCuttableEdgeSoups;
-	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups);
+	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups,
+					   model.modelToMeshMap, model.meshToModelMap);
 
 	// build halfedge meshes
-	model.resize(soups.size());
+	model.meshes.resize(soups.size());
 	for (int i = 0; i < (int)soups.size(); i++) {
 		if (!buildMesh(soups[i], isCuttableEdgeSoups[i], model[i], error)) {
 			return false;
@@ -536,12 +518,12 @@ bool MeshIO::read(std::istringstream& in, std::vector<Mesh>& model,
 	return true;
 }
 
-Vector MeshIO::normalize(std::vector<Mesh>& model)
+void MeshIO::normalize(Model& model)
 {
 	// compute center of mass
 	Vector cm;
 	int nVertices = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			cm += v->position;
 			nVertices++;
@@ -550,8 +532,8 @@ Vector MeshIO::normalize(std::vector<Mesh>& model)
 	cm /= nVertices;
 
 	// translate to origin and determine radius
-	double radius = 0.0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	double radius = 1e-8;
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			v->position -= cm;
 			radius = std::max(radius, v->position.norm());
@@ -559,19 +541,17 @@ Vector MeshIO::normalize(std::vector<Mesh>& model)
 	}
 
 	// rescale to unit radius
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		for (VertexIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			v->position /= radius;
 		}
 
 		model[i].radius = radius;
+		model[i].cm = cm;
 	}
-
-	return cm;
 }
 
-bool MeshIO::read(const std::string& fileName, std::vector<Mesh>& model,
-				  std::string& error)
+bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	std::ifstream in(fileName.c_str());
 	std::istringstream buffer;
@@ -625,7 +605,7 @@ void writeUV(std::ofstream& out, Vector uv, bool mapToSphere, double sphereRadiu
 							 std::to_string(uv.y) + "\n");
 }
 
-void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
+void MeshIO::write(std::ofstream& out, Model& model,
 				   const std::vector<bool>& mappedToSphere, bool normalize)
 {
 	// pack
@@ -635,9 +615,21 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 	BinPacking::pack(model, mappedToSphere, originalCenters, newCenters,
 					 flippedBins, modelMinBounds, modelMaxBounds);
 
-	int nVertices = 0;
+	// write vertex positions
+	for (int i = 0; i < model.nVertices(); i++) {
+		std::pair<int, int> vData = model.localVertexIndex(i);
+		const Mesh& mesh = model[vData.first];
+		VertexCIter v = mesh.vertices.begin() + vData.second;
+
+		Vector p = v->position*mesh.radius + mesh.cm;
+		writeString(out, "v " + std::to_string(p.x) + " " +
+								std::to_string(p.y) + " " +
+								std::to_string(p.z) + "\n");
+	}
+
+	// write uvs and indices
 	int nUvs = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// compute uv radius and shift
 		Vector minExtent(modelMinBounds.x, modelMinBounds.y);
 		double dx = modelMaxBounds.x - minExtent.x;
@@ -655,30 +647,21 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 		}
 
 		// write vertices and interior uvs
-		int vertexCount = 0;
 		int uvCount = 0;
 		HalfEdgeData<int> uvIndexMap(model[i]);
 
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
-			if (v->referenceIndex == -1) {
-				Vector p = v->position*model[i].radius;
-				writeString(out, "v " + std::to_string(p.x) + " " +
-										std::to_string(p.y) + " " +
-										std::to_string(p.z) + "\n");
-				vertexCount++;
-			}
-
 			if (!v->onBoundary()) {
 				writeUV(out, v->wedge()->uv, mappedToSphere[i], sphereRadius,
 						model[i].radius, originalCenters[i], newCenters[i],
 						minExtent, extent, flippedBins[i], normalize);
 
-				HalfEdgeCIter he = v->he;
+				HalfEdgeCIter he = v->halfEdge();
 				do {
-					uvIndexMap[he->next] = uvCount;
+					uvIndexMap[he->next()] = uvCount;
 
-					he = he->flip->next;
-				} while (he != v->he);
+					he = he->flip()->next();
+				} while (he != v->halfEdge());
 
 				uvCount++;
 			}
@@ -690,12 +673,12 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 					model[i].radius, originalCenters[i], newCenters[i],
 					minExtent, extent, flippedBins[i], normalize);
 
-			HalfEdgeCIter he = w->he->prev;
+			HalfEdgeCIter he = w->halfEdge()->prev();
 			do {
-				uvIndexMap[he->next] = uvCount;
+				uvIndexMap[he->next()] = uvCount;
 
-				if (he->edge->onCut) break;
-				he = he->flip->next;
+				if (he->edge()->onCut) break;
+				he = he->flip()->next();
 			} while (!he->onBoundary);
 
 			uvCount++;
@@ -712,21 +695,21 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 
 				writeString(out, "f");
 
-				HalfEdgeCIter he = f->he;
-				while (!he->edge->isCuttable) he = he->next;
+				HalfEdgeCIter he = f->halfEdge()->next();
+				while (!he->edge()->isCuttable) he = he->next();
 				HalfEdgeCIter fhe = he;
 				std::unordered_map<int, bool> seenUncuttableEdges;
 
 				do {
-					VertexCIter v = he->vertex;
+					VertexCIter v = he->vertex();
 					int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
-					writeString(out, " " + std::to_string(nVertices + vIndex + 1) + "/" +
-										   std::to_string(nUvs + uvIndexMap[he->next] + 1));
+					writeString(out, " " + std::to_string(model.globalVertexIndex(i, vIndex) + 1) + "/" +
+										   std::to_string(nUvs + uvIndexMap[he->next()] + 1));
 
-					he = he->next;
-					while (!he->edge->isCuttable) {
-						seenUncuttableEdges[he->edge->index] = true;
-						he = he->flip->next;
+					he = he->next();
+					while (!he->edge()->isCuttable) {
+						seenUncuttableEdges[he->edge()->index] = true;
+						he = he->flip()->next();
 					}
 
 				} while (he != fhe);
@@ -737,12 +720,11 @@ void MeshIO::write(std::ofstream& out, std::vector<Mesh>& model,
 			}
 		}
 
-		nVertices += vertexCount;
 		nUvs += uvCount;
 	}
 }
 
-bool MeshIO::write(const std::string& fileName, std::vector<Mesh>& model,
+bool MeshIO::write(const std::string& fileName, Model& model,
 				   const std::vector<bool>& mappedToSphere, bool normalize)
 {
 	std::ofstream out(fileName.c_str());

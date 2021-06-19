@@ -21,13 +21,13 @@ void Generators::buildPrimalSpanningTree(Mesh& mesh,
 		VertexCIter u = q.front();
 		q.pop();
 
-		HalfEdgeCIter he = u->he;
+		HalfEdgeCIter he = u->halfEdge();
 		do {
-			HalfEdgeCIter flip = he->flip;
-			EdgeCIter e = he->edge;
+			HalfEdgeCIter flip = he->flip();
+			EdgeCIter e = he->edge();
 
 			if (e->isCuttable) {
-				VertexCIter v = flip->vertex;
+				VertexCIter v = flip->vertex();
 
 				if (primalParent[v] == v && v != root) {
 					primalParent[v] = u;
@@ -35,17 +35,17 @@ void Generators::buildPrimalSpanningTree(Mesh& mesh,
 				}
 			}
 
-			he = flip->next;
-		} while (he != u->he);
+			he = flip->next();
+		} while (he != u->halfEdge());
 	}
 }
 
 bool Generators::inPrimalSpanningTree(EdgeCIter e,
 									  const VertexData<VertexCIter>& primalParent)
 {
-	HalfEdgeCIter he = e->he;
-	VertexCIter u = he->vertex;
-	VertexCIter v = he->flip->vertex;
+	HalfEdgeCIter he = e->halfEdge();
+	VertexCIter u = he->vertex();
+	VertexCIter v = he->flip()->vertex();
 
 	return primalParent[u] == v || primalParent[v] == u;
 }
@@ -65,19 +65,19 @@ void Generators::buildDualSpanningTree(Mesh& mesh,
 			continue;
 		}
 
-		HalfEdgeCIter he = f->he;
-		while (!he->edge->isCuttable) he = he->next;
+		HalfEdgeCIter he = f->halfEdge();
+		while (!he->edge()->isCuttable) he = he->next();
 		HalfEdgeCIter fhe = he;
 		std::unordered_map<int, bool> seenUncuttableEdges;
 
 		do {
-			ngon[he->face] = f;
-			ngonHalfEdges[f].push_back(he);
+			ngon[he->face()] = f;
+			ngonHalfEdges[f].emplace_back(he);
 
-			he = he->next;
-			while (!he->edge->isCuttable) {
-				seenUncuttableEdges[he->edge->index] = true;
-				he = he->flip->next;
+			he = he->next();
+			while (!he->edge()->isCuttable) {
+				seenUncuttableEdges[he->edge()->index] = true;
+				he = he->flip()->next();
 			}
 
 		} while (he != fhe);
@@ -98,10 +98,10 @@ void Generators::buildDualSpanningTree(Mesh& mesh,
 		const std::vector<HalfEdgeCIter>& halfEdges = ngonHalfEdges[f];
 		for (int i = 0; i < (int)halfEdges.size(); i++) {
 			HalfEdgeCIter he = halfEdges[i];
-			EdgeCIter e = he->edge;
+			EdgeCIter e = he->edge();
 
 			if (!inPrimalSpanningTree(e, primalParent)) {
-				FaceCIter g = ngon[he->flip->face];
+				FaceCIter g = ngon[he->flip()->face()];
 
 				if (dualParent[g] == g && g != root) {
 					dualParent[g] = f;
@@ -116,27 +116,27 @@ bool Generators::inDualSpanningTree(EdgeCIter e,
 									const FaceData<FaceCIter>& ngon,
 									const FaceData<FaceCIter>& dualParent)
 {
-	HalfEdgeCIter he = e->he;
-	FaceCIter f = ngon[he->face];
-	FaceCIter g = ngon[he->flip->face];
+	HalfEdgeCIter he = e->halfEdge();
+	FaceCIter f = ngon[he->face()];
+	FaceCIter g = ngon[he->flip()->face()];
 
 	return dualParent[f] == g || dualParent[g] == f;
 }
 
 EdgeIter Generators::sharedEdge(VertexCIter u, VertexCIter v)
 {
-	HalfEdgeCIter he = u->he;
+	HalfEdgeCIter he = u->halfEdge();
 
 	do {
-		if (he->flip->vertex == v) {
-			return he->edge;
+		if (he->flip()->vertex() == v) {
+			return he->edge();
 		}
 
-		he = he->flip->next;
-	} while (he != u->he);
+		he = he->flip()->next();
+	} while (he != u->halfEdge());
 
 	std::cerr << "Code should not reach here!" << std::endl;
-	return he->edge;
+	return he->edge();
 }
 
 void Generators::createBoundary(Mesh& mesh)
@@ -153,8 +153,8 @@ void Generators::createBoundary(Mesh& mesh)
 	EdgeData<int> seenEdge(mesh, 0);
 	for (WedgeIter w: mesh.cutBoundary()) {
 		VertexIter v = w->vertex();
-		HalfEdgeIter he = w->he->next;
-		EdgeIter e = he->edge;
+		HalfEdgeIter he = w->halfEdge()->next();
+		EdgeIter e = he->edge();
 
 		// insert vertex
 		if (!seenVertex[v]) {
@@ -163,7 +163,7 @@ void Generators::createBoundary(Mesh& mesh)
 		} else {
 			int index = v->index;
 			const Vector& position = v->position;
-			v = mesh.vertices.insert(mesh.vertices.end(), Vertex());
+			v = mesh.vertices.emplace(mesh.vertices.end(), Vertex(&mesh));
 			v->position = position;
 			v->index = nVertices + nV++;
 			v->referenceIndex = index;
@@ -174,20 +174,20 @@ void Generators::createBoundary(Mesh& mesh)
 			seenEdge[e] = 1;
 
 		} else {
-			e = mesh.edges.insert(mesh.edges.end(), Edge());
+			e = mesh.edges.emplace(mesh.edges.end(), Edge(&mesh));
 			e->index = nEdges + nE++;
 		}
 
-		HalfEdgeIter newHe = mesh.halfEdges.insert(mesh.halfEdges.end(), HalfEdge());
+		HalfEdgeIter newHe = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
 		newHe->index = nHalfEdges1 + nHe++;
-		newHe->vertex = v;
-		newHe->edge = e;
-		newHe->flip = he;
+		newHe->setVertex(v);
+		newHe->setEdge(e);
+		newHe->setFlip(he);
 	}
 
 	// insert boundary face
-	FaceIter newF = mesh.boundaries.insert(mesh.boundaries.end(), Face());
-	newF->he = mesh.halfEdges.begin() + nHalfEdges1;
+	FaceIter newF = mesh.boundaries.emplace(mesh.boundaries.end(), Face(&mesh));
+	newF->setHalfEdge(mesh.halfEdges.begin() + nHalfEdges1);
 	newF->index = 0;
 
 	// update connectivity
@@ -199,37 +199,37 @@ void Generators::createBoundary(Mesh& mesh)
 		HalfEdgeIter newPrev = mesh.halfEdges.begin() + i;
 		HalfEdgeIter newHe = mesh.halfEdges.begin() + j;
 		HalfEdgeIter newNext = mesh.halfEdges.begin() + k;
-		HalfEdgeIter flip = newHe->flip;
+		HalfEdgeIter flip = newHe->flip();
 
 		// update vertex connectivity
-		VertexIter v = newHe->vertex;
-		v->he = newHe;
-		HalfEdgeIter h = flip->next;
+		VertexIter v = newHe->vertex();
+		v->setHalfEdge(newHe);
+		HalfEdgeIter h = flip->next();
 		do {
-			h->vertex = v;
+			h->setVertex(v);
 
-			if (h->edge->onCut) break;
-			h = h->flip->next;
+			if (h->edge()->onCut) break;
+			h = h->flip()->next();
 		} while (true);
 
 		// update edge connectivity
-		EdgeIter e = newHe->edge;
-		e->he = flip;
+		EdgeIter e = newHe->edge();
+		e->setHalfEdge(flip);
 		e->onGenerator = true;
 
 		// update face connectivity
-		newHe->face = newF;
+		newHe->setFace(newF);
 
 		// update halfedge connectivity
-		flip->flip = newHe;
-		newHe->prev = newPrev;
-		newHe->next = newNext;
+		flip->setFlip(newHe);
+		newHe->setPrev(newPrev);
+		newHe->setNext(newNext);
 		newHe->onBoundary = true;
 	}
 
 	// assign halfedge edges and remove cut label from all edges
 	for (EdgeIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
-		e->he->edge = e;
+		e->halfEdge()->setEdge(e);
 		e->onCut = false;
 	}
 }
@@ -247,22 +247,22 @@ void Generators::compute(Mesh& mesh)
 		if (!inPrimalSpanningTree(e, primalParent) &&
 			!inDualSpanningTree(e, ngon, dualParent) &&
 			e->isCuttable) {
-			HalfEdgeCIter he = e->he;
+			HalfEdgeCIter he = e->halfEdge();
 
 			// track vertices back to the root
 			std::vector<EdgeIter> temp1;
-			VertexCIter u = he->vertex;
+			VertexCIter u = he->vertex();
 			while (primalParent[u] != u) {
 				VertexCIter v = primalParent[u];
-				temp1.push_back(sharedEdge(u, v));
+				temp1.emplace_back(sharedEdge(u, v));
 				u = v;
 			}
 
 			std::vector<EdgeIter> temp2;
-			u = he->flip->vertex;
+			u = he->flip()->vertex();
 			while (primalParent[u] != u) {
 				VertexCIter v = primalParent[u];
-				temp2.push_back(sharedEdge(u, v));
+				temp2.emplace_back(sharedEdge(u, v));
 				u = v;
 			}
 

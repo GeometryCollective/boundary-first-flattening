@@ -36,7 +36,7 @@ bool parseArg(const std::string& arg, const std::string& searchStr, std::string&
 }
 
 void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string& outputPath,
-		   	   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs)
+			   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs)
 {
 	if (argc < 3) {
 		// input and/or output path not specified
@@ -64,12 +64,12 @@ void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string
 	}
 }
 
-void loadModel(const std::string& inputPath, std::vector<Mesh>& model,
+void loadModel(const std::string& inputPath, Model& model,
 			   std::vector<bool>& surfaceIsClosed)
 {
 	std::string error;
 	if (MeshIO::read(inputPath, model, error)) {
-		int nMeshes = (int)model.size();
+		int nMeshes = model.size();
 		surfaceIsClosed.resize(nMeshes, false);
 
 		for (int i = 0; i < nMeshes; i++) {
@@ -113,10 +113,10 @@ void loadModel(const std::string& inputPath, std::vector<Mesh>& model,
 	}
 }
 
-void flatten(std::vector<Mesh>& model, const std::vector<bool>& surfaceIsClosed,
+void flatten(Model& model, const std::vector<bool>& surfaceIsClosed,
 			 int nCones, bool flattenToDisk, bool mapToSphere)
 {
-	int nMeshes = (int)model.size();
+	int nMeshes = model.size();
 	for (int i = 0; i < nMeshes; i++) {
 		Mesh& mesh = model[i];
 		BFF bff(mesh);
@@ -124,9 +124,15 @@ void flatten(std::vector<Mesh>& model, const std::vector<bool>& surfaceIsClosed,
 		if (nCones > 0) {
 			std::vector<VertexIter> cones;
 			DenseMatrix coneAngles(bff.data->iN);
-			ConePlacement::findConesAndPrescribeAngles(nCones, cones, coneAngles, bff.data, mesh);
-			Cutter::cut(cones, mesh);
-			bff.flattenWithCones(coneAngles, true);
+			int S = std::min(nCones, (int)mesh.vertices.size() - bff.data->bN);
+
+			if (ConePlacement::findConesAndPrescribeAngles(S, cones, coneAngles, bff.data, mesh)
+				== ConePlacement::ErrorCode::ok) {
+				if (!surfaceIsClosed[i] || cones.size() > 0) {
+					Cutter::cut(cones, mesh);
+					bff.flattenWithCones(coneAngles, true);
+				}
+			}
 
 		} else {
 			if (surfaceIsClosed[i]) {
@@ -151,11 +157,11 @@ void flatten(std::vector<Mesh>& model, const std::vector<bool>& surfaceIsClosed,
 	}
 }
 
-void writeModelUVs(const std::string& outputPath, std::vector<Mesh>& model,
+void writeModelUVs(const std::string& outputPath, Model& model,
 				   const std::vector<bool>& surfaceIsClosed, bool mapToSphere,
 				   bool normalizeUVs)
 {
-	int nMeshes = (int)model.size();
+	int nMeshes = model.size();
 	std::vector<bool> mappedToSphere(nMeshes, false);
 	for (int i = 0; i < nMeshes; i++) {
 		if (surfaceIsClosed[i]) {
@@ -181,12 +187,12 @@ int main(int argc, const char *argv[]) {
 			  flattenToDisk, mapToSphere, normalizeUVs);
 
 	// load model
-	std::vector<Mesh> model;
+	Model model;
 	std::vector<bool> surfaceIsClosed;
 	loadModel(inputPath, model, surfaceIsClosed);
 
 	// set nCones to 8 for closed surfaces`
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		if (surfaceIsClosed[i] && !mapToSphere && nCones < 3) {
 			std::cout << "Setting nCones to 8." << std::endl;
 			nCones = 8;

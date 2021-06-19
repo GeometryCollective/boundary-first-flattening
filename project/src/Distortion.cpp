@@ -110,31 +110,31 @@ Vector hsv(double h, double s, double v)
 	return Vector(r, g, b);
 }
 
-Vector Distortion::computeQuasiConformalError(const std::vector<Mesh>& model)
+Vector Distortion::computeQuasiConformalError(const Model& model)
 {
 	double totalQc = 0.0;
 	double minQc = std::numeric_limits<double>::infinity();
 	double maxQc = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 
 	distortion.clear();
 	distortion.reserve(model.size());
 
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
-		distortion.push_back(FaceData<double>(model[i]));
+		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);
 
 		for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 			int j = 0;
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				p[j] = he->vertex->position;
-				q[j] = he->next->corner->uv;
+				p[j] = he->vertex()->position;
+				q[j] = he->next()->corner()->uv;
 				j++;
 
-				he = he->next;
-			} while(he != f->he);
+				he = he->next();
+			} while(he != f->halfEdge());
 
 			double qc = bff::computeQuasiConformalError(p, q);
 			double area = f->area();
@@ -696,19 +696,19 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 	double totalU = 0.0;
 	double minU = std::numeric_limits<double>::infinity();
 	double maxU = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 	std::vector<Vector> p(3), q(3);
 
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		int i = 0;
-		HalfEdgeCIter he = f->he;
+		HalfEdgeCIter he = f->halfEdge();
 		do {
-			p[i] = he->vertex->position;
-			q[i] = he->next->corner->uv;
+			p[i] = he->vertex()->position;
+			q[i] = he->next()->corner()->uv;
 			i++;
 
-			he = he->next;
-		} while(he != f->he);
+			he = he->next();
+		} while(he != f->halfEdge());
 
 		double u = bff::computeAreaScaling(p, q);
 		maxU = std::max(maxU, u);
@@ -721,31 +721,31 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 	return Vector(minU, maxU, totalU/totalArea);
 }
 
-Vector Distortion::computeAreaScaling(const std::vector<Mesh>& model)
+Vector Distortion::computeAreaScaling(const Model& model)
 {
 	double totalU = 0.0;
 	double minU = std::numeric_limits<double>::infinity();
 	double maxU = -std::numeric_limits<double>::infinity();
-	double totalArea = 0.0;
+	double totalArea = 1e-8;
 
 	distortion.clear();
 	distortion.reserve(model.size());
 
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		const std::vector<Face>& faces = model[i].faces;
-		distortion.push_back(FaceData<double>(model[i]));
+		distortion.emplace_back(FaceData<double>(model[i]));
 		std::vector<Vector> p(3), q(3);
 
 		for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 			int j = 0;
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				p[j] = he->vertex->position;
-				q[j] = he->next->corner->uv;
+				p[j] = he->vertex()->position;
+				q[j] = he->next()->corner()->uv;
 				j++;
 
-				he = he->next;
-			} while(he != f->he);
+				he = he->next();
+			} while(he != f->halfEdge());
 
 			double u = bff::computeAreaScaling(p, q);
 			maxU = std::max(maxU, u);

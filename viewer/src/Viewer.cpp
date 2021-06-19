@@ -6,7 +6,6 @@
 #include "Cutter.h"
 #include "Distortion.h"
 #include "ShadersSource.h"
-#include "Eigen/Eigenvalues"
 #include <iomanip>
 #include <limits>
 
@@ -60,7 +59,7 @@ bool Viewer::ctrlClick = false;
 bool Viewer::altClick = false;
 
 std::string Viewer::objPath;
-std::vector<Mesh> Viewer::model;
+Model Viewer::model;
 std::vector<ModelState> Viewer::modelStates;
 Mesh* Viewer::mesh = NULL;
 ModelState* Viewer::state = NULL;
@@ -189,7 +188,7 @@ void Viewer::initGui()
 		if (file.empty()) return;
 		try {
 			std::vector<bool> mappedToSphere;
-			for (int i = 0; i < (int)model.size(); i++) {
+			for (int i = 0; i < model.size(); i++) {
 				mappedToSphere.push_back(modelStates[i].mappedToSphere);
 			}
 
@@ -202,7 +201,7 @@ void Viewer::initGui()
 		}
 	});
 
-	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Export Normalized UVs");
+	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Export UVs to [0, 1]");
 	exportNormalizedUVsCheckBox->setFixedHeight(14);
 
 	// plot
@@ -475,7 +474,7 @@ void Viewer::initShaders()
 
 void Viewer::initCameras()
 {
-	for (int i = 0; i < 2; i++) cameras.push_back(std::shared_ptr<Camera>(new Camera(EYE)));
+	for (int i = 0; i < 2; i++) cameras.emplace_back(std::shared_ptr<Camera>(new Camera(EYE)));
 }
 
 void Viewer::initTransforms()
@@ -532,7 +531,7 @@ void Viewer::initModel()
 	std::string error;
 	if ((loadedModel = MeshIO::read(objPath, model, error))) {
 		modelStates.resize(model.size());
-		for (int i = 0; i < (int)model.size(); i++) {
+		for (int i = 0; i < model.size(); i++) {
 			if (model[i].boundaries.size() >= 1) {
 				// mesh has boundaries
 				int eulerPlusBoundaries = model[i].eulerCharacteristic() + (int)model[i].boundaries.size();
@@ -595,9 +594,9 @@ void Viewer::initRenderMeshes()
 	if (loadedModel) {
 		int nVertices = 0;
 
-		for (int i = 0; i < (int)model.size(); i++) {
+		for (int i = 0; i < model.size(); i++) {
 			for (int j = 0; j < 2; j++) {
-				modelStates[i].renderMeshes.push_back(std::shared_ptr<RenderMesh>(new RenderMesh()));
+				modelStates[i].renderMeshes.emplace_back(std::shared_ptr<RenderMesh>(new RenderMesh()));
 			}
 
 			// initialize attributes for both rendermeshes
@@ -632,9 +631,9 @@ void Viewer::initRenderMeshes()
 					// set positions, normals and colors for the 1st rendermesh
 					// and barycenters for both rendermeshes
 					int j = 0;
-					HalfEdgeCIter h = f->he;
+					HalfEdgeCIter h = f->halfEdge();
 					do {
-						VertexCIter v = h->vertex;
+						VertexCIter v = h->vertex();
 						Vector normal = v->normal();
 						for (int k = 0; k < 3; k++) {
 							modelStates[i].renderMeshes[0]->positions->buffer[index + j][k] = v->position[k];
@@ -644,8 +643,8 @@ void Viewer::initRenderMeshes()
 						}
 
 						j++;
-						h = h->next;
-					} while (h != f->he);
+						h = h->next();
+					} while (h != f->halfEdge());
 				}
 			}
 
@@ -690,14 +689,16 @@ void Viewer::initRenderMeshes()
 
 void Viewer::initSpline()
 {
-	// place 4 handles on the boundary
+	// place at most 4 handles on the boundary
 	int n = 0;
 	int nHandles = 0;
-	int bN4 = (int)floor(state->bff->data->bN/4);
+	int maxHandles = std::max(1, std::min(state->bff->data->bN, 4));
+	int modHandles = (int)floor(state->bff->data->bN/maxHandles);
+
 	for (WedgeIter w: mesh->cutBoundary()) {
 		w->knot = state->spline.knots.end();
 
-		if (n%bN4 == 0 && nHandles < 4) {
+		if (n%modHandles == 0 && nHandles < maxHandles) {
 			addKnot(w);
 			nHandles++;
 		}
@@ -709,7 +710,7 @@ void Viewer::initSpline()
 void Viewer::initBFF()
 {
 	if (loadedModel) {
-		for (int i = (int)model.size() - 1; i >= 0; i--) {
+		for (int i = model.size() - 1; i >= 0; i--) {
 			mesh = &model[i];
 			state = &modelStates[i];
 
@@ -853,14 +854,14 @@ void Viewer::updateUniforms(int index, int width, int height)
 
 void Viewer::updateRenderMeshes()
 {
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// set uvs for the 1st rendermesh and positions and colors for 2nd rendermesh
 		std::shared_ptr<Buffer> uvs = modelStates[i].renderMeshes[0]->uvs;
 		for (FaceCIter f = model[i].faces.begin(); f != model[i].faces.end(); f++) {
 			if (!f->fillsHole) {
 				int index = 3*f->index;
 
-				WedgeCIter w0 = f->he->wedge();
+				WedgeCIter w0 = f->halfEdge()->wedge();
 				WedgeCIter w1 = w0->next();
 				WedgeCIter w2 = w1->next();
 				const Vector& p0 = w0->uv;
@@ -869,9 +870,9 @@ void Viewer::updateRenderMeshes()
 				double s = cross(p1 - p0, p2 - p0).z;
 
 				int j = 0;
-				HalfEdgeCIter h = f->he;
+				HalfEdgeCIter h = f->halfEdge();
 				do {
-					WedgeCIter w = h->next->wedge();
+					WedgeCIter w = h->next()->wedge();
 					glm::vec3 color;
 
 					if (plotType == PlotType::constant) {
@@ -903,8 +904,8 @@ void Viewer::updateRenderMeshes()
 					}
 
 					j++;
-					h = h->next;
-				} while (h != f->he);
+					h = h->next();
+				} while (h != f->halfEdge());
 			}
 		}
 
@@ -953,13 +954,13 @@ void Viewer::updateSphere(std::shared_ptr<RenderMesh> sphere, const glm::vec3& c
 			glm::vec3 p10 = center + radius*n10;
 			glm::vec3 p11 = center + radius*n11;
 
-			sphere->positions->buffer.push_back(p00);
-			sphere->positions->buffer.push_back(p01);
-			sphere->positions->buffer.push_back(p10);
-			sphere->positions->buffer.push_back(p10);
-			sphere->positions->buffer.push_back(p01);
-			sphere->positions->buffer.push_back(p11);
-			for (int k = 0; k < 6; k++) sphere->colors->buffer.push_back(color);
+			sphere->positions->buffer.emplace_back(p00);
+			sphere->positions->buffer.emplace_back(p01);
+			sphere->positions->buffer.emplace_back(p10);
+			sphere->positions->buffer.emplace_back(p10);
+			sphere->positions->buffer.emplace_back(p01);
+			sphere->positions->buffer.emplace_back(p11);
+			for (int k = 0; k < 6; k++) sphere->colors->buffer.emplace_back(color);
 
 			theta += dTheta;
 		}
@@ -981,7 +982,7 @@ void Viewer::addSphere(std::vector<std::shared_ptr<RenderMesh>>& spheres,
 {
 	std::shared_ptr<RenderMesh> sphere(new RenderMesh());
 	updateSphere(sphere, center, color);
-	spheres.push_back(sphere);
+	spheres.emplace_back(sphere);
 }
 
 void Viewer::updateLine(std::shared_ptr<RenderMesh> line, const glm::vec3& color, float width,
@@ -1002,7 +1003,7 @@ void Viewer::updateLine(std::shared_ptr<RenderMesh> line, const glm::vec3& color
 	glm::vec3 p11 = a - width*n;
 
 	line->positions->buffer = {p00, p01, p10, p00, p10, p11};
-	for (int k = 0; k < 6; k++) line->colors->buffer.push_back(color);
+	for (int k = 0; k < 6; k++) line->colors->buffer.emplace_back(color);
 	line->update({POSITION, COLOR});
 }
 
@@ -1012,7 +1013,7 @@ void Viewer::addLine(std::vector<std::shared_ptr<RenderMesh>>& lines,
 {
 	std::shared_ptr<RenderMesh> line(new RenderMesh());
 	updateLine(line, color, width, x1, y1, x2, y2, z);
-	lines.push_back(line);
+	lines.emplace_back(line);
 }
 
 void Viewer::updateCut()
@@ -1025,11 +1026,11 @@ void Viewer::updateCut()
 	state->cut->colors = std::shared_ptr<Buffer>(new Buffer());
 	for (EdgeCIter e = mesh->edges.begin(); e != mesh->edges.end(); e++) {
 		if (e->onCut || e->onGenerator) {
-			HalfEdgeCIter he = e->he;
+			HalfEdgeCIter he = e->halfEdge();
 
-			Vector n = 0.5*(he->face->normal() + he->flip->face->normal());
-			Vector a = he->vertex->position + 0.001*n;
-			Vector b = he->flip->vertex->position + 0.001*n;
+			Vector n = 0.5*(he->face()->normal() + he->flip()->face()->normal());
+			Vector a = he->vertex()->position + 0.001*n;
+			Vector b = he->flip()->vertex()->position + 0.001*n;
 			Vector u = b - a;
 			Vector v = cross(u, n);
 			v.normalize();
@@ -1042,8 +1043,8 @@ void Viewer::updateCut()
 			std::vector<Vector> p = {p00, p01, p10, p00, p10, p11};
 
 			for (int i = 0; i < 6; i++) {
-				state->cut->positions->buffer.push_back(glm::vec3(p[i].x, p[i].y, p[i].z));
-				state->cut->colors->buffer.push_back(red);
+				state->cut->positions->buffer.emplace_back(glm::vec3(p[i].x, p[i].y, p[i].z));
+				state->cut->colors->buffer.emplace_back(red);
 			}
 		}
 	}
@@ -1204,25 +1205,25 @@ void Viewer::addKnot(WedgeIter w)
 	if (w->knot == state->spline.knots.end()) {
 		double L = 0.0;
 		for (WedgeCIter w: mesh->cutBoundary()) {
-			L += w->he->next->edge->length();
+			L += w->halfEdge()->next()->edge()->length();
 		}
 
 		double l = 0.0;
 		for (WedgeCIter ww: mesh->cutBoundary()) {
 			if (w == ww) break;
-			l += ww->he->next->edge->length();
+			l += ww->halfEdge()->next()->edge()->length();
 		}
 
 		double s = 2*M_PI*l/L;
 		w->knot = state->spline.addKnot(s, state->spline.evaluate(s));
 		const Vector& uv = w->uv;
-		Vector scaledT = 0.25*exp(scaling(w))*tangent(w);
+		Vector scaledT = 0.25*exp(w->scaling())*w->tangent();
 
 		addSphere(state->splineHandles, glm::vec3(uv.x, uv.y, uv.z), orange);
 		addLine(state->splineLines, orange, 0.005, uv.x, uv.y, uv.x + scaledT.x, uv.y + scaledT.y, uv.z);
 		addLine(state->splineLines, orange, 0.005, uv.x, uv.y, uv.x - scaledT.x, uv.y - scaledT.y, uv.z);
 
-		state->knots.push_back(w);
+		state->knots.emplace_back(w);
 	}
 
 	state->selectedKnot = w;
@@ -1418,7 +1419,7 @@ void Viewer::placeCones(int S)
 				const Vector& p = v->position;
 				addSphere(handle.sphere3D, glm::vec3(p.x, p.y, p.z), yellow);
 				addSphere(handle.sphereUV, glm::vec3(uv.x, uv.y, uv.z), yellow);
-				state->handles.push_back(handle);
+				state->handles.emplace_back(handle);
 			}
 		}
 
@@ -1458,13 +1459,16 @@ void Viewer::normalizeConeAngles()
 
 void Viewer::setDefaultBoundaryAngles()
 {
-	// place 4 handles on the boundary
+	// place at most 4 handles on the boundary
 	int n = 0;
 	int nHandles = 0;
-	int bN4 = (int)floor(state->bff->data->bN/4);
+	int maxHandles = std::max(1, std::min(state->bff->data->bN, 4));
+	int modHandles = (int)floor(state->bff->data->bN/maxHandles);
+	double angle = 2.0/maxHandles;
+
 	for (WedgeIter w: mesh->cutBoundary()) {
-		if (n%bN4 == 0 && nHandles < 4) {
-			addVertexHandle(w->vertex(), 0.5);
+		if (n%modHandles == 0 && nHandles < maxHandles) {
+			addVertexHandle(w->vertex(), angle);
 			nHandles++;
 		}
 
@@ -1476,32 +1480,10 @@ std::vector<VertexIter> Viewer::getHandleVertices()
 {
 	std::vector<VertexIter> handleVertices;
 	for (VertexHandle handle: state->handles) {
-		handleVertices.push_back(handle.vertex);
+		handleVertices.emplace_back(handle.vertex);
 	}
 
 	return handleVertices;
-}
-
-void Viewer::performPCA()
-{
-	int wN = 0;
-	Eigen::Matrix2d covariance;
-	covariance.setZero();
-	for (WedgeIter w = mesh->wedges().begin(); w != mesh->wedges().end(); w++) {
-		Eigen::Vector2d uv(w->uv.x, w->uv.y);
-		covariance += uv * uv.transpose();
-		wN++;
-	}
-
-	covariance /= (double)wN;
-	Eigen::EigenSolver<Eigen::Matrix2d> solver(covariance);
-	Eigen::Matrix2d eigenVectors = -solver.eigenvectors().real();
-
-	for (WedgeIter w = mesh->wedges().begin(); w != mesh->wedges().end(); w++) {
-		Eigen::Vector2d uv(w->uv.x, w->uv.y);
-		w->uv.x = eigenVectors.col(0).dot(uv);
-		w->uv.y = eigenVectors.col(1).dot(uv);
-	}
 }
 
 void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
@@ -1514,7 +1496,7 @@ void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
 			removeVertexHandles();
 			DenseMatrix u(state->bff->data->bN);
 			state->bff->flatten(u, true);
-			performPCA();
+			mesh->projectUvsToPcaAxis();
 			update();
 
 		} else if (type == BoundaryType::setBoundaryAngles) {
@@ -1525,7 +1507,7 @@ void Viewer::flattenWithTargetBoundary(BoundaryType type, bool updateZoom)
 			removeVertexHandles();
 			state->bff->flattenToDisk();
 			state->flattenedToDisk = true;
-			performPCA();
+			mesh->projectUvsToPcaAxis();
 			update();
 		}
 	}
@@ -1568,7 +1550,7 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 	// set boundary data from spline
 	double L = 0.0;
 	for (WedgeCIter w: mesh->cutBoundary()) {
-		L += w->he->next->edge->length();
+		L += w->halfEdge()->next()->edge()->length();
 	}
 
 	double l = 0.0;
@@ -1579,11 +1561,11 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 		double offset = state->spline.evaluate(s);
 		if (!givenScaleFactors) {
 			// offset in curvature is the difference between offsets in angles
-			offset = state->spline.evaluate(2*M_PI*(l + w->he->next->edge->length())/L) - offset;
+			offset = state->spline.evaluate(2*M_PI*(l + w->halfEdge()->next()->edge()->length())/L) - offset;
 		}
 
 		boundaryData(i) = state->targetData(i) + offset;
-		l += w->he->next->edge->length();
+		l += w->halfEdge()->next()->edge()->length();
 	}
 
 	if (givenScaleFactors) {
@@ -1600,7 +1582,7 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 	for (int i = 0; i < (int)state->knots.size(); i++) {
 		WedgeIter w = state->knots[i];
 		const Vector& uv = w->uv;
-		Vector scaledT = 0.25*exp(scaling(w))*tangent(w);
+		Vector scaledT = 0.25*exp(w->scaling())*w->tangent();
 		glm::vec3 color = w == state->selectedKnot ? orange : yellow;
 
 		updateSphere(state->splineHandles[i], glm::vec3(uv.x, uv.y, uv.z), color);
@@ -1835,12 +1817,12 @@ void Viewer::keyCallback(GLFWwindow *w, int key, int scancode, int action, int m
 	} else if (model.size() > 1 && loadedModel) {
 		if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE) {
 			selectedMesh--;
-			if (selectedMesh < 0) selectedMesh = (int)model.size() - 1;
+			if (selectedMesh < 0) selectedMesh = model.size() - 1;
 			updateSelectedMesh();
 
 		} else if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE) {
 			selectedMesh++;
-			if (selectedMesh == (int)model.size()) selectedMesh = 0;
+			if (selectedMesh == model.size()) selectedMesh = 0;
 			updateSelectedMesh();
 		}
 	}
@@ -1956,7 +1938,7 @@ bool Viewer::pickVertexHandle(const ViewPane& pane)
 void Viewer::processPickedElement(int index, int pickedId)
 {
 	int nVertices = 0;
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		int nV = (int)model[i].vertices.size();
 
 		if (pickedId < nVertices + nV) {
@@ -1983,7 +1965,7 @@ void Viewer::processPickedElement(int index, int pickedId)
 void Viewer::pick(int index)
 {
 	// draw
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		modelStates[i].renderMeshes[index]->draw(flatShader, true);
 	}
 
@@ -2027,7 +2009,7 @@ void Viewer::drawRenderMeshes(const ViewPane& pane, int index)
 	clearViewport(pane);
 
 	// draw model
-	for (int i = 0; i < (int)model.size(); i++) {
+	for (int i = 0; i < model.size(); i++) {
 		// draw all meshes in 3D pane and only the selected mesh in the UV pane
 		if (index == 0 || (index == 1 && i == selectedMesh)) {
 			// update per mesh uniforms

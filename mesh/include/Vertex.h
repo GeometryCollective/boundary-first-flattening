@@ -7,10 +7,40 @@ namespace bff {
 class Vertex {
 public:
 	// constructor
-	Vertex();
+	Vertex(Mesh *mesh);
 
-	// outgoing halfedge
-	HalfEdgeIter he;
+	// copy constructor
+	Vertex(const Vertex& v);
+
+	// returns one of the halfedges associated with this vertex
+	HalfEdgeIter halfEdge() const;
+
+	// sets halfedge
+	void setHalfEdge(HalfEdgeCIter he);
+
+	// returns one of the wedges (a.k.a. corner) associated with this vertex
+	WedgeIter wedge() const;
+
+	// sets mesh
+	void setMesh(Mesh *mesh);
+
+	// checks if this vertex is on the boundary
+	bool onBoundary(bool checkIfOnCut = true) const;
+
+	// checks if this vertex is isolated
+	bool isIsolated() const;
+
+	// returns degree
+	int degree() const;
+
+	// returns angle weighted average of adjacent face normals
+	Vector normal() const;
+
+	// returns 2π minus sum of incident angles. Note: only valid for interior vertices
+	double angleDefect() const;
+
+	// returns exterior angle. Note: only valid for boundary vertices
+	double exteriorAngle() const;
 
 	// position
 	Vector position;
@@ -25,25 +55,12 @@ public:
 	// id of the reference vertex this vertex is a duplicate of
 	int referenceIndex;
 
-	// checks if this vertex is on the boundary
-	bool onBoundary(bool checkIfOnCut = true) const;
+private:
+	// index of one of the halfedges associated with this vertex
+	int halfEdgeIndex;
 
-	// returns one of the wedges (a.k.a. corner) associated with this vertex
-	WedgeIter wedge() const;
-
-	// returns degree
-	int degree() const;
-
-	// returns angle weighted average of adjacent face normals
-	Vector normal() const;
-
-	// returns 2π minus sum of incident angles. Note: only valid for interior vertices
-	double angleDefect() const;
-
-	// returns exterior angle. Note: only valid for boundary vertices
-	double exteriorAngle() const;
+	// pointer to mesh this vertex belongs to
+	Mesh *mesh;
 };
 
 } // namespace bff
-
-#include "Vertex.inl"

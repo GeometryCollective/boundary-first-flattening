@@ -5,6 +5,7 @@
 namespace bff {
 
 BFF::BFF(Mesh& mesh_):
+status(ErrorCode::ok),
 mesh(mesh_),
 inputSurfaceData(std::shared_ptr<BFFData>(new BFFData(mesh))),
 cutSurfaceData(NULL)
@@ -42,25 +43,33 @@ void BFF::computeBoundaryScaleFactors(const DenseMatrix& ltilde, DenseMatrix& u)
 	}
 }
 
-void BFF::convertDirichletToNeumann(const DenseMatrix& phi, DenseMatrix& g,
+bool BFF::convertDirichletToNeumann(const DenseMatrix& phi, DenseMatrix& g,
 									DenseMatrix& h, bool surfaceHasCut)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = phi - data->Aib*g;
-	data->Aii.L.solvePositiveDefinite(a, rhs);
+	if (!data->Aii.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 	if (surfaceHasCut) processCut(vcat(a, g), a, g);
 
 	h = -(data->Aib.transpose()*a + data->Abb*g);
+	return true;
 }
 
-void BFF::convertNeumannToDirichlet(const DenseMatrix& phi, const DenseMatrix& h,
+bool BFF::convertNeumannToDirichlet(const DenseMatrix& phi, const DenseMatrix& h,
 									DenseMatrix& g)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = vcat(phi, -h);
-	data->A.L.solvePositiveDefinite(a, rhs);
+	if (!data->A.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 
 	g = a.submatrix(data->iN, data->N);
+	return true;
 }
 
 double BFF::computeTargetBoundaryLengths(const DenseMatrix& u, DenseMatrix& lstar) const
@@ -115,7 +124,7 @@ double BFF::computeTargetDualBoundaryLengthsUV(DenseMatrix& ldual) const
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int j = data->bIndex[w->prev()];
 
-		Vector uvi = nextWedge(w)->uv;
+		Vector uvi = w->nextWedge()->uv;
 		Vector uvj = w->uv;
 		Vector uvk = w->prev()->uv;
 		ldual(j) = 0.5*((uvj - uvi).norm() + (uvk - uvj).norm());
@@ -155,6 +164,26 @@ void invert2x2(DenseMatrix& m)
 	m *= 1.0/det;
 }
 
+void invert3x3(DenseMatrix& m)
+{
+	double det = m(0, 0)*(m(1, 1)*m(2, 2) - m(2, 1)*m(1, 2)) -
+				 m(0, 1)*(m(1, 0)*m(2, 2) - m(1, 2)*m(2, 0)) +
+				 m(0, 2)*(m(1, 0)*m(2, 1) - m(1, 1)*m(2, 0));
+
+	DenseMatrix mInv(3, 3); // inverse of matrix m
+	mInv(0, 0) = (m(1, 1)*m(2, 2) - m(2, 1)*m(1, 2));
+	mInv(0, 1) = (m(0, 2)*m(2, 1) - m(0, 1)*m(2, 2));
+	mInv(0, 2) = (m(0, 1)*m(1, 2) - m(0, 2)*m(1, 1));
+	mInv(1, 0) = (m(1, 2)*m(2, 0) - m(1, 0)*m(2, 2));
+	mInv(1, 1) = (m(0, 0)*m(2, 2) - m(0, 2)*m(2, 0));
+	mInv(1, 2) = (m(1, 0)*m(0, 2) - m(0, 0)*m(1, 2));
+	mInv(2, 0) = (m(1, 0)*m(2, 1) - m(2, 0)*m(1, 1));
+	mInv(2, 1) = (m(2, 0)*m(0, 1) - m(0, 0)*m(2, 1));
+	mInv(2, 2) = (m(0, 0)*m(1, 1) - m(1, 0)*m(0, 1));
+
+	m = mInv*(1.0/det);
+}
+
 void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 					   DenseMatrix& ltilde) const
 {
@@ -165,8 +194,8 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 									  // the boundary and a shared index to
 									  // wedges on opposite sides of a cut
 	for (WedgeCIter w: mesh.cutBoundary()) {
-		if (indexMap[w->he->next->edge] == -1) {
-			indexMap[w->he->next->edge] = eN++;
+		if (indexMap[w->halfEdge()->next()->edge()] == -1) {
+			indexMap[w->halfEdge()->next()->edge()] = eN++;
 		}
 	}
 
@@ -174,7 +203,7 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 	DenseMatrix L(eN), diagNinv(eN), T(2, eN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = data->bIndex[w];
-		int ii = indexMap[w->he->next->edge];
+		int ii = indexMap[w->halfEdge()->next()->edge()];
 
 		L(ii) = lstar(i);
 		diagNinv(ii) += 1.0/data->l(i);
@@ -197,7 +226,7 @@ void BFF::closeLengths(const DenseMatrix& lstar, const DenseMatrix& Ttilde,
 	ltilde = DenseMatrix(data->bN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = data->bIndex[w];
-		int ii = indexMap[w->he->next->edge];
+		int ii = indexMap[w->halfEdge()->next()->edge()];
 
 		ltilde(i) = L(ii);
 	}
@@ -236,20 +265,24 @@ void BFF::constructBestFitCurve(const DenseMatrix& lstar, const DenseMatrix& kti
 	}
 }
 
-void BFF::extendHarmonic(const DenseMatrix& g, DenseMatrix& h)
+bool BFF::extendHarmonic(const DenseMatrix& g, DenseMatrix& h)
 {
 	DenseMatrix a;
 	DenseMatrix rhs = -(data->Aib*g);
-	data->Aii.L.solvePositiveDefinite(a, rhs);
+	if (!data->Aii.L.solvePositiveDefinite(a, rhs)) {
+		status = ErrorCode::factorizationFailed;
+		return false;
+	}
 
 	h = vcat(a, g);
+	return true;
 }
 
-void BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
+bool BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
 					  DenseMatrix& a, DenseMatrix& b, bool conjugate)
 {
 	// extend real component of gamma
-	extendHarmonic(gammaRe, a);
+	if (!extendHarmonic(gammaRe, a)) return false;
 
 	if (conjugate) {
 		// conjugate imaginary component of gamma
@@ -257,17 +290,22 @@ void BFF::extendCurve(const DenseMatrix& gammaRe, const DenseMatrix& gammaIm,
 		for (WedgeCIter w: mesh.cutBoundary()) {
 			int i = data->index[w->prev()];
 			int j = data->index[w];
-			int k = data->index[nextWedge(w)];
+			int k = data->index[w->nextWedge()];
 
 			h(j) = 0.5*(a(k) - a(i));
 		}
 
-		data->A.L.solvePositiveDefinite(b, h);
+		if (!data->A.L.solvePositiveDefinite(b, h)) {
+			status = ErrorCode::factorizationFailed;
+			return false;
+		}
 
 	} else {
 		// extend imaginary component of gamma
-		extendHarmonic(gammaIm, b);
+		if (!extendHarmonic(gammaIm, b)) return false;
 	}
+
+	return true;
 }
 
 void BFF::normalize()
@@ -286,7 +324,7 @@ void BFF::normalize()
 	}
 	cm /= wN;
 
-	// translate to origin and determine radius
+	// translate to origin
 	for (WedgeIter w = mesh.wedges().begin(); w != mesh.wedges().end(); w++) {
 		if (w->isReal()) {
 			w->uv -= cm;
@@ -302,7 +340,7 @@ void BFF::normalize()
 	}
 }
 
-void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugate)
+bool BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugate)
 {
 	// compute target lengths
 	DenseMatrix lstar;
@@ -314,7 +352,7 @@ void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugat
 
 	// extend
 	DenseMatrix flatteningRe, flatteningIm;
-	extendCurve(gammaRe, gammaIm, flatteningRe, flatteningIm, conjugate);
+	if (!extendCurve(gammaRe, gammaIm, flatteningRe, flatteningIm, conjugate)) return false;
 
 	// set uv coordinates
 	for (WedgeIter w = mesh.wedges().begin(); w != mesh.wedges().end(); w++) {
@@ -328,9 +366,10 @@ void BFF::flatten(const DenseMatrix& u, const DenseMatrix& ktilde, bool conjugat
 	}
 
 	normalize();
+	return true;
 }
 
-void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
+bool BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 {
 	if (givenScaleFactors) {
 		// compute mean scaling
@@ -338,17 +377,17 @@ void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 
 		// compute normal derivative of boundary scale factors
 		DenseMatrix dudn;
-		convertDirichletToNeumann(-data->K, target, dudn);
+		if (!convertDirichletToNeumann(-data->K, target, dudn)) return false;
 
 		// compute target boundary curvatures
 		compatibleTarget = data->k - dudn;
 
 		// flatten with scale factors u and compatible curvatures ktilde
-		flatten(target, compatibleTarget, true);
+		if (!flatten(target, compatibleTarget, true)) return false;
 
 	} else {
 		// given target boundary curvatures, compute target boundary scale factors
-		convertNeumannToDirichlet(-data->K, data->k - target, compatibleTarget);
+		if (!convertNeumannToDirichlet(-data->K, data->k - target, compatibleTarget)) return false;
 
 		// the scale factors provided by the user and those computed from the neumann
 		// to dirichlet map might differ by a constant, so adjust these scale factors by
@@ -358,11 +397,13 @@ void BFF::flatten(DenseMatrix& target, bool givenScaleFactors)
 		for (int i = 0; i < data->bN; i++) compatibleTarget(i) += constantOffset;
 
 		// flatten with compatible target scale factors u and curvatures ktilde
-		flatten(compatibleTarget, target, false);
+		if (!flatten(compatibleTarget, target, false)) return false;
 	}
+
+	return true;
 }
 
-void BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
+bool BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
 {
 	if (surfaceHasNewCut) cutSurfaceData = std::shared_ptr<BFFData>(new BFFData(mesh));
 
@@ -372,19 +413,20 @@ void BFF::flattenWithCones(const DenseMatrix& C, bool surfaceHasNewCut)
 
 	// compute normal derivative of boundary scale factors
 	DenseMatrix dudn;
-	convertDirichletToNeumann(-(data->K - C), u, dudn, true);
+	if (!convertDirichletToNeumann(-(data->K - C), u, dudn, true)) return false;
 
 	// compute target boundary curvatures
 	DenseMatrix ktilde = data->k - dudn;
 
 	// flatten with compatible target scale factors u and curvatures ktilde
-	flatten(u, ktilde, false);
+	if (!flatten(u, ktilde, false)) return false;
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;
+	return true;
 }
 
-void BFF::flattenToDisk()
+bool BFF::flattenToDisk()
 {
 	DenseMatrix u(data->bN), ktilde(data->bN);
 	for (int iter = 0; iter < 10; iter++) {
@@ -402,11 +444,11 @@ void BFF::flattenToDisk()
 		}
 
 		// compute target scale factors
-		convertNeumannToDirichlet(-data->K, data->k - ktilde, u);
+		if (!convertNeumannToDirichlet(-data->K, data->k - ktilde, u)) return false;
 	}
 
 	// flatten with compatible target scale factors u and curvatures ktilde
-	flatten(u, ktilde, false);
+	return flatten(u, ktilde, false);
 }
 
 int sample(const std::vector<Vector>& gamma,
@@ -446,7 +488,7 @@ double angle(const Vector& a, const Vector& b, const Vector& c) {
 	return theta;
 }
 
-void BFF::flattenToShape(const std::vector<Vector>& gamma)
+bool BFF::flattenToShape(const std::vector<Vector>& gamma)
 {
 	int n = (int)gamma.size(); // number of vertices in target curve
 	int nB = (int)data->bN; // number of vertices on domain boundary
@@ -491,7 +533,7 @@ void BFF::flattenToShape(const std::vector<Vector>& gamma)
 		// compute ktilde, which is the (integrated) curvature of the sampled curve z
 		double sum = 0.0;
 		for (WedgeCIter w: mesh.cutBoundary()) {
-			int i = data->bIndex[nextWedge(w)];
+			int i = data->bIndex[w->nextWedge()];
 			int j = data->bIndex[w];
 			int k = data->bIndex[w->prev()];
 
@@ -514,11 +556,13 @@ void BFF::flattenToShape(const std::vector<Vector>& gamma)
 		if (iter == 0) closeCurvatures(ktilde);
 
 		// compute target scale factors
-		convertNeumannToDirichlet(-data->K, data->k - ktilde, u);
+		if (!convertNeumannToDirichlet(-data->K, data->k - ktilde, u)) return false;
 
 		// flatten with compatible target scale factors u and curvatures ktilde
-		flatten(u, ktilde, false);
+		if (!flatten(u, ktilde, false)) return false;
 	}
+
+	return true;
 }
 
 void BFF::projectStereographically(VertexCIter pole, double radius,
@@ -535,16 +579,83 @@ void BFF::projectStereographically(VertexCIter pole, double radius,
 		}
 
 		// set uv coordinates
-		HalfEdgeIter he = v->he;
+		HalfEdgeIter he = v->halfEdge();
 		do {
-			he->next->wedge()->uv = projection;
+			he->next()->wedge()->uv = projection;
 
-			he = he->flip->next;
-		} while (he != v->he);
+			he = he->flip()->next();
+		} while (he != v->halfEdge());
 	}
 }
 
-void BFF::mapToSphere()
+void BFF::centerMobius()
+{
+	// source: Algorithm 1, http://www.cs.cmu.edu/~kmcrane/Projects/MobiusRegistration/paper.pdf
+	FaceData<Vector> centroids(mesh);
+	FaceData<double> areas(mesh);
+
+	// perform centering
+	for (int iter = 0; iter < 1000; iter++) {
+		// compute face centroids and areas
+		double totalArea = 0.0;
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			centroids[f] = f->centroidUV();
+			areas[f] = f->areaUV();
+			totalArea += areas[f];
+		}
+
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			areas[f] /= totalArea;
+		}
+
+		// compute center of mass
+		Vector cm;
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			cm += areas[f]*centroids[f];
+		}
+
+		// terminate if center is near zero
+		if (cm.norm() < 1e-3) break;
+
+		// build Jacobian
+		DenseMatrix J(3, 3);
+		DenseMatrix Id = DenseMatrix::identity(3, 3);
+
+		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 3; j++) {
+					J(i, j) += 2.0*areas[f]*(Id(i, j) - centroids[f][i]*centroids[f][j]);
+				}
+			}
+		}
+
+		// compute inversion center
+		invert3x3(J);
+		Vector inversionCenter(J(0, 0)*cm.x + J(0, 1)*cm.y + J(0, 2)*cm.z,
+							   J(1, 0)*cm.x + J(1, 1)*cm.y + J(1, 2)*cm.z,
+							   J(2, 0)*cm.x + J(2, 1)*cm.y + J(2, 2)*cm.z);
+		inversionCenter *= -1.0;
+		double scale = 1.0 - inversionCenter.norm2();
+
+		// apply inversion
+		for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
+			const Vector& uv = v->halfEdge()->next()->wedge()->uv;
+			Vector reflection = uv + inversionCenter;
+			reflection /= reflection.norm2();
+			Vector uvInv = scale*reflection + inversionCenter;
+
+			// set uv coordinates
+			HalfEdgeIter he = v->halfEdge();
+			do {
+				he->next()->wedge()->uv = uvInv;
+
+				he = he->flip()->next();
+			} while (he != v->halfEdge());
+		}
+	}
+}
+
+bool BFF::mapToSphere()
 {
 	// remove an arbitrary vertex star
 	VertexIter pole;
@@ -556,27 +667,27 @@ void BFF::mapToSphere()
 	}
 
 	pole->inNorthPoleVicinity = true;
-	HalfEdgeIter he = pole->he;
+	HalfEdgeIter he = pole->halfEdge();
 	do {
-		he->face->inNorthPoleVicinity = true;
+		he->face()->inNorthPoleVicinity = true;
 
-		HalfEdgeIter next = he->next;
-		next->edge->onCut = true;
-		next->edge->he = next;
+		HalfEdgeIter next = he->next();
+		next->edge()->onCut = true;
+		next->edge()->setHalfEdge(next);
 
 		he->wedge()->inNorthPoleVicinity = true;
 		next->wedge()->inNorthPoleVicinity = true;
-		next->next->wedge()->inNorthPoleVicinity = true;
+		next->next()->wedge()->inNorthPoleVicinity = true;
 
-		he = he->flip->next;
-	} while (he != pole->he);
+		he = he->flip()->next();
+	} while (he != pole->halfEdge());
 
 	// initialize data class for this new surface without the vertex star
 	std::shared_ptr<BFFData> sphericalSurfaceData(new BFFData(mesh));
 	data = sphericalSurfaceData;
 
 	// flatten this surface to a disk
-	flattenToDisk();
+	if (!flattenToDisk()) return false;
 
 	// stereographically project the disk to a sphere
 	// since we do not know beforehand what the radius of our disk
@@ -608,22 +719,26 @@ void BFF::mapToSphere()
 
 	// restore vertex star
 	pole->inNorthPoleVicinity = false;
-	he = pole->he;
+	he = pole->halfEdge();
 	do {
-		he->face->inNorthPoleVicinity = false;
+		he->face()->inNorthPoleVicinity = false;
 
-		HalfEdgeIter next = he->next;
-		next->edge->onCut = false;
+		HalfEdgeIter next = he->next();
+		next->edge()->onCut = false;
 
 		he->wedge()->inNorthPoleVicinity = false;
 		next->wedge()->inNorthPoleVicinity = false;
-		next->next->wedge()->inNorthPoleVicinity = false;
+		next->next()->wedge()->inNorthPoleVicinity = false;
 
-		he = he->flip->next;
-	} while (he != pole->he);
+		he = he->flip()->next();
+	} while (he != pole->halfEdge());
+
+	// perform mobius centering
+	centerMobius();
 
 	// reset current data to the data of the input surface
 	data = inputSurfaceData;
+	return true;
 }
 
 BFFData::BFFData(Mesh& mesh_):
@@ -643,14 +758,14 @@ void BFFData::indexWedges()
 	iN = 0;
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 		if (!v->onBoundary()) {
-			HalfEdgeCIter he = v->he;
+			HalfEdgeCIter he = v->halfEdge();
 			do {
-				WedgeCIter w = he->next->wedge();
+				WedgeCIter w = he->next()->wedge();
 				bIndex[w] = -1;
 				index[w] = iN;
 
-				he = he->flip->next;
-			} while (he != v->he);
+				he = he->flip()->next();
+			} while (he != v->halfEdge());
 
 			iN++;
 		}
@@ -659,14 +774,14 @@ void BFFData::indexWedges()
 	// index boundary wedges
 	bN = 0;
 	for (WedgeCIter w: mesh.cutBoundary()) {
-		HalfEdgeCIter he = w->he->prev;
+		HalfEdgeCIter he = w->halfEdge()->prev();
 		do {
-			WedgeCIter w = he->next->wedge();
+			WedgeCIter w = he->next()->wedge();
 			bIndex[w] = bN;
 			index[w] = iN + bN;
 
-			if (he->edge->onCut) break;
-			he = he->flip->next;
+			if (he->edge()->onCut) break;
+			he = he->flip()->next();
 		} while (!he->onBoundary);
 
 		bN++;
@@ -692,7 +807,7 @@ void BFFData::computeIntegratedCurvatures()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		k(i) = exteriorAngle(w);
+		k(i) = w->exteriorAngle();
 	}
 }
 
@@ -702,7 +817,7 @@ void BFFData::computeBoundaryLengths()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		l(i) = w->he->next->edge->length();
+		l(i) = w->halfEdge()->next()->edge()->length();
 	}
 }
 
@@ -711,10 +826,10 @@ void BFFData::buildLaplace()
 	Triplet T(N, N);
 	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
 		if (f->isReal()) {
-			HalfEdgeCIter he = f->he;
+			HalfEdgeCIter he = f->halfEdge();
 			do {
-				int i = index[he->next->wedge()];
-				int j = index[he->prev->wedge()];
+				int i = index[he->next()->wedge()];
+				int j = index[he->prev()->wedge()];
 				double w = 0.5*he->cotan();
 
 				T.add(i, i, w);
@@ -722,8 +837,8 @@ void BFFData::buildLaplace()
 				T.add(i, j, -w);
 				T.add(j, i, -w);
 
-				he = he->next;
-			} while (he != f->he);
+				he = he->next();
+			} while (he != f->halfEdge());
 		}
 	}
 

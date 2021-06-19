@@ -1,87 +1,61 @@
-#include "Mesh.h"
+#include "MeshData.h"
 #include <limits>
 
 namespace bff {
 
 Mesh::Mesh():
-radius(0.0)
+radius(0.0),
+cm(0.0, 0.0, 0.0),
+status(ErrorCode::ok)
 {
 
 }
 
 Mesh::Mesh(const Mesh& mesh):
-radius(mesh.radius)
+radius(mesh.radius),
+cm(mesh.cm),
+status(mesh.status)
 {
-	// allocate halfEdges
+	// initialize halfEdges
 	halfEdges.reserve(mesh.halfEdges.size());
 	for (HalfEdgeCIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
-		halfEdges.insert(halfEdges.end(), HalfEdge());
+		HalfEdgeIter hNew = halfEdges.emplace(halfEdges.end(), HalfEdge(*h));
+		hNew->setMesh(this);
 	}
 
 	// initialize vertices
 	vertices.reserve(mesh.vertices.size());
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-		VertexIter vNew = vertices.insert(vertices.end(), Vertex());
-		vNew->he = halfEdges.begin() + v->he->index;
-		vNew->position = v->position;
-		vNew->inNorthPoleVicinity = v->inNorthPoleVicinity;
-		vNew->index = v->index;
-		vNew->referenceIndex = v->referenceIndex;
+		VertexIter vNew = vertices.emplace(vertices.end(), Vertex(*v));
+		vNew->setMesh(this);
 	}
 
 	// initialize edges
 	edges.reserve(mesh.edges.size());
 	for (EdgeCIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
-		EdgeIter eNew = edges.insert(edges.end(), Edge());
-		eNew->he = halfEdges.begin() + e->he->index;
-		eNew->onGenerator = e->onGenerator;
-		eNew->onCut = e->onCut;
-		eNew->isCuttable = e->isCuttable;
-		eNew->index = e->index;
+		EdgeIter eNew = edges.emplace(edges.end(), Edge(*e));
+		eNew->setMesh(this);
 	}
 
 	// initialize faces
 	faces.reserve(mesh.faces.size());
 	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
-		FaceIter fNew = faces.insert(faces.end(), Face());
-		fNew->he = halfEdges.begin() + f->he->index;
-		fNew->fillsHole = f->fillsHole;
-		fNew->inNorthPoleVicinity = f->inNorthPoleVicinity;
-		fNew->index = f->index;
+		FaceIter fNew = faces.emplace(faces.end(), Face(*f));
+		fNew->setMesh(this);
 	}
 
 	// initialize corners
 	corners.reserve(mesh.corners.size());
 	for (CornerCIter c = mesh.corners.begin(); c != mesh.corners.end(); c++) {
-		CornerIter cNew = corners.insert(corners.end(), Corner());
-		cNew->he = halfEdges.begin() + c->he->index;
-		cNew->uv = c->uv;
-		cNew->inNorthPoleVicinity = c->inNorthPoleVicinity;
-		cNew->index = c->index;
+		CornerIter cNew = corners.emplace(corners.end(), Corner(*c));
+		cNew->setMesh(this);
 	}
 
 	// initialize boundaries
 	boundaries.reserve(mesh.boundaries.size());
 	for (BoundaryCIter b = mesh.boundaries.begin(); b != mesh.boundaries.end(); b++) {
-		BoundaryIter bNew = boundaries.insert(boundaries.end(), Face());
-		bNew->he = halfEdges.begin() + b->he->index;
-		bNew->fillsHole = b->fillsHole;
-		bNew->inNorthPoleVicinity = b->inNorthPoleVicinity;
-		bNew->index = b->index;
-	}
-
-	// initialize halfEdges
-	for (HalfEdgeCIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
-		HalfEdgeIter hNew = halfEdges.begin() + h->index;
-		hNew->next = halfEdges.begin() + h->next->index;
-		hNew->prev = halfEdges.begin() + h->prev->index;
-		hNew->flip = halfEdges.begin() + h->flip->index;
-		hNew->vertex = vertices.begin() + h->vertex->index;
-		hNew->edge = edges.begin() + h->edge->index;
-		hNew->face = faces.begin() + h->face->index;
-		if (!h->onBoundary) hNew->corner = corners.begin() + h->corner->index;
-		hNew->index = h->index;
-		hNew->onBoundary = h->onBoundary;
+		BoundaryIter bNew = boundaries.emplace(boundaries.end(), Face(*b));
+		bNew->setMesh(this);
 	}
 }
 
@@ -91,9 +65,9 @@ int Mesh::eulerCharacteristic() const
 }
 
 double Mesh::diameter() const
- {
+{
 	double maxLimit = std::numeric_limits<double>::max();
-	double minLimit = std::numeric_limits<double>::min();
+	double minLimit = std::numeric_limits<double>::lowest();
 	Vector minBounds(maxLimit, maxLimit, maxLimit);
 	Vector maxBounds(minLimit, minLimit, minLimit);
 
@@ -109,7 +83,70 @@ double Mesh::diameter() const
 	}
 
 	return (maxBounds - minBounds).norm();
- }
+}
+
+void computeEigenvectors2x2(double a, double b, double c, Vector& v1, Vector& v2)
+{
+	double disc = std::sqrt((a - c)*(a - c) + 4.0*b*b)/2.0;
+	double lambda1 = (a + c)/2.0 - disc;
+	double lambda2 = (a + c)/2.0 + disc;
+
+	v1 = b < 0.0 ? Vector(-b, a - lambda1) : Vector(b, lambda2 - a);
+	double v1Norm = v1.norm();
+	if (v1Norm > 0) v1 /= v1Norm;
+	v2 = Vector(-v1.y, v1.x);
+}
+
+void Mesh::projectUvsToPcaAxis()
+{
+	// compute center of mass
+	Vector cm;
+	double totalArea = 1e-8;
+	FaceData<double> areaUV(*this);
+	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
+		if (f->isReal() && !f->fillsHole) {
+			Vector centroid = f->centroidUV();
+			areaUV[f] = f->areaUV();
+
+			cm += centroid*areaUV[f];
+			totalArea += areaUV[f];
+		}
+	}
+	cm /= totalArea;
+
+	// translate uvs to origin
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		if (w->isReal()) {
+			w->uv -= cm;
+		}
+	}
+
+	// build covariance matrix
+	double a = 0, b = 0, c = 0;
+	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
+		if (f->isReal() && !f->fillsHole) {
+			Vector centroid = f->centroidUV();
+			double area = areaUV[f];
+
+			a += centroid.x*centroid.x*area;
+			b += centroid.x*centroid.y*area;
+			c += centroid.y*centroid.y*area;
+		}
+	}
+
+	// compute eigenvectors
+	Vector v1, v2;
+	computeEigenvectors2x2(a, b, c, v1, v2);
+
+	// project uvs onto principal axes
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		if (w->isReal()) {
+			Vector& uv = w->uv;
+			uv = Vector(dot(v1, uv), dot(v2, uv));
+			uv += cm;
+		}
+	}
+}
 
 CutPtrSet Mesh::cutBoundary()
 {
@@ -117,13 +154,13 @@ CutPtrSet Mesh::cutBoundary()
 		// if there is no boundary, initialize the iterator with the first edge
 		// on the cut
 		for (EdgeCIter e = edges.begin(); e != edges.end(); e++) {
-			if (e->onCut) return CutPtrSet(e->he);
+			if (e->onCut) return CutPtrSet(e->halfEdge());
 		}
 
 		return CutPtrSet();
 	}
 
-	return CutPtrSet(boundaries[0].he);
+	return CutPtrSet(boundaries[0].halfEdge());
 }
 
 std::vector<Wedge>& Mesh::wedges()
