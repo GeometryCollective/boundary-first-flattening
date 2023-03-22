@@ -23,6 +23,7 @@ TextBox* Viewer::angleTextBox = NULL;
 Slider* Viewer::angleSlider = NULL;
 Label* Viewer::instructionText = NULL;
 CheckBox* Viewer::exportNormalizedUVsCheckBox = NULL;
+CheckBox* Viewer::useVtFlagToStoreUVsCheckBox = NULL;
 Button* Viewer::placeConesButton = NULL;
 
 int Viewer::windowWidth = 1300;
@@ -181,7 +182,7 @@ void Viewer::initGui()
 		}
 	});
 
-	Button *exportMeshButton = new Button(nanoguiWindow, "Export Mesh");
+	Button *exportMeshButton = new Button(nanoguiWindow, "Export UVs");
 	exportMeshButton->setFixedHeight(25);
 	exportMeshButton->setCallback([] {
 		std::string file = file_dialog({{"obj", "Wavefront OBJ file"}}, true);
@@ -192,7 +193,9 @@ void Viewer::initGui()
 				mappedToSphere.push_back(modelStates[i].mappedToSphere);
 			}
 
-			if (!MeshIO::write(file, model, mappedToSphere, exportNormalizedUVsCheckBox->checked())) {
+			if (!MeshIO::write(file, model, mappedToSphere,
+							   exportNormalizedUVsCheckBox->checked(),
+							   !useVtFlagToStoreUVsCheckBox->checked())) {
 				reportError("Unable to write file: " + file);
 			}
 
@@ -201,8 +204,11 @@ void Viewer::initGui()
 		}
 	});
 
-	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Export UVs to [0, 1]");
+	exportNormalizedUVsCheckBox = new CheckBox(nanoguiWindow, "Normalize UVs to [0, 1]");
 	exportNormalizedUVsCheckBox->setFixedHeight(14);
+
+	useVtFlagToStoreUVsCheckBox = new CheckBox(nanoguiWindow, "Use 'vt' flag to store UVs");
+	useVtFlagToStoreUVsCheckBox->setFixedHeight(14);
 
 	// plot
 	plotLabel = new Label(nanoguiWindow, "Plot", "sans");
@@ -395,9 +401,11 @@ void Viewer::initGui()
 		}
 	});
 
+	/*
 	Button *removeSeamsButton = new Button(nanoguiWindow, "Remove Seams");
 	removeSeamsButton->setFixedHeight(25);
 	removeSeamsButton->setEnabled(false);
+	*/
 
 	new Label(nanoguiWindow, "Spherical Parameterization");
 	Button *sphericalParameterizationButton = new Button(nanoguiWindow, "Map to Sphere");

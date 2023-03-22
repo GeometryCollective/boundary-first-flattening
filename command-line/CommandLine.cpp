@@ -16,7 +16,8 @@ void printUsage(const std::string& programName)
 			  << "[--nCones=N_CONES] "
 			  << "[--flattenToDisk] "
 			  << "[--mapToSphere] "
-			  << "[--normalizeUVs]"
+			  << "[--normalizeUVs] "
+			  << "[--writeOnlyUVs]"
 			  << std::endl;
 }
 
@@ -36,7 +37,8 @@ bool parseArg(const std::string& arg, const std::string& searchStr, std::string&
 }
 
 void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string& outputPath,
-			   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs)
+			   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs,
+			   bool& writeOnlyUVs)
 {
 	if (argc < 3) {
 		// input and/or output path not specified
@@ -54,6 +56,7 @@ void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string
 			if (doesArgExist(argv[i], "--flattenToDisk")) flattenToDisk = true;
 			if (doesArgExist(argv[i], "--mapToSphere")) mapToSphere = true;
 			if (doesArgExist(argv[i], "--normalizeUVs")) normalizeUVs = true;
+			if (doesArgExist(argv[i], "--writeOnlyUVs")) writeOnlyUVs = true;
 		}
 	}
 
@@ -159,7 +162,7 @@ void flatten(Model& model, const std::vector<bool>& surfaceIsClosed,
 
 void writeModelUVs(const std::string& outputPath, Model& model,
 				   const std::vector<bool>& surfaceIsClosed, bool mapToSphere,
-				   bool normalizeUVs)
+				   bool normalizeUVs, bool writeOnlyUVs)
 {
 	int nMeshes = model.size();
 	std::vector<bool> mappedToSphere(nMeshes, false);
@@ -169,7 +172,7 @@ void writeModelUVs(const std::string& outputPath, Model& model,
 		}
 	}
 
-	if (!MeshIO::write(outputPath, model, mappedToSphere, normalizeUVs)) {
+	if (!MeshIO::write(outputPath, model, mappedToSphere, normalizeUVs, writeOnlyUVs)) {
 		std::cerr << "Unable to write file: " << outputPath << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -183,8 +186,9 @@ int main(int argc, const char *argv[]) {
 	bool flattenToDisk = false;
 	bool mapToSphere = false;
 	bool normalizeUVs = false;
-	parseArgs(argc, argv, inputPath, outputPath, nCones,
-			  flattenToDisk, mapToSphere, normalizeUVs);
+	bool writeOnlyUVs = false;
+	parseArgs(argc, argv, inputPath, outputPath, nCones, flattenToDisk,
+			  mapToSphere, normalizeUVs, writeOnlyUVs);
 
 	// load model
 	Model model;
@@ -203,7 +207,8 @@ int main(int argc, const char *argv[]) {
 	flatten(model, surfaceIsClosed, nCones, flattenToDisk, mapToSphere);
 
 	// write model uvs to output path
-	writeModelUVs(outputPath, model, surfaceIsClosed, mapToSphere, normalizeUVs);
+	writeModelUVs(outputPath, model, surfaceIsClosed, mapToSphere,
+				  normalizeUVs, writeOnlyUVs);
 
 	return 0;
 }

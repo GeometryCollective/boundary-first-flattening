@@ -581,7 +581,8 @@ void writeString(std::ofstream& out, const std::string& str)
 
 void writeUV(std::ofstream& out, Vector uv, bool mapToSphere, double sphereRadius,
 			 double meshRadius, const Vector& oldCenter, const Vector& newCenter,
-			 const Vector& minExtent, double extent, bool flipped, bool normalize)
+			 const Vector& minExtent, double extent, bool flipped, bool normalize,
+			 bool useVertexFlag)
 {
 	// resize
 	if (mapToSphere) {
@@ -601,12 +602,19 @@ void writeUV(std::ofstream& out, Vector uv, bool mapToSphere, double sphereRadiu
 	if (normalize) uv /= extent;
 
 	// write to file
-	writeString(out, "vt " + std::to_string(uv.x) + " " +
-							 std::to_string(uv.y) + "\n");
+	if (useVertexFlag) {
+		writeString(out, "v " + std::to_string(uv.x) + " " +
+								std::to_string(uv.y) + " 0.0\n");
+
+	} else {
+		writeString(out, "vt " + std::to_string(uv.x) + " " +
+								 std::to_string(uv.y) + "\n");
+	}
 }
 
 void MeshIO::write(std::ofstream& out, Model& model,
-				   const std::vector<bool>& mappedToSphere, bool normalize)
+				   const std::vector<bool>& mappedToSphere,
+				   bool normalize, bool writeOnlyUVs)
 {
 	// pack
 	std::vector<Vector> originalCenters, newCenters;
@@ -615,16 +623,18 @@ void MeshIO::write(std::ofstream& out, Model& model,
 	BinPacking::pack(model, mappedToSphere, originalCenters, newCenters,
 					 flippedBins, modelMinBounds, modelMaxBounds);
 
-	// write vertex positions
-	for (int i = 0; i < model.nVertices(); i++) {
-		std::pair<int, int> vData = model.localVertexIndex(i);
-		const Mesh& mesh = model[vData.first];
-		VertexCIter v = mesh.vertices.begin() + vData.second;
+	if (!writeOnlyUVs) {
+		// write vertex positions
+		for (int i = 0; i < model.nVertices(); i++) {
+			std::pair<int, int> vData = model.localVertexIndex(i);
+			const Mesh& mesh = model[vData.first];
+			VertexCIter v = mesh.vertices.begin() + vData.second;
 
-		Vector p = v->position*mesh.radius + mesh.cm;
-		writeString(out, "v " + std::to_string(p.x) + " " +
-								std::to_string(p.y) + " " +
-								std::to_string(p.z) + "\n");
+			Vector p = v->position*mesh.radius + mesh.cm;
+			writeString(out, "v " + std::to_string(p.x) + " " +
+									std::to_string(p.y) + " " +
+									std::to_string(p.z) + "\n");
+		}
 	}
 
 	// write uvs and indices
@@ -652,9 +662,9 @@ void MeshIO::write(std::ofstream& out, Model& model,
 
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			if (!v->onBoundary()) {
-				writeUV(out, v->wedge()->uv, mappedToSphere[i], sphereRadius,
-						model[i].radius, originalCenters[i], newCenters[i],
-						minExtent, extent, flippedBins[i], normalize);
+				writeUV(out, v->wedge()->uv, mappedToSphere[i], sphereRadius, model[i].radius,
+						originalCenters[i], newCenters[i], minExtent, extent, flippedBins[i],
+						normalize, writeOnlyUVs);
 
 				HalfEdgeCIter he = v->halfEdge();
 				do {
@@ -669,9 +679,9 @@ void MeshIO::write(std::ofstream& out, Model& model,
 
 		// write boundary uvs
 		for (WedgeCIter w: model[i].cutBoundary()) {
-			writeUV(out, w->uv, mappedToSphere[i], sphereRadius,
-					model[i].radius, originalCenters[i], newCenters[i],
-					minExtent, extent, flippedBins[i], normalize);
+			writeUV(out, w->uv, mappedToSphere[i], sphereRadius, model[i].radius,
+					originalCenters[i], newCenters[i], minExtent, extent, flippedBins[i],
+					normalize, writeOnlyUVs);
 
 			HalfEdgeCIter he = w->halfEdge()->prev();
 			do {
@@ -701,10 +711,15 @@ void MeshIO::write(std::ofstream& out, Model& model,
 				std::unordered_map<int, bool> seenUncuttableEdges;
 
 				do {
-					VertexCIter v = he->vertex();
-					int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
-					writeString(out, " " + std::to_string(model.globalVertexIndex(i, vIndex) + 1) + "/" +
-										   std::to_string(nUvs + uvIndexMap[he->next()] + 1));
+					if (writeOnlyUVs) {
+						writeString(out, " " + std::to_string(nUvs + uvIndexMap[he->next()] + 1));
+
+					} else {
+						VertexCIter v = he->vertex();
+						int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
+						writeString(out, " " + std::to_string(model.globalVertexIndex(i, vIndex) + 1) + "/" +
+											   std::to_string(nUvs + uvIndexMap[he->next()] + 1));
+					}
 
 					he = he->next();
 					while (!he->edge()->isCuttable) {
@@ -725,7 +740,8 @@ void MeshIO::write(std::ofstream& out, Model& model,
 }
 
 bool MeshIO::write(const std::string& fileName, Model& model,
-				   const std::vector<bool>& mappedToSphere, bool normalize)
+				   const std::vector<bool>& mappedToSphere,
+				   bool normalize, bool writeOnlyUVs)
 {
 	std::ofstream out(fileName.c_str());
 
@@ -733,7 +749,7 @@ bool MeshIO::write(const std::string& fileName, Model& model,
 		return false;
 	}
 
-	MeshIO::write(out, model, mappedToSphere, normalize);
+	MeshIO::write(out, model, mappedToSphere, normalize, writeOnlyUVs);
 	out.close();
 
 	return true;

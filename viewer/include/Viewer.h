@@ -204,6 +204,7 @@ private:
 	static Slider *angleSlider;
 	static Label *instructionText;
 	static CheckBox *exportNormalizedUVsCheckBox;
+	static CheckBox *useVtFlagToStoreUVsCheckBox;
 	static Button *placeConesButton;
 
 	static int windowWidth;

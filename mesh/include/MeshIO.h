@@ -39,7 +39,8 @@ public:
 
 	// writes data to obj file
 	static bool write(const std::string& fileName, Model& model,
-					  const std::vector<bool>& mappedToSphere, bool normalize);
+					  const std::vector<bool>& mappedToSphere,
+					  bool normalize, bool writeOnlyUVs);
 
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,
@@ -72,7 +73,8 @@ private:
 
 	// writes data to obj file
 	static void write(std::ofstream& out, Model& model,
-					  const std::vector<bool>& mappedToSphere, bool normalize);
+					  const std::vector<bool>& mappedToSphere,
+					  bool normalize, bool writeOnlyUVs);
 };
 
 } // namespace bff
