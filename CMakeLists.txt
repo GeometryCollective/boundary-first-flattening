@@ -32,7 +32,10 @@ list(APPEND BFF_INCLUDE_DIRS "mesh/include")
 list(APPEND BFF_INCLUDE_DIRS "project/include")
 include_directories(${BFF_INCLUDE_DIRS})
 
-file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/src/*.cpp" "linear-algebra/src/*.cpp" "mesh/src/*.cpp" "project/src/*.cpp")
+file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/src/*.cpp"
+					  "linear-algebra/src/*.cpp"
+					  "mesh/src/*.cpp"
+					  "project/src/*.cpp")
 
 # create bff static library
 add_library(bff ${BFF_SOURCES})
@@ -54,10 +57,12 @@ if (BUILD_GUI)
 	add_subdirectory(deps/nanogui)
 	add_definitions(${NANOGUI_EXTRA_DEFS})
 
+	# glm
+	add_subdirectory(deps/glm)
+
 	# viewer
 	list(APPEND VIEWER_INCLUDE_DIRS ${NANOGUI_EXTRA_INCS})
 	list(APPEND VIEWER_INCLUDE_DIRS "deps/nanogui/include")
-	list(APPEND VIEWER_INCLUDE_DIRS "deps/glm")
 	list(APPEND VIEWER_INCLUDE_DIRS "viewer/include")
 	include_directories(${VIEWER_INCLUDE_DIRS})
 
@@ -65,5 +70,5 @@ if (BUILD_GUI)
 
 	# build viewer app
 	add_executable(bff-viewer ${VIEWER_SOURCES})
-	target_link_libraries(bff-viewer bff nanogui ${NANOGUI_EXTRA_LIBS})
+	target_link_libraries(bff-viewer bff glm nanogui ${NANOGUI_EXTRA_LIBS})
 endif()
