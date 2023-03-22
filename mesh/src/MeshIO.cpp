@@ -630,10 +630,18 @@ void MeshIO::write(std::ofstream& out, Model& model,
 			const Mesh& mesh = model[vData.first];
 			VertexCIter v = mesh.vertices.begin() + vData.second;
 
-			Vector p = v->position*mesh.radius + mesh.cm;
-			writeString(out, "v " + std::to_string(p.x) + " " +
-									std::to_string(p.y) + " " +
-									std::to_string(p.z) + "\n");
+			if (mappedToSphere[vData.first]) {
+				const Vector& uv = v->wedge()->uv;
+				writeString(out, "v " + std::to_string(uv.x) + " " +
+										std::to_string(uv.y) + " " +
+										std::to_string(uv.z) + "\n");
+
+			} else {
+				Vector p = v->position*mesh.radius + mesh.cm;
+				writeString(out, "v " + std::to_string(p.x) + " " +
+										std::to_string(p.y) + " " +
+										std::to_string(p.z) + "\n");
+			}
 		}
 	}
 
