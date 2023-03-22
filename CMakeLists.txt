@@ -26,13 +26,14 @@ MESSAGE(STATUS "SuiteSparse_LIBS: ${SuiteSparse_LIBRARIES}")
 
 # bff lib
 list(APPEND BFF_INCLUDE_DIRS ${SuiteSparse_INCLUDE_DIRS})
-list(APPEND BFF_INCLUDE_DIRS "deps/rectangle-bin-pack/include")
+list(APPEND BFF_INCLUDE_DIRS "deps/rectangle-bin-pack")
 list(APPEND BFF_INCLUDE_DIRS "linear-algebra/include")
 list(APPEND BFF_INCLUDE_DIRS "mesh/include")
 list(APPEND BFF_INCLUDE_DIRS "project/include")
 include_directories(${BFF_INCLUDE_DIRS})
 
-file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/src/*.cpp"
+file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/GuillotineBinPack.cpp"
+					  "deps/rectangle-bin-pack/Rect.cpp"
 					  "linear-algebra/src/*.cpp"
 					  "mesh/src/*.cpp"
 					  "project/src/*.cpp")

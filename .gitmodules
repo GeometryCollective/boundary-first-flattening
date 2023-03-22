@@ -2,3 +2,6 @@
 	path = deps/glm
 	url = https://github.com/g-truc/glm.git
 	branch = 0.9.8
+[submodule "deps/rectangle-bin-pack"]
+	path = deps/rectangle-bin-pack
+	url = https://github.com/juj/RectangleBinPack.git
