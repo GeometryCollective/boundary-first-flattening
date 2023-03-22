@@ -27,26 +27,24 @@ MESSAGE(STATUS "SuiteSparse_LIBS: ${SuiteSparse_LIBRARIES}")
 # bff lib
 list(APPEND BFF_INCLUDE_DIRS ${SuiteSparse_INCLUDE_DIRS})
 list(APPEND BFF_INCLUDE_DIRS "deps/rectangle-bin-pack")
-list(APPEND BFF_INCLUDE_DIRS "linear-algebra/include")
-list(APPEND BFF_INCLUDE_DIRS "mesh/include")
-list(APPEND BFF_INCLUDE_DIRS "project/include")
-include_directories(${BFF_INCLUDE_DIRS})
+list(APPEND BFF_INCLUDE_DIRS "include")
 
 file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/GuillotineBinPack.cpp"
 					  "deps/rectangle-bin-pack/Rect.cpp"
-					  "linear-algebra/src/*.cpp"
-					  "mesh/src/*.cpp"
-					  "project/src/*.cpp")
+					  "src/linear-algebra/*.cpp"
+					  "src/mesh/*.cpp"
+					  "src/project/*.cpp")
 
 # create bff static library
 add_library(bff ${BFF_SOURCES})
 target_link_libraries(bff ${SuiteSparse_LIBRARIES})
+target_include_directories(bff PUBLIC ${BFF_INCLUDE_DIRS})
 
 if (BUILD_CLI)
 	# build command line app
-	file(GLOB COMMAND_LINE_SOURCES "command-line/*.cpp")
+	file(GLOB BFF_COMMAND_LINE_SOURCES "apps/command-line/src/*.cpp")
 
-	add_executable(bff-command-line ${COMMAND_LINE_SOURCES})
+	add_executable(bff-command-line ${BFF_COMMAND_LINE_SOURCES})
 	target_link_libraries(bff-command-line bff)
 endif()
 
@@ -62,14 +60,14 @@ if (BUILD_GUI)
 	add_subdirectory(deps/glm)
 
 	# viewer
-	list(APPEND VIEWER_INCLUDE_DIRS ${NANOGUI_EXTRA_INCS})
-	list(APPEND VIEWER_INCLUDE_DIRS "deps/nanogui/include")
-	list(APPEND VIEWER_INCLUDE_DIRS "viewer/include")
-	include_directories(${VIEWER_INCLUDE_DIRS})
-
-	file(GLOB VIEWER_SOURCES "viewer/src/*.cpp")
+	list(APPEND BFF_VIEWER_INCLUDE_DIRS ${NANOGUI_EXTRA_INCS})
+	list(APPEND BFF_VIEWER_INCLUDE_DIRS "deps/nanogui/include")
+	list(APPEND BFF_VIEWER_INCLUDE_DIRS "apps/viewer/include")
 
 	# build viewer app
-	add_executable(bff-viewer ${VIEWER_SOURCES})
+	file(GLOB BFF_VIEWER_SOURCES "apps/viewer/src/*.cpp")
+
+	add_executable(bff-viewer ${BFF_VIEWER_SOURCES})
+	target_include_directories(bff-viewer PUBLIC ${BFF_VIEWER_INCLUDE_DIRS})
 	target_link_libraries(bff-viewer bff glm nanogui ${NANOGUI_EXTRA_LIBS})
 endif()

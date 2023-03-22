@@ -196,7 +196,7 @@ Unlike the GUI, the command line application does not expose some of the interac
 
 # Code level interface
 
-All features of BFF can be accessed directly through a static library by compiling the code. The most important methods are described in <tt>project/include/Bff.h</tt>. These methods assume that a standard triangle mesh has already been loaded into the <tt>Mesh</tt> object, and produce UV coordinates at the corners of each triangle, stored in the <tt>uv</tt> member of each element of <tt>Mesh::corners</tt>.
+All features of BFF can be accessed directly through a static library by compiling the code. The most important methods are described in <tt>include/bff/project/Bff.h</tt>. These methods assume that a standard triangle mesh has already been loaded into the <tt>Mesh</tt> object, and produce UV coordinates at the corners of each triangle, stored in the <tt>uv</tt> member of each element of <tt>Mesh::corners</tt>.
 
 ```
 // Computes automatic flattening with minimal area distortion
