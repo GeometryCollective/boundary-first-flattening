@@ -37,6 +37,7 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 * **v1.2** (June 2019) &mdash; Ensures that vertex ordering in the input/output meshes agree; accelerates cone computation for surfaces with boundary; minor accelerations and bug fixes.
 * **v1.3** (August 2019) &mdash; Adds support for tighter bin packing; ensures vertex ordering is preserved; more error logging and bug fixes.
 * **v1.4** (June 2020) &mdash; Improved spherical parameterization; bin packing related bugfixes and more efficient loading of models with many components.
+* **v1.5** (March 2023) &mdash; Updated dependencies; restructured project to avoid include conflict; option to export UVs as mesh positions in OBJ file.
 
 # Tutorial
 
