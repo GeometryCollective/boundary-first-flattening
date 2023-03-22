@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Shader.h"
-#include <vec3.hpp>
+#include <glm/vec3.hpp>
 #include <vector>
 #include <memory>
 
