@@ -1,5 +1,5 @@
 /** @file Rect.cpp
-	@author Jukka Jylänki
+	@author Jukka Jylï¿½nki
 
 	This work is released to Public Domain, do whatever you want with it.
 */
@@ -43,8 +43,8 @@ int NodeSortCmp(const Rect &a, const Rect &b)
 */
 bool IsContainedIn(const Rect &a, const Rect &b)
 {
-	return a.x >= b.x && a.y >= b.y 
-		&& a.x+a.width <= b.x+b.width 
+	return a.x >= b.x && a.y >= b.y
+		&& a.x+a.width <= b.x+b.width
 		&& a.y+a.height <= b.y+b.height;
 }
 

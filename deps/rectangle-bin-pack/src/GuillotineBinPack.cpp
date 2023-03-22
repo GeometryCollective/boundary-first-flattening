@@ -1,10 +1,11 @@
 /** @file GuillotineBinPack.cpp
-	@author Jukka Jylänki
+	@author Jukka Jylï¿½nki
 
 	@brief Implements different bin packer algorithms that use the GUILLOTINE data structure.
 
 	This work is released to Public Domain, do whatever you want with it.
 */
+#include <algorithm>
 #include <utility>
 #include <iostream>
 #include <limits>
@@ -53,7 +54,7 @@ void GuillotineBinPack::Init(int width, int height)
 	freeRectangles.push_back(n);
 }
 
-void GuillotineBinPack::Insert(std::vector<RectSize> &rects, bool merge, 
+void GuillotineBinPack::Insert(std::vector<RectSize> &rects, bool merge,
 	FreeRectChoiceHeuristic rectChoice, GuillotineSplitHeuristic splitMethod)
 {
 	// Remember variables about the best packing choice we have made so far during the iteration process.
@@ -169,7 +170,7 @@ bool FitsPerfectly(const RectSize &r, const Rect &freeRect)
 /*
 // A helper function for GUILLOTINE-MAXFITTING. Counts how many rectangles fit into the given rectangle
 // after it has been split.
-void CountNumFitting(const Rect &freeRect, int width, int height, const std::vector<RectSize> &rects, 
+void CountNumFitting(const Rect &freeRect, int width, int height, const std::vector<RectSize> &rects,
 	int usedRectIndex, bool splitHorizontal, int &score1, int &score2)
 {
 	const int w = freeRect.width - width;
@@ -218,7 +219,7 @@ void CountNumFitting(const Rect &freeRect, int width, int height, const std::vec
 */
 /*
 // Implements GUILLOTINE-MAXFITTING, an experimental heuristic that's really cool but didn't quite work in practice.
-void GuillotineBinPack::InsertMaxFitting(std::vector<RectSize> &rects, std::vector<Rect> &dst, bool merge, 
+void GuillotineBinPack::InsertMaxFitting(std::vector<RectSize> &rects, std::vector<Rect> &dst, bool merge,
 	FreeRectChoiceHeuristic rectChoice, GuillotineSplitHeuristic splitMethod)
 {
 	dst.clear();
@@ -336,7 +337,7 @@ void GuillotineBinPack::InsertMaxFitting(std::vector<RectSize> &rects, std::vect
 }
 */
 
-Rect GuillotineBinPack::Insert(int width, int height, bool merge, FreeRectChoiceHeuristic rectChoice, 
+Rect GuillotineBinPack::Insert(int width, int height, bool merge, FreeRectChoiceHeuristic rectChoice,
 	GuillotineSplitHeuristic splitMethod)
 {
 	// Find where to put the new rectangle.
@@ -505,7 +506,7 @@ void GuillotineBinPack::SplitFreeRectByHeuristic(const Rect &freeRect, const Rec
 
 	// Placing placedRect into freeRect results in an L-shaped free area, which must be split into
 	// two disjoint rectangles. This can be achieved with by splitting the L-shape using a single line.
-	// We have two choices: horizontal or vertical.	
+	// We have two choices: horizontal or vertical.
 
 	// Use the given heuristic to decide which choice to make.
 

@@ -1,5 +1,5 @@
 /** @file GuillotineBinPack.h
-	@author Jukka Jylänki
+	@author Jukka Jylï¿½nki
 
 	@brief Implements different bin packer algorithms that use the GUILLOTINE data structure.
 
@@ -55,7 +55,7 @@ public:
 	/// Inserts a single rectangle into the bin. The packer might rotate the rectangle, in which case the returned
 	/// struct will have the width and height values swapped.
 	/// @param merge If true, performs free Rectangle Merge procedure after packing the new rectangle. This procedure
-	///		tries to defragment the list of disjoint free rectangles to improve packing performance, but also takes up 
+	///		tries to defragment the list of disjoint free rectangles to improve packing performance, but also takes up
 	///		some extra time.
 	/// @param rectChoice The free rectangle choice heuristic rule to use.
 	/// @param splitMethod The free rectangle split heuristic rule to use.
@@ -66,11 +66,11 @@ public:
 	/// @param merge If true, performs Rectangle Merge operations during the packing process.
 	/// @param rectChoice The free rectangle choice heuristic rule to use.
 	/// @param splitMethod The free rectangle split heuristic rule to use.
-	void Insert(std::vector<RectSize> &rects, bool merge, 
+	void Insert(std::vector<RectSize> &rects, bool merge,
 		FreeRectChoiceHeuristic rectChoice, GuillotineSplitHeuristic splitMethod);
 
 // Implements GUILLOTINE-MAXFITTING, an experimental heuristic that's really cool but didn't quite work in practice.
-//	void InsertMaxFitting(std::vector<RectSize> &rects, std::vector<Rect> &dst, bool merge, 
+//	void InsertMaxFitting(std::vector<RectSize> &rects, std::vector<Rect> &dst, bool merge,
 //		FreeRectChoiceHeuristic rectChoice, GuillotineSplitHeuristic splitMethod);
 
 	/// Computes the ratio of used/total surface area. 0.00 means no space is yet used, 1.00 means the whole bin is used.
@@ -112,7 +112,7 @@ private:
 	Rect FindPositionForNewNode(int width, int height, FreeRectChoiceHeuristic rectChoice, int *nodeIndex);
 
 	static int ScoreByHeuristic(int width, int height, const Rect &freeRect, FreeRectChoiceHeuristic rectChoice);
-	// The following functions compute (penalty) score values if a rect of the given size was placed into the 
+	// The following functions compute (penalty) score values if a rect of the given size was placed into the
 	// given free rectangle. In these score values, smaller is better.
 
 	static int ScoreBestAreaFit(int width, int height, const Rect &freeRect);
