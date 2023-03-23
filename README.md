@@ -27,8 +27,8 @@ The BFF application is based on the paper, <em>"<a href="http://www.cs.cmu.edu/~
 
 # Download Application
 
->    [Mac OSX v1.4](http://geometry.cs.cmu.edu/software/BFFMacOSX.zip)<br/>
->    [Windows v1.1](http://geometry.cs.cmu.edu/software/BFFWindows.zip)
+>    [Mac OSX v1.5](https://github.com/GeometryCollective/boundary-first-flattening/releases/tag/v1.5)<br/>
+>    [Windows v1.5](https://github.com/GeometryCollective/boundary-first-flattening/releases/tag/v1.5)
 
 # Release History
 
