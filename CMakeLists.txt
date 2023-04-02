@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.1.0)
 project(bff)
 
-option(BUILD_CLI  "Build BFF command line" ON)
-option(BUILD_GUI  "Build BFF GUI"          ON)
+option(BFF_BUILD_CLI  "Build BFF command line" ON)
+option(BFF_BUILD_GUI  "Build BFF GUI"          ON)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +40,7 @@ add_library(bff ${BFF_SOURCES})
 target_link_libraries(bff ${SuiteSparse_LIBRARIES})
 target_include_directories(bff PUBLIC ${BFF_INCLUDE_DIRS})
 
-if (BUILD_CLI)
+if (BFF_BUILD_CLI)
 	# build command line app
 	file(GLOB BFF_COMMAND_LINE_SOURCES "apps/command-line/src/*.cpp")
 
@@ -48,7 +48,7 @@ if (BUILD_CLI)
 	target_link_libraries(bff-command-line bff)
 endif()
 
-if (BUILD_GUI)
+if (BFF_BUILD_GUI)
 	# nanogui
 	set(NANOGUI_BUILD_EXAMPLE OFF CACHE BOOL " " FORCE)
 	set(NANOGUI_BUILD_PYTHON  OFF CACHE BOOL " " FORCE)
