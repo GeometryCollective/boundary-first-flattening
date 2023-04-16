@@ -4,8 +4,7 @@
 
 namespace bff {
 
-void Generators::buildPrimalSpanningTree(Mesh& mesh,
-										 VertexData<VertexCIter>& primalParent)
+void Generators::buildPrimalSpanningTree(Mesh& mesh, VertexData<VertexCIter>& primalParent)
 {
 	// mark each vertex as its own parent
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
@@ -40,8 +39,7 @@ void Generators::buildPrimalSpanningTree(Mesh& mesh,
 	}
 }
 
-bool Generators::inPrimalSpanningTree(EdgeCIter e,
-									  const VertexData<VertexCIter>& primalParent)
+bool Generators::inPrimalSpanningTree(EdgeCIter e, const VertexData<VertexCIter>& primalParent)
 {
 	HalfEdgeCIter he = e->halfEdge();
 	VertexCIter u = he->vertex();
