@@ -34,8 +34,13 @@ public:
 
 class MeshIO {
 public:
-	// reads model from obj file
+	// reads model from file
 	static bool read(const std::string& fileName, Model& model, std::string& error);
+
+	// reads model from obj file
+	static bool readOBJ(const std::string& fileName, PolygonSoup& soup,
+						std::set<std::pair<int, int>>& uncuttableEdges,
+						std::string& error);
 
 	// writes data to obj file
 	static bool write(const std::string& fileName, Model& model,
@@ -67,9 +72,6 @@ private:
 
 	// checks if mesh has non-manifold vertices
 	static bool hasNonManifoldVertices(const Mesh& mesh);
-
-	// reads data from obj file
-	static bool read(std::istringstream& in, Model& model, std::string& error);
 
 	// writes data to obj file
 	static void write(std::ofstream& out, Model& model,

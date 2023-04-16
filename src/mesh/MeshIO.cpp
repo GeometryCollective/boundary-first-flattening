@@ -8,6 +8,8 @@ namespace bff {
 
 void AdjacencyTable::construct(int n, const std::vector<int>& indices)
 {
+	data.clear();
+	iMap.clear();
 	data.resize(n);
 	iMap.resize(n);
 	size = 0;
@@ -47,6 +49,90 @@ int AdjacencyTable::getIndex(int i, int j) const
 int AdjacencyTable::getSize() const
 {
 	return size;
+}
+
+bool MeshIO::readOBJ(const std::string& fileName, PolygonSoup& soup,
+					 std::set<std::pair<int, int>>& uncuttableEdges,
+					 std::string& error)
+{
+	std::ifstream in(fileName.c_str());
+	std::istringstream buffer;
+
+	if (!in.is_open()) {
+		error = "Unable to open file";
+		return false;
+
+	} else {
+		buffer.str(std::string(std::istreambuf_iterator<char>(in),
+							   std::istreambuf_iterator<char>()));
+	}
+
+	std::string line;
+	int nVertices = 0;
+	bool seenFace = false;
+	soup.positions.clear();
+	soup.indices.clear();
+	uncuttableEdges.clear();
+
+	while (std::getline(buffer, line)) {
+		std::istringstream ss(line);
+		std::string token;
+		ss >> token;
+
+		if (token == "v") {
+			double x, y, z;
+			ss >> x >> y >> z;
+			soup.positions.emplace_back(Vector(x, y, z));
+
+			if (seenFace) {
+				nVertices = 0;
+				seenFace = false;
+			}
+			nVertices++;
+
+		} else if (token == "f") {
+			seenFace = true;
+			int vertexCount = 0;
+			int rootIndex = 0;
+			int prevIndex = 0;
+
+			while (ss >> token) {
+				std::istringstream indexStream(token);
+				std::string indexString;
+
+				if (std::getline(indexStream, indexString, '/')) {
+					int index = std::stoi(indexString);
+					if (index < 0) index = nVertices + index;
+					else index -= 1;
+
+					if (vertexCount == 0) rootIndex = index;
+
+					vertexCount++;
+					if (vertexCount > 3) {
+						// triangulate polygon if vertexCount > 3
+						soup.indices.emplace_back(rootIndex);
+						soup.indices.emplace_back(prevIndex);
+						soup.indices.emplace_back(index);
+
+						// tag edge as uncuttable
+						int i = rootIndex;
+						int j = prevIndex;
+						if (i > j) std::swap(i, j);
+						std::pair<int, int> edge(i, j);
+						uncuttableEdges.emplace(edge);
+
+					} else {
+						soup.indices.emplace_back(index);
+					}
+
+					prevIndex = index;
+				}
+			}
+		}
+	}
+
+	in.close();
+	return true;
 }
 
 void MeshIO::separateComponents(const PolygonSoup& soup,
@@ -426,98 +512,6 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	return true;
 }
 
-bool MeshIO::read(std::istringstream& in, Model& model, std::string& error)
-{
-	PolygonSoup soup;
-	std::string line;
-	int nVertices = 0;
-	bool seenFace = false;
-	std::set<std::pair<int, int>> uncuttableEdges;
-
-	while (std::getline(in, line)) {
-		std::istringstream ss(line);
-		std::string token;
-		ss >> token;
-
-		if (token == "v") {
-			double x, y, z;
-			ss >> x >> y >> z;
-			soup.positions.emplace_back(Vector(x, y, z));
-
-			if (seenFace) {
-				nVertices = 0;
-				seenFace = false;
-			}
-			nVertices++;
-
-		} else if (token == "f") {
-			seenFace = true;
-			int vertexCount = 0;
-			int rootIndex = 0;
-			int prevIndex = 0;
-
-			while (ss >> token) {
-				std::istringstream indexStream(token);
-				std::string indexString;
-
-				if (std::getline(indexStream, indexString, '/')) {
-					int index = std::stoi(indexString);
-					if (index < 0) index = nVertices + index;
-					else index -= 1;
-
-					if (vertexCount == 0) rootIndex = index;
-
-					vertexCount++;
-					if (vertexCount > 3) {
-						// triangulate polygon if vertexCount > 3
-						soup.indices.emplace_back(rootIndex);
-						soup.indices.emplace_back(prevIndex);
-						soup.indices.emplace_back(index);
-
-						// tag edge as uncuttable
-						int i = rootIndex;
-						int j = prevIndex;
-						if (i > j) std::swap(i, j);
-						std::pair<int, int> edge(i, j);
-						uncuttableEdges.emplace(edge);
-
-					} else {
-						soup.indices.emplace_back(index);
-					}
-
-					prevIndex = index;
-				}
-			}
-		}
-	}
-
-	// construct table
-	soup.table.construct(soup.positions.size(), soup.indices);
-	std::vector<int> isCuttableEdge(soup.table.getSize(), 1);
-	for (std::set<std::pair<int, int>>::iterator it = uncuttableEdges.begin();
-												 it != uncuttableEdges.end();
-												 it++) {
-		int eIndex = soup.table.getIndex(it->first, it->second);
-		isCuttableEdge[eIndex] = 0;
-	}
-
-	// separate model into components
-	std::vector<PolygonSoup> soups;
-	std::vector<std::vector<int>> isCuttableEdgeSoups;
-	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups,
-					   model.modelToMeshMap, model.meshToModelMap);
-
-	// build halfedge meshes
-	model.meshes.resize(soups.size());
-	for (int i = 0; i < (int)soups.size(); i++) {
-		if (!buildMesh(soups[i], isCuttableEdgeSoups[i], model[i], error)) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 void MeshIO::normalize(Model& model)
 {
 	// compute center of mass
@@ -553,25 +547,40 @@ void MeshIO::normalize(Model& model)
 
 bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
-	std::ifstream in(fileName.c_str());
-	std::istringstream buffer;
-
-	if (!in.is_open()) {
+	// read obj file
+	PolygonSoup soup;
+	std::set<std::pair<int, int>> uncuttableEdges;
+	if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
 		return false;
-
-	} else {
-		buffer.str(std::string(std::istreambuf_iterator<char>(in),
-							   std::istreambuf_iterator<char>()));
 	}
 
-	bool success = false;
-	if ((success = read(buffer, model, error))) {
-		normalize(model);
+	// construct adjacency table
+	soup.table.construct(soup.positions.size(), soup.indices);
+	std::vector<int> isCuttableEdge(soup.table.getSize(), 1);
+	for (std::set<std::pair<int, int>>::iterator it = uncuttableEdges.begin();
+												 it != uncuttableEdges.end();
+												 it++) {
+		int eIndex = soup.table.getIndex(it->first, it->second);
+		isCuttableEdge[eIndex] = 0;
 	}
 
-	in.close();
+	// separate model into components
+	std::vector<PolygonSoup> soups;
+	std::vector<std::vector<int>> isCuttableEdgeSoups;
+	separateComponents(soup, isCuttableEdge, soups, isCuttableEdgeSoups,
+					   model.modelToMeshMap, model.meshToModelMap);
 
-	return success;
+	// build halfedge meshes
+	model.meshes.resize(soups.size());
+	for (int i = 0; i < (int)soups.size(); i++) {
+		if (!buildMesh(soups[i], isCuttableEdgeSoups[i], model[i], error)) {
+			return false;
+		}
+	}
+
+	// normalize model
+	normalize(model);
+	return true;
 }
 
 void writeString(std::ofstream& out, const std::string& str)
