@@ -34,18 +34,18 @@ public:
 
 class MeshIO {
 public:
-	// reads model from file
-	static bool read(const std::string& fileName, Model& model, std::string& error);
-
-	// reads model from obj file
-	static bool readOBJ(const std::string& fileName, PolygonSoup& soup,
-						std::set<std::pair<int, int>>& uncuttableEdges,
-						std::string& error);
+	// loads model from file
+	static bool load(const std::string& fileName, Model& model, std::string& error);
 
 	// writes data to obj file
 	static bool write(const std::string& fileName, Model& model,
 					  const std::vector<bool>& mappedToSphere,
 					  bool normalize, bool writeOnlyUVs);
+
+	// reads model from obj file
+	static bool readOBJ(const std::string& fileName, PolygonSoup& soup,
+						std::set<std::pair<int, int>>& uncuttableEdges,
+						std::string& error);
 
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,

@@ -71,7 +71,7 @@ void loadModel(const std::string& inputPath, Model& model,
 			   std::vector<bool>& surfaceIsClosed)
 {
 	std::string error;
-	if (MeshIO::read(inputPath, model, error)) {
+	if (MeshIO::load(inputPath, model, error)) {
 		int nMeshes = model.size();
 		surfaceIsClosed.resize(nMeshes, false);
 
