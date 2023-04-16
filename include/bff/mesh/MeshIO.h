@@ -34,8 +34,8 @@ public:
 
 class MeshIO {
 public:
-	// loads model from file
-	static bool load(const std::string& fileName, Model& model, std::string& error);
+	// reads model from file
+	static bool read(const std::string& fileName, Model& model, std::string& error);
 
 	// writes data to obj file
 	static bool write(const std::string& fileName, Model& model,

@@ -545,7 +545,7 @@ void MeshIO::normalize(Model& model)
 	}
 }
 
-bool MeshIO::load(const std::string& fileName, Model& model, std::string& error)
+bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	// read obj file
 	PolygonSoup soup;

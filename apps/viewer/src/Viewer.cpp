@@ -537,7 +537,7 @@ void Viewer::initModel()
 {
 	// load model from file
 	std::string error;
-	if ((loadedModel = MeshIO::load(objPath, model, error))) {
+	if ((loadedModel = MeshIO::read(objPath, model, error))) {
 		modelStates.resize(model.size());
 		for (int i = 0; i < model.size(); i++) {
 			if (model[i].boundaries.size() >= 1) {
