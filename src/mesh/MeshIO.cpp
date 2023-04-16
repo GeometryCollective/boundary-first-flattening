@@ -545,15 +545,9 @@ void MeshIO::normalize(Model& model)
 	}
 }
 
-bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
+bool MeshIO::buildModel(const std::set<std::pair<int, int>>& uncuttableEdges,
+						PolygonSoup& soup, Model& model, std::string& error)
 {
-	// read obj file
-	PolygonSoup soup;
-	std::set<std::pair<int, int>> uncuttableEdges;
-	if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
-		return false;
-	}
-
 	// construct adjacency table
 	soup.table.construct(soup.positions.size(), soup.indices);
 	std::vector<int> isCuttableEdge(soup.table.getSize(), 1);
@@ -580,6 +574,23 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 
 	// normalize model
 	normalize(model);
+	return true;
+}
+
+bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
+{
+	// read polygon soup from obj file
+	PolygonSoup soup;
+	std::set<std::pair<int, int>> uncuttableEdges;
+	if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
+		return false;
+	}
+
+	// build model
+	if (!buildModel(uncuttableEdges, soup, model, error)) {
+		return false;
+	}
+
 	return true;
 }
 
