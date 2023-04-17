@@ -1,6 +1,6 @@
 #include "bff/project/Generators.h"
 #include <queue>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace bff {
 
@@ -66,7 +66,7 @@ void Generators::buildDualSpanningTree(Mesh& mesh,
 		HalfEdgeCIter he = f->halfEdge();
 		while (!he->edge()->isCuttable) he = he->next();
 		HalfEdgeCIter fhe = he;
-		std::unordered_map<int, bool> seenUncuttableEdges;
+		std::unordered_set<int> seenUncuttableEdges;
 
 		do {
 			ngon[he->face()] = f;
@@ -74,7 +74,7 @@ void Generators::buildDualSpanningTree(Mesh& mesh,
 
 			he = he->next();
 			while (!he->edge()->isCuttable) {
-				seenUncuttableEdges[he->edge()->index] = true;
+				seenUncuttableEdges.emplace(he->edge()->index);
 				he = he->flip()->next();
 			}
 

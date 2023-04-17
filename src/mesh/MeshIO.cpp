@@ -1,6 +1,7 @@
 #include "bff/mesh/MeshIO.h"
 #include "bff/project/BinPacking.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include <iomanip>
 
@@ -52,7 +53,7 @@ int AdjacencyTable::getSize() const
 }
 
 bool MeshIO::readOBJ(const std::string& fileName, PolygonSoup& soup,
-					 std::set<std::pair<int, int>>& uncuttableEdges,
+					 std::vector<std::pair<int, int>>& uncuttableEdges,
 					 std::string& error)
 {
 	std::ifstream in(fileName.c_str());
@@ -117,9 +118,8 @@ bool MeshIO::readOBJ(const std::string& fileName, PolygonSoup& soup,
 						// tag edge as uncuttable
 						int i = rootIndex;
 						int j = prevIndex;
-						if (i > j) std::swap(i, j);
 						std::pair<int, int> edge(i, j);
-						uncuttableEdges.emplace(edge);
+						uncuttableEdges.emplace_back(edge);
 
 					} else {
 						soup.indices.emplace_back(index);
@@ -545,16 +545,14 @@ void MeshIO::normalize(Model& model)
 	}
 }
 
-bool MeshIO::buildModel(const std::set<std::pair<int, int>>& uncuttableEdges,
+bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						PolygonSoup& soup, Model& model, std::string& error)
 {
 	// construct adjacency table
 	soup.table.construct(soup.positions.size(), soup.indices);
 	std::vector<int> isCuttableEdge(soup.table.getSize(), 1);
-	for (std::set<std::pair<int, int>>::iterator it = uncuttableEdges.begin();
-												 it != uncuttableEdges.end();
-												 it++) {
-		int eIndex = soup.table.getIndex(it->first, it->second);
+	for (int i = 0; i < (int)uncuttableEdges.size(); i++) {
+		int eIndex = soup.table.getIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
 		isCuttableEdge[eIndex] = 0;
 	}
 
@@ -581,7 +579,7 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	// read polygon soup from obj file
 	PolygonSoup soup;
-	std::set<std::pair<int, int>> uncuttableEdges;
+	std::vector<std::pair<int, int>> uncuttableEdges;
 	if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
 		return false;
 	}
@@ -750,7 +748,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 				HalfEdgeCIter he = f->halfEdge()->next();
 				while (!he->edge()->isCuttable) he = he->next();
 				HalfEdgeCIter fhe = he;
-				std::unordered_map<int, bool> seenUncuttableEdges;
+				std::unordered_set<int> seenUncuttableEdges;
 
 				do {
 					VertexCIter v = he->vertex();
@@ -761,7 +759,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 
 					he = he->next();
 					while (!he->edge()->isCuttable) {
-						seenUncuttableEdges[he->edge()->index] = true;
+						seenUncuttableEdges.emplace(he->edge()->index);
 						he = he->flip()->next();
 					}
 

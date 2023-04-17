@@ -39,11 +39,11 @@ public:
 
 	// reads polygon soup from obj file
 	static bool readOBJ(const std::string& fileName, PolygonSoup& soup,
-						std::set<std::pair<int, int>>& uncuttableEdges,
+						std::vector<std::pair<int, int>>& uncuttableEdges,
 						std::string& error);
 
 	// builds model
-	static bool buildModel(const std::set<std::pair<int, int>>& uncuttableEdges,
+	static bool buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						   PolygonSoup& soup, Model& model, std::string& error);
 
 	// writes model and its UVs to file
