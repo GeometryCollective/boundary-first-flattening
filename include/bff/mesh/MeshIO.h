@@ -68,15 +68,17 @@ public:
 								const Vector& modelMaxBounds,
 								std::vector<Vector>& positions,
 								std::vector<Vector>& uvs,
-								std::vector<std::vector<int>>& indices,
-								std::vector<std::vector<int>>& uvIndices);
+								std::vector<int>& vIndices,
+								std::vector<int>& uvIndices,
+								std::vector<int>& indicesOffset);
 
 	// writes model positions and UVs to obj file
 	static bool writeOBJ(const std::string& fileName, bool writeOnlyUvs,
 						 const std::vector<Vector>& positions,
 						 const std::vector<Vector>& uvs,
-						 const std::vector<std::vector<int>>& indices,
-						 const std::vector<std::vector<int>>& uvIndices);
+						 const std::vector<int>& vIndices,
+						 const std::vector<int>& uvIndices,
+						 const std::vector<int>& indicesOffset);
 
 private:
 	// separates model into components

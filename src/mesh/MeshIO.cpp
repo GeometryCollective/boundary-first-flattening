@@ -620,17 +620,26 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 							 const Vector& modelMaxBounds,
 							 std::vector<Vector>& positions,
 							 std::vector<Vector>& uvs,
-							 std::vector<std::vector<int>>& indices,
-							 std::vector<std::vector<int>>& uvIndices)
+							 std::vector<int>& vIndices,
+							 std::vector<int>& uvIndices,
+							 std::vector<int>& indicesOffset)
 {
-	// clear
-	positions.clear();
-	uvs.clear();
-	indices.clear();
-	uvIndices.clear();
+	// initialize
+	int nVertices = model.nVertices();
+	int nFaces = 0;
+	for (int i = 0; i < model.size(); i++) {
+		nFaces += (int)model[i].faces.size();
+	}
+
+	positions.clear(); positions.reserve(nVertices);
+	uvs.clear(); uvs.reserve(nVertices);
+	vIndices.clear(); vIndices.reserve(3*nFaces);
+	uvIndices.clear(); uvIndices.reserve(3*nFaces);
+	indicesOffset.clear(); indicesOffset.reserve(nFaces + 1);
+	indicesOffset.emplace_back(0);
 
 	// collect vertex positions
-	for (int i = 0; i < model.nVertices(); i++) {
+	for (int i = 0; i < nVertices; i++) {
 		std::pair<int, int> vData = model.localVertexIndex(i);
 		const Mesh& mesh = model[vData.first];
 		VertexCIter v = mesh.vertices.begin() + vData.second;
@@ -646,6 +655,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 	}
 
 	// collect uvs and indices
+	int nV = 0;
 	int nUvs = 0;
 	for (int i = 0; i < model.size(); i++) {
 		// compute uv radius and shift
@@ -737,7 +747,6 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 					continue;
 				}
 
-				std::vector<int> index, uvIndex;
 				HalfEdgeCIter he = f->halfEdge()->next();
 				while (!he->edge()->isCuttable) he = he->next();
 				HalfEdgeCIter fhe = he;
@@ -746,8 +755,9 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 				do {
 					VertexCIter v = he->vertex();
 					int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
-					index.emplace_back(model.globalVertexIndex(i, vIndex));
-					uvIndex.emplace_back(nUvs + uvIndexMap[he->next()]);
+					vIndices.emplace_back(model.globalVertexIndex(i, vIndex));
+					uvIndices.emplace_back(nUvs + uvIndexMap[he->next()]);
+					nV++;
 
 					he = he->next();
 					while (!he->edge()->isCuttable) {
@@ -757,8 +767,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 
 				} while (he != fhe);
 
-				indices.emplace_back(index);
-				uvIndices.emplace_back(uvIndex);
+				indicesOffset.emplace_back(nV);
 				uncuttableEdges = (int)seenUncuttableEdges.size();
 			}
 		}
@@ -775,8 +784,9 @@ void writeString(std::ofstream& out, const std::string& str)
 bool MeshIO::writeOBJ(const std::string& fileName, bool writeOnlyUvs,
 					  const std::vector<Vector>& positions,
 					  const std::vector<Vector>& uvs,
-					  const std::vector<std::vector<int>>& indices,
-					  const std::vector<std::vector<int>>& uvIndices)
+					  const std::vector<int>& vIndices,
+					  const std::vector<int>& uvIndices,
+					  const std::vector<int>& indicesOffset)
 {
 	std::ofstream out(fileName.c_str());
 	if (!out.is_open()) {
@@ -804,16 +814,16 @@ bool MeshIO::writeOBJ(const std::string& fileName, bool writeOnlyUvs,
 		}
 	}
 
-	for (int i = 0; i < (int)uvIndices.size(); i++) {
+	for (int i = 0; i < (int)indicesOffset.size() - 1; i++) {
 		writeString(out, "f");
 
-		for (int j = 0; j < (int)uvIndices[i].size(); j++) {
+		for (int j = indicesOffset[i]; j < indicesOffset[i + 1]; j++) {
 			if (writeOnlyUvs) {
-				writeString(out, " " + std::to_string(uvIndices[i][j] + 1));
+				writeString(out, " " + std::to_string(uvIndices[j] + 1));
 
 			} else {
-				writeString(out, " " + std::to_string(indices[i][j] + 1) + "/" +
-									   std::to_string(uvIndices[i][j] + 1));
+				writeString(out, " " + std::to_string(vIndices[j] + 1) + "/" +
+									   std::to_string(uvIndices[j] + 1));
 			}
 		}
 
@@ -838,14 +848,15 @@ bool MeshIO::write(const std::string& fileName, Model& model,
 
 	// collect model UVs
 	std::vector<Vector> positions, uvs;
-	std::vector<std::vector<int>> indices, uvIndices;
+	std::vector<int> vIndices, uvIndices, indicesOffset;
 	collectModelUvs(model, normalizeUvs, isSurfaceMappedToSphere,
 					originalUvIslandCenters, newUvIslandCenters,
 					isUvIslandFlipped, modelMinBounds, modelMaxBounds,
-					positions, uvs, indices, uvIndices);
+					positions, uvs, vIndices, uvIndices, indicesOffset);
 
 	// write OBJ
-	return writeOBJ(fileName, writeOnlyUvs, positions, uvs, indices, uvIndices);
+	return writeOBJ(fileName, writeOnlyUvs, positions, uvs,
+					vIndices, uvIndices, indicesOffset);
 }
 
 } // namespace bff
