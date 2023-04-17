@@ -12,7 +12,7 @@ public:
 		for (int i = 0; i <= n_; i++) {
 			rank[i] = 0;
 			parent[i] = i;
-			marked[i] = false;
+			marked[i] = 0;
 		}
 	}
 
@@ -35,32 +35,32 @@ public:
 		if (rank[x] == rank[y]) rank[y]++;
 
 		// if either set was marked, both are marked
-		if (marked[x] || marked[y]) {
-			marked[x] = true;
-			marked[y] = true;
+		if (isMarked(x) || isMarked(y)) {
+			marked[x] = 1;
+			marked[y] = 1;
 		}
 	}
 
 	// mark set
 	void mark(int x) {
-		marked[find(x)] = true;
+		marked[find(x)] = 1;
 	}
 
 	// unmark set
 	void unmark(int x) {
-		marked[find(x)] = false;
+		marked[find(x)] = 0;
 	}
 
 	// check if set is marked
 	bool isMarked(int x) {
-		return marked[find(x)];
+		return marked[find(x)] == 1;
 	}
 
 private:
 	// members
 	std::vector<int> parent;
 	std::vector<int> rank;
-	std::vector<bool> marked;
+	std::vector<uint8_t> marked;
 };
 
 } // namespace bff
