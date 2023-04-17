@@ -34,7 +34,7 @@ public:
 
 class MeshIO {
 public:
-	// reads model from file
+	// reads polygon soup from file and builds model
 	static bool read(const std::string& fileName, Model& model, std::string& error);
 
 	// reads polygon soup from obj file
