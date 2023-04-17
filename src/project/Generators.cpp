@@ -147,8 +147,8 @@ void Generators::createBoundary(Mesh& mesh)
 	int nHe = 0;
 
 	// insert vertices, edges and halfedges
-	VertexData<int> seenVertex(mesh, 0);
-	EdgeData<int> seenEdge(mesh, 0);
+	VertexData<uint8_t> seenVertex(mesh, 0);
+	EdgeData<uint8_t> seenEdge(mesh, 0);
 	for (WedgeIter w: mesh.cutBoundary()) {
 		VertexIter v = w->vertex();
 		HalfEdgeIter he = w->halfEdge()->next();
