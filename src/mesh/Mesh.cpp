@@ -114,7 +114,7 @@ void Mesh::projectUvsToPcaAxis()
 	}
 	cm /= totalArea;
 
-	// translate uvs to origin
+	// translate UVs to origin
 	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
 		if (w->isReal()) {
 			w->uv -= cm;

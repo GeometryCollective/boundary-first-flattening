@@ -654,7 +654,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 		}
 	}
 
-	// collect uvs and indices
+	// collect UVs and indices
 	int nV = 0;
 	int nUvs = 0;
 	for (int i = 0; i < model.size(); i++) {
@@ -674,7 +674,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 			}
 		}
 
-		// collect interior uvs
+		// collect interior UVs
 		int uvCount = 0;
 		HalfEdgeData<int> uvIndexMap(model[i]);
 
@@ -708,7 +708,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 			}
 		}
 
-		// collect boundary uvs
+		// collect boundary UVs
 		for (WedgeCIter w: model[i].cutBoundary()) {
 			Vector uv = w->uv;
 			if (isSurfaceMappedToSphere[i] == 1) {
