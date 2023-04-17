@@ -37,9 +37,9 @@ double computeQuasiConformalError(std::vector<Vector>& p, std::vector<Vector>& q
 	double a = dot(Ss, Ss);
 	double b = dot(Ss, St);
 	double c = dot(St, St);
-	double det = sqrt(pow(a-c, 2) + 4.0*b*b);
-	double Gamma = sqrt(0.5*(a + c + det));
-	double gamma = sqrt(0.5*(a + c - det));
+	double det = std::sqrt(std::pow(a - c, 2) + 4.0*b*b);
+	double Gamma = std::sqrt(0.5*(a + c + det));
+	double gamma = std::sqrt(0.5*(a + c - det));
 
 	if (Gamma < gamma) std::swap(Gamma, gamma);
 

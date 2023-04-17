@@ -95,7 +95,7 @@ inline Vector& Vector::operator-=(const Vector& v)
 
 inline double Vector::norm() const
 {
-	return sqrt(norm2());
+	return std::sqrt(norm2());
 }
 
 inline double Vector::norm2() const

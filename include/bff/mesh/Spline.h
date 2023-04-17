@@ -1,7 +1,7 @@
 #pragma once
 
 #include <map>
-#include "math.h"
+#include <cmath>
 
 typedef std::map<double, double>::iterator       KnotIter;
 typedef std::map<double, double>::const_iterator KnotCIter;

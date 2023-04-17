@@ -100,7 +100,7 @@ void BinPacking::pack(const Model& model,
 	std::vector<Rect> rectangles(n);
 	int minBoxLength = 10000;
 	int maxBoxLength = 10000;
-	double unitsPerInt = sqrt(totalArea)/(double)maxBoxLength;
+	double unitsPerInt = std::sqrt(totalArea)/(double)maxBoxLength;
 
 	for (int i = 0; i < n; i++) {
 		int minX = static_cast<int>(std::floor(minBounds[i].x/unitsPerInt));

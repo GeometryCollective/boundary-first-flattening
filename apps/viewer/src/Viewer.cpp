@@ -1870,7 +1870,7 @@ double Viewer::pickDistance(int index, const Vector& position, const ViewPane& p
 	double dx = clickX - projected[0];
 	double dy = framebufferHeight - clickY - projected[1];
 
-	return sqrt(dx*dx + dy*dy);
+	return std::sqrt(dx*dx + dy*dy);
 }
 
 bool Viewer::didPick(int index, const Vector& position, const ViewPane& pane)

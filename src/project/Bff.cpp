@@ -1,6 +1,5 @@
 #include "bff/project/Bff.h"
 #include "bff/project/Distortion.h"
-#include <cmath>
 
 namespace bff {
 
