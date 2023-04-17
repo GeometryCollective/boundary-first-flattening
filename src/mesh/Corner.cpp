@@ -123,8 +123,8 @@ double Wedge::scaling() const
 	double lij = (b - a).norm();
 	double ljk = (c - b).norm();
 
-	double uij = log(lij/halfEdge()->next()->edge()->length());
-	double ujk = log(ljk/next->halfEdge()->next()->edge()->length());
+	double uij = std::log(lij/halfEdge()->next()->edge()->length());
+	double ujk = std::log(ljk/next->halfEdge()->next()->edge()->length());
 
 	return (lij*uij + ljk*ujk)/(lij + ljk);
 }

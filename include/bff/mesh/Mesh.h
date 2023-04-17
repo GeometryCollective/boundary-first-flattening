@@ -23,7 +23,7 @@ public:
 	// returns mesh diameter
 	double diameter() const;
 
-	// projects uvs to PCA axis
+	// projects UVs to PCA axis
 	void projectUvsToPcaAxis();
 
 	// range based for loop over the cut boundary

@@ -37,8 +37,8 @@ void BFF::computeBoundaryScaleFactors(const DenseMatrix& ltilde, DenseMatrix& u)
 
 		// compute u as a weighted average of piecewise constant scale factors per
 		// boundary edge
-		double uij = log(ltilde(i)/data->l(i));
-		double ujk = log(ltilde(j)/data->l(j));
+		double uij = std::log(ltilde(i)/data->l(i));
+		double ujk = std::log(ltilde(j)/data->l(j));
 		u(j) = (ltilde(i)*uij + ltilde(j)*ujk)/(ltilde(i) + ltilde(j));
 	}
 }

@@ -162,7 +162,7 @@ double computeAreaScaling(const std::vector<Vector>& p, const std::vector<Vector
 	Vector v2 = q[2] - q[0];
 	double area = cross(v1, v2).norm();
 
-	return log(area/Area);
+	return std::log(area/Area);
 }
 
 Vector seismic(double u)
