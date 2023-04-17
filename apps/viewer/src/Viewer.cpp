@@ -188,12 +188,12 @@ void Viewer::initGui()
 		std::string file = file_dialog({{"obj", "Wavefront OBJ file"}}, true);
 		if (file.empty()) return;
 		try {
-			std::vector<bool> mappedToSphere;
+			std::vector<uint8_t> isSurfaceMappedToSphere;
 			for (int i = 0; i < model.size(); i++) {
-				mappedToSphere.push_back(modelStates[i].mappedToSphere);
+				isSurfaceMappedToSphere.push_back(modelStates[i].mappedToSphere ? 1 : 0);
 			}
 
-			if (!MeshIO::write(file, model, mappedToSphere,
+			if (!MeshIO::write(file, model, isSurfaceMappedToSphere,
 							   exportNormalizedUVsCheckBox->checked(),
 							   !useVtFlagToStoreUVsCheckBox->checked())) {
 				reportError("Unable to write file: " + file);

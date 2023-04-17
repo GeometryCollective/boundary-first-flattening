@@ -48,22 +48,22 @@ public:
 
 	// writes model and its UVs to file
 	static bool write(const std::string& fileName, Model& model,
-					  const std::vector<bool>& isSurfaceMappedToSphere,
+					  const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					  bool normalizeUvs, bool writeOnlyUvs);
 
 	// bin packs model UV islands
-	static void packUvs(Model& model, const std::vector<bool>& isSurfaceMappedToSphere,
+	static void packUvs(Model& model, const std::vector<uint8_t>& isSurfaceMappedToSphere,
 						std::vector<Vector>& originalUvIslandCenters,
 						std::vector<Vector>& newUvIslandCenters,
-						std::vector<bool>& isUvIslandFlipped,
+						std::vector<uint8_t>& isUvIslandFlipped,
 						Vector& modelMinBounds, Vector& modelMaxBounds);
 
 	// collects model positions and UVs
 	static void collectModelUvs(Model& model, bool normalizeUvs,
-								const std::vector<bool>& isSurfaceMappedToSphere,
+								const std::vector<uint8_t>& isSurfaceMappedToSphere,
 								const std::vector<Vector>& originalUvIslandCenters,
 								const std::vector<Vector>& newUvIslandCenters,
-								const std::vector<bool>& isUvIslandFlipped,
+								const std::vector<uint8_t>& isUvIslandFlipped,
 								const Vector& modelMinBounds,
 								const Vector& modelMaxBounds,
 								std::vector<Vector>& positions,

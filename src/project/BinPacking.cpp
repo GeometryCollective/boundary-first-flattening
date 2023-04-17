@@ -10,7 +10,7 @@ using namespace rbp;
 bool attemptPacking(int boxLength, double unitsPerInt,
 					const std::vector<Rect>& rectangles,
 					std::vector<Vector>& newUvIslandCenters,
-					std::vector<bool>& isUvIslandFlipped,
+					std::vector<uint8_t>& isUvIslandFlipped,
 					Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	int n = (int)rectangles.size();
@@ -33,7 +33,7 @@ bool attemptPacking(int boxLength, double unitsPerInt,
 		}
 
 		// check if flipped
-		isUvIslandFlipped[i] = rect.width == rectangles[i].width ? false : true;
+		isUvIslandFlipped[i] = rect.width == rectangles[i].width ? 0 : 1;
 
 		// compute new centers
 		newUvIslandCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
@@ -48,10 +48,10 @@ bool attemptPacking(int boxLength, double unitsPerInt,
 }
 
 void BinPacking::pack(const Model& model,
-					  const std::vector<bool>& isSurfaceMappedToSphere,
+					  const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					  std::vector<Vector>& originalUvIslandCenters,
 					  std::vector<Vector>& newUvIslandCenters,
-					  std::vector<bool>& isUvIslandFlipped,
+					  std::vector<uint8_t>& isUvIslandFlipped,
 					  Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	// compute bounding boxes
@@ -65,7 +65,7 @@ void BinPacking::pack(const Model& model,
 	for (int i = 0; i < n; i++) {
 		// compute island radius
 		double radius = 1e-8;
-		if (isSurfaceMappedToSphere[i]) {
+		if (isSurfaceMappedToSphere[i] == 1) {
 			for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 				radius = std::max(w->uv.norm(), radius);
 			}
@@ -77,7 +77,7 @@ void BinPacking::pack(const Model& model,
 		// scale UVs by radius and compute bounds
 		for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 			Vector uv = w->uv;
-			if (isSurfaceMappedToSphere[i]) {
+			if (isSurfaceMappedToSphere[i] == 1) {
 				uv /= radius;
 				uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
 				uv.y = 0.5 - asin(uv.y)/M_PI;

@@ -166,14 +166,14 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 	// separate soup into components
 	int components = 0;
-	std::vector<bool> seenFace(nIndices, false);
+	std::vector<uint8_t> seenFace(nIndices, 0);
 	std::vector<int> faceComponent(nIndices);
 	for (int I = 0; I < nIndices; I += 3) {
 		// continue if face has already been seen
-		if (seenFace[I]) continue;
+		if (seenFace[I] == 1) continue;
 
 		// collect all faces in a single component and mark them as seen
-		seenFace[I] = true;
+		seenFace[I] = 1;
 		faceComponent[I] = components;
 		std::queue<int> q;
 		q.push(I);
@@ -196,7 +196,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 					int g = f == faces[0] ? faces[1] : faces[0];
 
 					if (!seenFace[g]) {
-						seenFace[g] = true;
+						seenFace[g] = 1;
 						faceComponent[g] = components;
 						q.push(g);
 					}
@@ -594,10 +594,10 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 	return true;
 }
 
-void MeshIO::packUvs(Model& model, const std::vector<bool>& isSurfaceMappedToSphere,
+void MeshIO::packUvs(Model& model, const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					 std::vector<Vector>& originalUvIslandCenters,
 					 std::vector<Vector>& newUvIslandCenters,
-					 std::vector<bool>& isUvIslandFlipped,
+					 std::vector<uint8_t>& isUvIslandFlipped,
 					 Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	if (model.size() > 1) {
@@ -612,10 +612,10 @@ void MeshIO::packUvs(Model& model, const std::vector<bool>& isSurfaceMappedToSph
 }
 
 void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
-							 const std::vector<bool>& isSurfaceMappedToSphere,
+							 const std::vector<uint8_t>& isSurfaceMappedToSphere,
 							 const std::vector<Vector>& originalUvIslandCenters,
 							 const std::vector<Vector>& newUvIslandCenters,
-							 const std::vector<bool>& isUvIslandFlipped,
+							 const std::vector<uint8_t>& isUvIslandFlipped,
 							 const Vector& modelMinBounds,
 							 const Vector& modelMaxBounds,
 							 std::vector<Vector>& positions,
@@ -635,7 +635,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 		const Mesh& mesh = model[vData.first];
 		VertexCIter v = mesh.vertices.begin() + vData.second;
 
-		if (isSurfaceMappedToSphere[vData.first]) {
+		if (isSurfaceMappedToSphere[vData.first] == 1) {
 			const Vector& uv = v->wedge()->uv;
 			positions.emplace_back(uv);
 
@@ -658,7 +658,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 
 		// compute sphere radius if component has been mapped to a sphere
 		double sphereRadius = 1.0;
-		if (isSurfaceMappedToSphere[i]) {
+		if (isSurfaceMappedToSphere[i] == 1) {
 			for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 				sphereRadius = std::max(w->uv.norm(), sphereRadius);
 			}
@@ -671,7 +671,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			if (!v->onBoundary()) {
 				Vector uv = v->wedge()->uv;
-				if (isSurfaceMappedToSphere[i]) {
+				if (isSurfaceMappedToSphere[i] == 1) {
 					uv /= sphereRadius;
 					uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
 					uv.y = 0.5 - asin(uv.y)/M_PI;
@@ -681,7 +681,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 				}
 
 				uv -= originalUvIslandCenters[i];
-				if (isUvIslandFlipped[i]) uv = Vector(-uv.y, uv.x);
+				if (isUvIslandFlipped[i] == 1) uv = Vector(-uv.y, uv.x);
 				uv += newUvIslandCenters[i];
 				uv -= minExtent;
 				if (normalizeUvs) uv /= extent;
@@ -701,7 +701,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 		// collect boundary uvs
 		for (WedgeCIter w: model[i].cutBoundary()) {
 			Vector uv = w->uv;
-			if (isSurfaceMappedToSphere[i]) {
+			if (isSurfaceMappedToSphere[i] == 1) {
 				uv /= sphereRadius;
 				uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
 				uv.y = 0.5 - asin(uv.y)/M_PI;
@@ -711,7 +711,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 			}
 
 			uv -= originalUvIslandCenters[i];
-			if (isUvIslandFlipped[i]) uv = Vector(-uv.y, uv.x);
+			if (isUvIslandFlipped[i] == 1) uv = Vector(-uv.y, uv.x);
 			uv += newUvIslandCenters[i];
 			uv -= minExtent;
 			if (normalizeUvs) uv /= extent;
@@ -825,12 +825,12 @@ bool MeshIO::writeOBJ(const std::string& fileName, bool writeOnlyUvs,
 }
 
 bool MeshIO::write(const std::string& fileName, Model& model,
-				   const std::vector<bool>& isSurfaceMappedToSphere,
+				   const std::vector<uint8_t>& isSurfaceMappedToSphere,
 				   bool normalizeUvs, bool writeOnlyUvs)
 {
 	// pack UVs
 	std::vector<Vector> originalUvIslandCenters, newUvIslandCenters;
-	std::vector<bool> isUvIslandFlipped;
+	std::vector<uint8_t> isUvIslandFlipped;
 	Vector modelMinBounds, modelMaxBounds;
 	packUvs(model, isSurfaceMappedToSphere, originalUvIslandCenters,
 			newUvIslandCenters, isUvIslandFlipped,

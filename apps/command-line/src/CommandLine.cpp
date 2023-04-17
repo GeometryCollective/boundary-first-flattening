@@ -68,12 +68,12 @@ void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string
 }
 
 void loadModel(const std::string& inputPath, Model& model,
-			   std::vector<bool>& surfaceIsClosed)
+			   std::vector<uint8_t>& isSurfaceClosed)
 {
 	std::string error;
 	if (MeshIO::read(inputPath, model, error)) {
 		int nMeshes = model.size();
-		surfaceIsClosed.resize(nMeshes, false);
+		isSurfaceClosed.resize(nMeshes, 0);
 
 		for (int i = 0; i < nMeshes; i++) {
 			Mesh& mesh = model[i];
@@ -88,7 +88,7 @@ void loadModel(const std::string& inputPath, Model& model,
 					if (nBoundaries > 1) {
 						if (HoleFiller::fill(mesh)) {
 							// all holes were filled
-							surfaceIsClosed[i] = true;
+							isSurfaceClosed[i] = 1;
 						}
 					}
 
@@ -101,7 +101,7 @@ void loadModel(const std::string& inputPath, Model& model,
 			} else if (nBoundaries == 0) {
 				if (mesh.eulerCharacteristic() == 2) {
 					// mesh is closed
-					surfaceIsClosed[i] = true;
+					isSurfaceClosed[i] = 1;
 
 				} else {
 					// mesh has handles
@@ -116,7 +116,7 @@ void loadModel(const std::string& inputPath, Model& model,
 	}
 }
 
-void flatten(Model& model, const std::vector<bool>& surfaceIsClosed,
+void flatten(Model& model, const std::vector<uint8_t>& isSurfaceClosed,
 			 int nCones, bool flattenToDisk, bool mapToSphere)
 {
 	int nMeshes = model.size();
@@ -129,16 +129,16 @@ void flatten(Model& model, const std::vector<bool>& surfaceIsClosed,
 			DenseMatrix coneAngles(bff.data->iN);
 			int S = std::min(nCones, (int)mesh.vertices.size() - bff.data->bN);
 
-			if (ConePlacement::findConesAndPrescribeAngles(S, cones, coneAngles, bff.data, mesh)
-				== ConePlacement::ErrorCode::ok) {
-				if (!surfaceIsClosed[i] || cones.size() > 0) {
+			if (ConePlacement::findConesAndPrescribeAngles(S, cones, coneAngles, bff.data, mesh) ==
+				ConePlacement::ErrorCode::ok) {
+				if (!isSurfaceClosed[i] || cones.size() > 0) {
 					Cutter::cut(cones, mesh);
 					bff.flattenWithCones(coneAngles, true);
 				}
 			}
 
 		} else {
-			if (surfaceIsClosed[i]) {
+			if (isSurfaceClosed[i] == 1) {
 				if (mapToSphere) {
 					bff.mapToSphere();
 
@@ -163,18 +163,18 @@ void flatten(Model& model, const std::vector<bool>& surfaceIsClosed,
 }
 
 void writeModelUVs(const std::string& outputPath, Model& model,
-				   const std::vector<bool>& surfaceIsClosed, bool mapToSphere,
+				   const std::vector<uint8_t>& isSurfaceClosed, bool mapToSphere,
 				   bool normalizeUVs, bool writeOnlyUVs)
 {
 	int nMeshes = model.size();
-	std::vector<bool> mappedToSphere(nMeshes, false);
-	for (int i = 0; i < nMeshes; i++) {
-		if (surfaceIsClosed[i]) {
-			mappedToSphere[i] = mapToSphere;
+	std::vector<uint8_t> isSurfaceMappedToSphere(nMeshes, 0);
+	if (mapToSphere) {
+		for (int i = 0; i < nMeshes; i++) {
+			isSurfaceMappedToSphere[i] = isSurfaceClosed[i];
 		}
 	}
 
-	if (!MeshIO::write(outputPath, model, mappedToSphere, normalizeUVs, writeOnlyUVs)) {
+	if (!MeshIO::write(outputPath, model, isSurfaceMappedToSphere, normalizeUVs, writeOnlyUVs)) {
 		std::cerr << "Unable to write file: " << outputPath << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -194,22 +194,22 @@ int main(int argc, const char *argv[]) {
 
 	// load model
 	Model model;
-	std::vector<bool> surfaceIsClosed;
-	loadModel(inputPath, model, surfaceIsClosed);
+	std::vector<uint8_t> isSurfaceClosed;
+	loadModel(inputPath, model, isSurfaceClosed);
 
-	// set nCones to 8 for closed surfaces`
+	// set nCones to 8 for closed surfaces
 	for (int i = 0; i < model.size(); i++) {
-		if (surfaceIsClosed[i] && !mapToSphere && nCones < 3) {
+		if (isSurfaceClosed[i] == 1 && !mapToSphere && nCones < 3) {
 			std::cout << "Setting nCones to 8." << std::endl;
 			nCones = 8;
 		}
 	}
 
 	// flatten
-	flatten(model, surfaceIsClosed, nCones, flattenToDisk, mapToSphere);
+	flatten(model, isSurfaceClosed, nCones, flattenToDisk, mapToSphere);
 
 	// write model uvs to output path
-	writeModelUVs(outputPath, model, surfaceIsClosed, mapToSphere,
+	writeModelUVs(outputPath, model, isSurfaceClosed, mapToSphere,
 				  normalizeUVs, writeOnlyUVs);
 
 	return 0;
