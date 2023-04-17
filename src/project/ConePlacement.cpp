@@ -3,7 +3,7 @@
 
 namespace bff {
 
-int ConePlacement::initializeConeSet(VertexData<int>& isCone, Mesh& mesh)
+int ConePlacement::initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh)
 {
 	int cones = 0;
 	if (mesh.boundaries.size() > 0) {
@@ -38,7 +38,7 @@ int ConePlacement::initializeConeSet(VertexData<int>& isCone, Mesh& mesh)
 }
 
 void ConePlacement::separateConeIndices(std::vector<int>& s, std::vector<int>& n,
-										const VertexData<int>& isCone,
+										const VertexData<uint8_t>& isCone,
 										const WedgeData<int>& index, const Mesh& mesh,
 										bool ignoreBoundary)
 {
@@ -64,7 +64,7 @@ void ConePlacement::separateConeIndices(std::vector<int>& s, std::vector<int>& n
 
 bool ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 										const SparseMatrix& A,
-										const VertexData<int>& isCone,
+										const VertexData<uint8_t>& isCone,
 										const WedgeData<int>& index, const Mesh& mesh)
 {
 	// collect cone and non-cone indices
@@ -104,7 +104,7 @@ bool ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& K,
 
 void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
 										const DenseMatrix& K, const DenseMatrix& k,
-										const SparseMatrix& A, const VertexData<int>& isCone,
+										const SparseMatrix& A, const VertexData<uint8_t>& isCone,
 										const WedgeData<int>& index, Mesh& mesh)
 {
 	// collect cone, non-cone and boundary indices indices
@@ -139,7 +139,7 @@ void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
 	}
 }
 
-bool ConePlacement::addConeWithLargestScaleFactor(VertexData<int>& isCone,
+bool ConePlacement::addConeWithLargestScaleFactor(VertexData<uint8_t>& isCone,
 												  const DenseMatrix u,
 												  const WedgeData<int>& index,
 												  const Mesh& mesh)
@@ -172,7 +172,7 @@ bool ConePlacement::addConeWithLargestScaleFactor(VertexData<int>& isCone,
 }
 
 bool ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
-										const SparseMatrix& A, const VertexData<int>& isCone,
+										const SparseMatrix& A, const VertexData<uint8_t>& isCone,
 										const WedgeData<int>& index, const Mesh& mesh)
 {
 	// collect cone and non-cone indices
@@ -200,7 +200,7 @@ bool ConePlacement::computeScaleFactors(DenseMatrix& u, const DenseMatrix& K,
 	return true;
 }
 
-bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
+bool ConePlacement::useCpmsStrategy(int S, VertexData<uint8_t>& isCone,
 									DenseMatrix& C, const DenseMatrix& K,
 									SparseMatrix& A, const WedgeData<int>& index,
 									Mesh& mesh)
@@ -230,7 +230,7 @@ bool ConePlacement::useCpmsStrategy(int S, VertexData<int>& isCone,
 	return true;
 }
 
-bool ConePlacement::useCetmStrategy(int S, VertexData<int>& isCone,
+bool ConePlacement::useCetmStrategy(int S, VertexData<uint8_t>& isCone,
 									DenseMatrix& C, const DenseMatrix& K,
 									const DenseMatrix& k, const SparseMatrix& A,
 									const WedgeData<int>& index, Mesh& mesh)
@@ -270,7 +270,7 @@ ConePlacement::ErrorCode ConePlacement::findConesAndPrescribeAngles(
 											DenseMatrix& coneAngles,
 											std::shared_ptr<BFFData> data, Mesh& mesh)
 {
-	VertexData<int> isCone(mesh, 0);
+	VertexData<uint8_t> isCone(mesh, 0);
 	DenseMatrix C(data->N);
 	DenseMatrix K = vcat(data->K, data->k);
 	bool success = true;
@@ -279,7 +279,7 @@ ConePlacement::ErrorCode ConePlacement::findConesAndPrescribeAngles(
 		// set cones
 		cones.reserve(S);
 		for (VertexIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-			if (!v->onBoundary() && isCone[v]) {
+			if (!v->onBoundary() && isCone[v] == 1) {
 				cones.emplace_back(v);
 			}
 		}
