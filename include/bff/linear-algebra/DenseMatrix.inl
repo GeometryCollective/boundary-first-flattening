@@ -174,8 +174,8 @@ inline void mul(double alpha, cholmod_dense *A, cholmod_dense *B, double beta, c
 	int M = (int)A->nrow;
 	int N = (int)B->ncol;
 	int K = (int)B->nrow;
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K,
-				alpha, (double *)A->x, M, (double *)B->x, K, beta, (double *)C->x, M);
+	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, M, N, K, alpha,
+				(double *)A->x, M, (double *)B->x, K, beta, (double *)C->x, M);
 }
 
 inline DenseMatrix operator*(const DenseMatrix& A, double s)
