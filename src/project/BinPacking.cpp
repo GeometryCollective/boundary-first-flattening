@@ -129,7 +129,7 @@ void BinPacking::pack(const Model& model,
 		}
 
 		minBoxLength = maxBoxLength;
-		maxBoxLength = static_cast<int>(ceil(minBoxLength*1.2));
+		maxBoxLength = static_cast<int>(std::ceil(minBoxLength*1.2));
 		iter++;
 	} while (iter < 50);
 

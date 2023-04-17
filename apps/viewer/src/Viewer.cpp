@@ -701,7 +701,7 @@ void Viewer::initSpline()
 	int n = 0;
 	int nHandles = 0;
 	int maxHandles = std::max(1, std::min(state->bff->data->bN, 4));
-	int modHandles = (int)floor(state->bff->data->bN/maxHandles);
+	int modHandles = (int)std::floor(state->bff->data->bN/maxHandles);
 
 	for (WedgeIter w: mesh->cutBoundary()) {
 		w->knot = state->spline.knots.end();
@@ -1471,7 +1471,7 @@ void Viewer::setDefaultBoundaryAngles()
 	int n = 0;
 	int nHandles = 0;
 	int maxHandles = std::max(1, std::min(state->bff->data->bN, 4));
-	int modHandles = (int)floor(state->bff->data->bN/maxHandles);
+	int modHandles = (int)std::floor(state->bff->data->bN/maxHandles);
 	double angle = 2.0/maxHandles;
 
 	for (WedgeIter w: mesh->cutBoundary()) {

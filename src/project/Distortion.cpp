@@ -58,7 +58,7 @@ Vector hsv(double h, double s, double v)
 	} else {
 		h = (h == 1 ? 0 : h) * 6;
 
-		int i = (int)floor(h);
+		int i = (int)std::floor(h);
 
 		double f = h - i;
 		double p = v*(1 - s);
@@ -683,7 +683,7 @@ Vector seismic(double u)
 	// find the two nearest indices in to the colormap lookup table, then
 	// return a linear blend between them
 	double scaled = u*(values.size() - 1);
-	double lower = floor(scaled);
+	double lower = std::floor(scaled);
 	double upperBlend = scaled - lower;
 	unsigned int lowerInd = static_cast<unsigned int>(lower);
 	unsigned int upperInd = lowerInd + 1;
