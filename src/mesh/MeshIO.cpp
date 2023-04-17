@@ -594,78 +594,58 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 	return true;
 }
 
-void writeString(std::ofstream& out, const std::string& str)
+void MeshIO::packUvs(Model& model, const std::vector<bool>& isSurfaceMappedToSphere,
+					 std::vector<Vector>& originalUvIslandCenters,
+					 std::vector<Vector>& newUvIslandCenters,
+					 std::vector<bool>& isUvIslandFlipped,
+					 Vector& modelMinBounds, Vector& modelMaxBounds)
 {
-	out.write(str.c_str(), str.size());
-}
-
-void writeUV(std::ofstream& out, Vector uv, bool mapToSphere, double sphereRadius,
-			 double meshRadius, const Vector& oldCenter, const Vector& newCenter,
-			 const Vector& minExtent, double extent, bool flipped, bool normalize,
-			 bool useVertexFlag)
-{
-	// resize
-	if (mapToSphere) {
-		uv /= sphereRadius;
-		uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
-		uv.y = 0.5 - asin(uv.y)/M_PI;
-
-	} else {
-		uv *= meshRadius;
-	}
-
-	// shift
-	uv -= oldCenter;
-	if (flipped) uv = Vector(-uv.y, uv.x);
-	uv += newCenter;
-	uv -= minExtent;
-	if (normalize) uv /= extent;
-
-	// write to file
-	if (useVertexFlag) {
-		writeString(out, "v " + std::to_string(uv.x) + " " +
-								std::to_string(uv.y) + " 0.0\n");
-
-	} else {
-		writeString(out, "vt " + std::to_string(uv.x) + " " +
-								 std::to_string(uv.y) + "\n");
-	}
-}
-
-void MeshIO::write(std::ofstream& out, Model& model,
-				   const std::vector<bool>& mappedToSphere,
-				   bool normalize, bool writeOnlyUVs)
-{
-	// pack
-	std::vector<Vector> originalCenters, newCenters;
-	std::vector<bool> flippedBins;
-	Vector modelMinBounds, modelMaxBounds;
-	BinPacking::pack(model, mappedToSphere, originalCenters, newCenters,
-					 flippedBins, modelMinBounds, modelMaxBounds);
-
-	if (!writeOnlyUVs) {
-		// write vertex positions
-		for (int i = 0; i < model.nVertices(); i++) {
-			std::pair<int, int> vData = model.localVertexIndex(i);
-			const Mesh& mesh = model[vData.first];
-			VertexCIter v = mesh.vertices.begin() + vData.second;
-
-			if (mappedToSphere[vData.first]) {
-				const Vector& uv = v->wedge()->uv;
-				writeString(out, "v " + std::to_string(uv.x) + " " +
-										std::to_string(uv.y) + " " +
-										std::to_string(uv.z) + "\n");
-
-			} else {
-				Vector p = v->position*mesh.radius + mesh.cm;
-				writeString(out, "v " + std::to_string(p.x) + " " +
-										std::to_string(p.y) + " " +
-										std::to_string(p.z) + "\n");
-			}
+	if (model.size() > 1) {
+		for (int i = 0; i < model.size(); i++) {
+			model[i].projectUvsToPcaAxis();
 		}
 	}
 
-	// write uvs and indices
+	BinPacking::pack(model, isSurfaceMappedToSphere, originalUvIslandCenters,
+					 newUvIslandCenters, isUvIslandFlipped,
+					 modelMinBounds, modelMaxBounds);
+}
+
+void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
+							 const std::vector<bool>& isSurfaceMappedToSphere,
+							 const std::vector<Vector>& originalUvIslandCenters,
+							 const std::vector<Vector>& newUvIslandCenters,
+							 const std::vector<bool>& isUvIslandFlipped,
+							 const Vector& modelMinBounds,
+							 const Vector& modelMaxBounds,
+							 std::vector<Vector>& positions,
+							 std::vector<Vector>& uvs,
+							 std::vector<std::vector<int>>& indices,
+							 std::vector<std::vector<int>>& uvIndices)
+{
+	// clear
+	positions.clear();
+	uvs.clear();
+	indices.clear();
+	uvIndices.clear();
+
+	// collect vertex positions
+	for (int i = 0; i < model.nVertices(); i++) {
+		std::pair<int, int> vData = model.localVertexIndex(i);
+		const Mesh& mesh = model[vData.first];
+		VertexCIter v = mesh.vertices.begin() + vData.second;
+
+		if (isSurfaceMappedToSphere[vData.first]) {
+			const Vector& uv = v->wedge()->uv;
+			positions.emplace_back(uv);
+
+		} else {
+			Vector p = v->position*mesh.radius + mesh.cm;
+			positions.emplace_back(p);
+		}
+	}
+
+	// collect uvs and indices
 	int nUvs = 0;
 	for (int i = 0; i < model.size(); i++) {
 		// compute uv radius and shift
@@ -678,21 +658,34 @@ void MeshIO::write(std::ofstream& out, Model& model,
 
 		// compute sphere radius if component has been mapped to a sphere
 		double sphereRadius = 1.0;
-		if (mappedToSphere[i]) {
+		if (isSurfaceMappedToSphere[i]) {
 			for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 				sphereRadius = std::max(w->uv.norm(), sphereRadius);
 			}
 		}
 
-		// write vertices and interior uvs
+		// collect interior uvs
 		int uvCount = 0;
 		HalfEdgeData<int> uvIndexMap(model[i]);
 
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			if (!v->onBoundary()) {
-				writeUV(out, v->wedge()->uv, mappedToSphere[i], sphereRadius, model[i].radius,
-						originalCenters[i], newCenters[i], minExtent, extent, flippedBins[i],
-						normalize, writeOnlyUVs);
+				Vector uv = v->wedge()->uv;
+				if (isSurfaceMappedToSphere[i]) {
+					uv /= sphereRadius;
+					uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
+					uv.y = 0.5 - asin(uv.y)/M_PI;
+
+				} else {
+					uv *= model[i].radius;
+				}
+
+				uv -= originalUvIslandCenters[i];
+				if (isUvIslandFlipped[i]) uv = Vector(-uv.y, uv.x);
+				uv += newUvIslandCenters[i];
+				uv -= minExtent;
+				if (normalizeUvs) uv /= extent;
+				uvs.emplace_back(uv);
 
 				HalfEdgeCIter he = v->halfEdge();
 				do {
@@ -705,11 +698,24 @@ void MeshIO::write(std::ofstream& out, Model& model,
 			}
 		}
 
-		// write boundary uvs
+		// collect boundary uvs
 		for (WedgeCIter w: model[i].cutBoundary()) {
-			writeUV(out, w->uv, mappedToSphere[i], sphereRadius, model[i].radius,
-					originalCenters[i], newCenters[i], minExtent, extent, flippedBins[i],
-					normalize, writeOnlyUVs);
+			Vector uv = w->uv;
+			if (isSurfaceMappedToSphere[i]) {
+				uv /= sphereRadius;
+				uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
+				uv.y = 0.5 - asin(uv.y)/M_PI;
+
+			} else {
+				uv *= model[i].radius;
+			}
+
+			uv -= originalUvIslandCenters[i];
+			if (isUvIslandFlipped[i]) uv = Vector(-uv.y, uv.x);
+			uv += newUvIslandCenters[i];
+			uv -= minExtent;
+			if (normalizeUvs) uv /= extent;
+			uvs.emplace_back(uv);
 
 			HalfEdgeCIter he = w->halfEdge()->prev();
 			do {
@@ -722,7 +728,7 @@ void MeshIO::write(std::ofstream& out, Model& model,
 			uvCount++;
 		}
 
-		// write indices
+		// collect indices
 		int uncuttableEdges = 0;
 		for (FaceCIter f = model[i].faces.begin(); f != model[i].faces.end(); f++) {
 			if (!f->fillsHole) {
@@ -731,23 +737,17 @@ void MeshIO::write(std::ofstream& out, Model& model,
 					continue;
 				}
 
-				writeString(out, "f");
-
+				std::vector<int> index, uvIndex;
 				HalfEdgeCIter he = f->halfEdge()->next();
 				while (!he->edge()->isCuttable) he = he->next();
 				HalfEdgeCIter fhe = he;
 				std::unordered_map<int, bool> seenUncuttableEdges;
 
 				do {
-					if (writeOnlyUVs) {
-						writeString(out, " " + std::to_string(nUvs + uvIndexMap[he->next()] + 1));
-
-					} else {
-						VertexCIter v = he->vertex();
-						int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
-						writeString(out, " " + std::to_string(model.globalVertexIndex(i, vIndex) + 1) + "/" +
-											   std::to_string(nUvs + uvIndexMap[he->next()] + 1));
-					}
+					VertexCIter v = he->vertex();
+					int vIndex = v->referenceIndex == -1 ? v->index : v->referenceIndex;
+					index.emplace_back(model.globalVertexIndex(i, vIndex));
+					uvIndex.emplace_back(nUvs + uvIndexMap[he->next()]);
 
 					he = he->next();
 					while (!he->edge()->isCuttable) {
@@ -757,9 +757,9 @@ void MeshIO::write(std::ofstream& out, Model& model,
 
 				} while (he != fhe);
 
+				indices.emplace_back(index);
+				uvIndices.emplace_back(uvIndex);
 				uncuttableEdges = (int)seenUncuttableEdges.size();
-
-				writeString(out, "\n");
 			}
 		}
 
@@ -767,20 +767,85 @@ void MeshIO::write(std::ofstream& out, Model& model,
 	}
 }
 
-bool MeshIO::write(const std::string& fileName, Model& model,
-				   const std::vector<bool>& mappedToSphere,
-				   bool normalize, bool writeOnlyUVs)
+void writeString(std::ofstream& out, const std::string& str)
+{
+	out.write(str.c_str(), str.size());
+}
+
+bool MeshIO::writeOBJ(const std::string& fileName, bool writeOnlyUvs,
+					  const std::vector<Vector>& positions,
+					  const std::vector<Vector>& uvs,
+					  const std::vector<std::vector<int>>& indices,
+					  const std::vector<std::vector<int>>& uvIndices)
 {
 	std::ofstream out(fileName.c_str());
-
 	if (!out.is_open()) {
 		return false;
 	}
 
-	MeshIO::write(out, model, mappedToSphere, normalize, writeOnlyUVs);
-	out.close();
+	if (!writeOnlyUvs) {
+		for (int i = 0; i < (int)positions.size(); i++) {
+			const Vector& p = positions[i];
+			writeString(out, "v " + std::to_string(p.x) + " " +
+									std::to_string(p.y) + " " +
+									std::to_string(p.z) + "\n");
+		}
+	}
 
+	for (int i = 0; i < (int)uvs.size(); i++) {
+		const Vector& uv = uvs[i];
+		if (writeOnlyUvs) {
+			writeString(out, "v " + std::to_string(uv.x) + " " +
+									std::to_string(uv.y) + " 0.0\n");
+
+		} else {
+			writeString(out, "vt " + std::to_string(uv.x) + " " +
+									 std::to_string(uv.y) + "\n");
+		}
+	}
+
+	for (int i = 0; i < (int)uvIndices.size(); i++) {
+		writeString(out, "f");
+
+		for (int j = 0; j < (int)uvIndices[i].size(); j++) {
+			if (writeOnlyUvs) {
+				writeString(out, " " + std::to_string(uvIndices[i][j] + 1));
+
+			} else {
+				writeString(out, " " + std::to_string(indices[i][j] + 1) + "/" +
+									   std::to_string(uvIndices[i][j] + 1));
+			}
+		}
+
+		writeString(out, "\n");
+	}
+
+	out.close();
 	return true;
+}
+
+bool MeshIO::write(const std::string& fileName, Model& model,
+				   const std::vector<bool>& isSurfaceMappedToSphere,
+				   bool normalizeUvs, bool writeOnlyUvs)
+{
+	// pack UVs
+	std::vector<Vector> originalUvIslandCenters, newUvIslandCenters;
+	std::vector<bool> isUvIslandFlipped;
+	Vector modelMinBounds, modelMaxBounds;
+	packUvs(model, isSurfaceMappedToSphere, originalUvIslandCenters,
+			newUvIslandCenters, isUvIslandFlipped,
+			modelMinBounds, modelMaxBounds);
+
+	// collect model UVs
+	std::vector<Vector> positions, uvs;
+	std::vector<std::vector<int>> indices, uvIndices;
+	collectModelUvs(model, normalizeUvs, isSurfaceMappedToSphere,
+					originalUvIslandCenters, newUvIslandCenters,
+					isUvIslandFlipped, modelMinBounds, modelMaxBounds,
+					positions, uvs, indices, uvIndices);
+
+	// write OBJ
+	return writeOBJ(fileName, writeOnlyUvs, positions, uvs, indices, uvIndices);
 }
 
 } // namespace bff

@@ -6,10 +6,13 @@ namespace bff {
 
 class BinPacking {
 public:
-	// packs uvs
-	static void pack(Model& model, const std::vector<bool>& mappedToSphere,
-					 std::vector<Vector>& originalCenters, std::vector<Vector>& newCenters,
-					 std::vector<bool>& flippedBins, Vector& modelMinBounds, Vector& modelMaxBounds);
+	// packs UVs
+	static void pack(const Model& model,
+					 const std::vector<bool>& isSurfaceMappedToSphere,
+					 std::vector<Vector>& originalUvIslandCenters,
+					 std::vector<Vector>& newUvIslandCenters,
+					 std::vector<bool>& isUvIslandFlipped,
+					 Vector& modelMinBounds, Vector& modelMaxBounds);
 };
 
 } // namespace bff

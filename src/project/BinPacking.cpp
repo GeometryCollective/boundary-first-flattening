@@ -7,8 +7,10 @@ namespace bff {
 
 using namespace rbp;
 
-bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& rectangles,
-					std::vector<Vector>& newCenters, std::vector<bool>& flippedBins,
+bool attemptPacking(int boxLength, double unitsPerInt,
+					const std::vector<Rect>& rectangles,
+					std::vector<Vector>& newUvIslandCenters,
+					std::vector<bool>& isUvIslandFlipped,
 					Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	int n = (int)rectangles.size();
@@ -31,11 +33,11 @@ bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& 
 		}
 
 		// check if flipped
-		flippedBins[i] = rect.width == rectangles[i].width ? false : true;
+		isUvIslandFlipped[i] = rect.width == rectangles[i].width ? false : true;
 
 		// compute new centers
-		newCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
-		newCenters[i] *= unitsPerInt;
+		newUvIslandCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
+		newUvIslandCenters[i] *= unitsPerInt;
 		modelMinBounds.x = std::min((double)rect.x, modelMinBounds.x);
 		modelMinBounds.y = std::min((double)rect.y, modelMinBounds.y);
 		modelMaxBounds.x = std::max((double)(rect.x + rect.width), modelMaxBounds.x);
@@ -45,9 +47,12 @@ bool attemptPacking(int boxLength, double unitsPerInt, const std::vector<Rect>& 
 	return true;
 }
 
-void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
-					  std::vector<Vector>& originalCenters, std::vector<Vector>& newCenters,
-					  std::vector<bool>& flippedBins, Vector& modelMinBounds, Vector& modelMaxBounds)
+void BinPacking::pack(const Model& model,
+					  const std::vector<bool>& isSurfaceMappedToSphere,
+					  std::vector<Vector>& originalUvIslandCenters,
+					  std::vector<Vector>& newUvIslandCenters,
+					  std::vector<bool>& isUvIslandFlipped,
+					  Vector& modelMinBounds, Vector& modelMaxBounds)
 {
 	// compute bounding boxes
 	int n = model.size();
@@ -58,24 +63,21 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 											std::numeric_limits<double>::lowest()));
 
 	for (int i = 0; i < n; i++) {
-		// compute component radius
+		// compute island radius
 		double radius = 1e-8;
-		if (mappedToSphere[i]) {
+		if (isSurfaceMappedToSphere[i]) {
 			for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 				radius = std::max(w->uv.norm(), radius);
 			}
 
 		} else {
 			radius = model[i].radius;
-
-			// project uvs to pca axis for better packing efficiency
-			if (n > 1) model[i].projectUvsToPcaAxis();
 		}
 
-		// scale uvs by radius and compute bounds
+		// scale UVs by radius and compute bounds
 		for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 			Vector uv = w->uv;
-			if (mappedToSphere[i]) {
+			if (isSurfaceMappedToSphere[i]) {
 				uv /= radius;
 				uv.x = 0.5 + atan2(uv.z, uv.x)/(2*M_PI);
 				uv.y = 0.5 - asin(uv.y)/M_PI;
@@ -94,34 +96,37 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 	}
 
 	// quantize boxes
-	originalCenters.resize(n);
+	originalUvIslandCenters.resize(n);
 	std::vector<Rect> rectangles(n);
 	int minBoxLength = 10000;
 	int maxBoxLength = 10000;
 	double unitsPerInt = sqrt(totalArea)/(double)maxBoxLength;
 
 	for (int i = 0; i < n; i++) {
-		int minX = static_cast<int>(floor(minBounds[i].x/unitsPerInt));
-		int minY = static_cast<int>(floor(minBounds[i].y/unitsPerInt));
-		int maxX = static_cast<int>(ceil(maxBounds[i].x/unitsPerInt));
-		int maxY = static_cast<int>(ceil(maxBounds[i].y/unitsPerInt));
+		int minX = static_cast<int>(std::floor(minBounds[i].x/unitsPerInt));
+		int minY = static_cast<int>(std::floor(minBounds[i].y/unitsPerInt));
+		int maxX = static_cast<int>(std::ceil(maxBounds[i].x/unitsPerInt));
+		int maxY = static_cast<int>(std::ceil(maxBounds[i].y/unitsPerInt));
 
 		int width = maxX - minX;
 		int height = maxY - minY;
 		rectangles[i] = Rect{minX, minY, width, height};
-		originalCenters[i].x = (minX + maxX)/2.0;
-		originalCenters[i].y = (minY + maxY)/2.0;
-		originalCenters[i] *= unitsPerInt;
+		originalUvIslandCenters[i].x = (minX + maxX)/2.0;
+		originalUvIslandCenters[i].y = (minY + maxY)/2.0;
+		originalUvIslandCenters[i] *= unitsPerInt;
 	}
 
-	// pack
-	newCenters.resize(n);
-	flippedBins.resize(n);
+	// pack islands
+	newUvIslandCenters.resize(n);
+	isUvIslandFlipped.resize(n);
 	int iter = 0;
 
 	do {
-		if (attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
-						   flippedBins, modelMinBounds, modelMaxBounds)) break;
+		if (attemptPacking(maxBoxLength, unitsPerInt, rectangles,
+						   newUvIslandCenters, isUvIslandFlipped,
+						   modelMinBounds, modelMaxBounds)) {
+			break;
+		}
 
 		minBoxLength = maxBoxLength;
 		maxBoxLength = static_cast<int>(ceil(minBoxLength*1.2));
@@ -137,8 +142,9 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 			int boxLength = (minBoxLength + maxBoxLength)/2;
 			if (boxLength == minBoxLength) break;
 
-			if (attemptPacking(boxLength, unitsPerInt, rectangles, newCenters,
-							   flippedBins, modelMinBounds, modelMaxBounds)) {
+			if (attemptPacking(boxLength, unitsPerInt, rectangles,
+							   newUvIslandCenters, isUvIslandFlipped,
+							   modelMinBounds, modelMaxBounds)) {
 				maxBoxLength = boxLength;
 
 			} else {
@@ -146,8 +152,9 @@ void BinPacking::pack(Model& model, const std::vector<bool>& mappedToSphere,
 			}
 		}
 
-		attemptPacking(maxBoxLength, unitsPerInt, rectangles, newCenters,
-					   flippedBins, modelMinBounds, modelMaxBounds);
+		attemptPacking(maxBoxLength, unitsPerInt, rectangles,
+					   newUvIslandCenters, isUvIslandFlipped,
+					   modelMinBounds, modelMaxBounds);
 	}
 
 	modelMinBounds *= unitsPerInt;

@@ -46,10 +46,37 @@ public:
 	static bool buildModel(const std::set<std::pair<int, int>>& uncuttableEdges,
 						   PolygonSoup& soup, Model& model, std::string& error);
 
-	// writes data to obj file
+	// writes model and its UVs to file
 	static bool write(const std::string& fileName, Model& model,
-					  const std::vector<bool>& mappedToSphere,
-					  bool normalize, bool writeOnlyUVs);
+					  const std::vector<bool>& isSurfaceMappedToSphere,
+					  bool normalizeUvs, bool writeOnlyUvs);
+
+	// bin packs model UV islands
+	static void packUvs(Model& model, const std::vector<bool>& isSurfaceMappedToSphere,
+						std::vector<Vector>& originalUvIslandCenters,
+						std::vector<Vector>& newUvIslandCenters,
+						std::vector<bool>& isUvIslandFlipped,
+						Vector& modelMinBounds, Vector& modelMaxBounds);
+
+	// collects model positions and UVs
+	static void collectModelUvs(Model& model, bool normalizeUvs,
+								const std::vector<bool>& isSurfaceMappedToSphere,
+								const std::vector<Vector>& originalUvIslandCenters,
+								const std::vector<Vector>& newUvIslandCenters,
+								const std::vector<bool>& isUvIslandFlipped,
+								const Vector& modelMinBounds,
+								const Vector& modelMaxBounds,
+								std::vector<Vector>& positions,
+								std::vector<Vector>& uvs,
+								std::vector<std::vector<int>>& indices,
+								std::vector<std::vector<int>>& uvIndices);
+
+	// writes model positions and UVs to obj file
+	static bool writeOBJ(const std::string& fileName, bool writeOnlyUvs,
+						 const std::vector<Vector>& positions,
+						 const std::vector<Vector>& uvs,
+						 const std::vector<std::vector<int>>& indices,
+						 const std::vector<std::vector<int>>& uvIndices);
 
 private:
 	// separates model into components
@@ -76,11 +103,6 @@ private:
 
 	// centers model around origin and records radius
 	static void normalize(Model& model);
-
-	// writes data to obj file
-	static void write(std::ofstream& out, Model& model,
-					  const std::vector<bool>& mappedToSphere,
-					  bool normalize, bool writeOnlyUVs);
 };
 
 } // namespace bff
