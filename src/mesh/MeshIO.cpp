@@ -27,9 +27,7 @@ void AdjacencyTable::construct(int n, const std::vector<int>& indices)
 	iMap.resize(n + 1, 0);
 
 	for (int i = 0; i < n; i++) {
-		std::sort(temp[i].begin(), temp[i].end());
 		std::vector<int>::iterator end = std::unique(temp[i].begin(), temp[i].end());
-
 		for (std::vector<int>::iterator it = temp[i].begin(); it != end; it++) {
 			data.emplace_back(*it);
 		}
