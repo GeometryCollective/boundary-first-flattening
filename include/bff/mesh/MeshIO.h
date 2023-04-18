@@ -83,9 +83,9 @@ public:
 private:
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,
-								   const std::vector<int>& isCuttableEdge,
+								   const std::vector<uint8_t>& isCuttableModelEdge,
 								   std::vector<PolygonSoup>& soups,
-								   std::vector<std::vector<int>>& isCuttableEdgeSoups,
+								   std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								   std::vector<std::pair<int, int>>& modelToMeshMap,
 								   std::vector<std::vector<int>>& meshToModelMap);
 
@@ -100,7 +100,7 @@ private:
 
 	// builds a halfedge mesh
 	static bool buildMesh(const PolygonSoup& soup,
-						  const std::vector<int>& isCuttableEdge,
+						  const std::vector<uint8_t>& isCuttableEdge,
 						  Mesh& mesh, std::string& error);
 
 	// centers model around origin and records radius
