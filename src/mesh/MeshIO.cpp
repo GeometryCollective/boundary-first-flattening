@@ -145,7 +145,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 	// create an edge face adjacency map
 	int nIndices = (int)soup.indices.size();
 	int nVertices = (int)soup.positions.size();
-	std::vector<std::vector<int>> adjacentFaces(soup.table.getSize());
+	std::vector<std::pair<int, int>> adjacentFaces(soup.table.getSize(), std::make_pair(-1, -1));
 	for (int I = 0; I < nIndices; I += 3) {
 		for (int J = 0; J < 3; J++) {
 			int K = (J + 1) % 3;
@@ -153,10 +153,14 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 			int j = soup.indices[I + K];
 
 			int eIndex = soup.table.getIndex(i, j);
-			adjacentFaces[eIndex].emplace_back(I);
+			if (adjacentFaces[eIndex].first == -1) {
+				adjacentFaces[eIndex].first = I;
 
-			// check for non-manifold edges
-			if (adjacentFaces[eIndex].size() > 2) {
+			} else if (adjacentFaces[eIndex].second == -1) {
+				adjacentFaces[eIndex].second = I;
+
+			} else {
+				// non-manifold edges
 				soups.emplace_back(soup);
 				isCuttableSoupEdge.emplace_back(isCuttableModelEdge);
 				return;
@@ -191,9 +195,10 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int eIndex = soup.table.getIndex(i, j);
 
 				// check if the edge is not on the boundary
-				const std::vector<int>& faces = adjacentFaces[eIndex];
-				if (faces.size() == 2) {
-					int g = f == faces[0] ? faces[1] : faces[0];
+				if (adjacentFaces[eIndex].first != -1 && adjacentFaces[eIndex].second != -1) {
+					int g = f == adjacentFaces[eIndex].first ?
+							adjacentFaces[eIndex].second :
+							adjacentFaces[eIndex].first;
 
 					if (!seenFace[g]) {
 						seenFace[g] = 1;
