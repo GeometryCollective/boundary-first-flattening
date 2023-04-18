@@ -50,7 +50,7 @@ void ConePlacement::separateConeIndices(std::vector<int>& s, std::vector<int>& n
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 		int i = index[v->wedge()];
 
-		if (isCone[v]) {
+		if (isCone[v] == 1) {
 			bool onBoundary = v->onBoundary();
 			if (!onBoundary || (onBoundary && !ignoreBoundary)) {
 				s.emplace_back(i);
