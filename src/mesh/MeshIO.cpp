@@ -221,7 +221,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 		// create soups
 		soups.resize(components);
 		isCuttableSoupEdge.resize(components);
-		std::vector<std::unordered_map<int, int>> seenVertex(components);
+		std::vector<std::unordered_map<int, int>> soupVertexIndexMap(components);
 		modelToMeshMap.resize(nVertices);
 
 		for (int I = 0; I < nIndices; I += 3) {
@@ -231,16 +231,16 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[I + J];
 
 				// insert vertex if it hasn't been seen
-				if (seenVertex[c].find(i) == seenVertex[c].end()) {
+				if (soupVertexIndexMap[c].find(i) == soupVertexIndexMap[c].end()) {
 					int index = (int)soups[c].positions.size();
-					seenVertex[c][i] = index;
+					soupVertexIndexMap[c][i] = index;
 					soups[c].positions.emplace_back(soup.positions[i]);
 					meshToModelMap[c].emplace_back(i);
 					modelToMeshMap[i] = std::make_pair(c, index);
 				}
 
 				// add index
-				soups[c].indices.emplace_back(seenVertex[c][i]);
+				soups[c].indices.emplace_back(soupVertexIndexMap[c][i]);
 			}
 		}
 
@@ -263,8 +263,8 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 				// add edge if uncuttable
 				if (!isCuttableModelEdge[eIndex]) {
-					int ii = seenVertex[c][i];
-					int jj = seenVertex[c][j];
+					int ii = soupVertexIndexMap[c][i];
+					int jj = soupVertexIndexMap[c][j];
 
 					int eIndexSoup = soups[c].table.getIndex(ii, jj);
 					isCuttableSoupEdge[c][eIndexSoup] = 0;
