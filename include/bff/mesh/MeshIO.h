@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <fstream>
 #include <sstream>
 #include "bff/mesh/MeshData.h"
@@ -20,7 +19,7 @@ public:
 
 private:
 	// members
-	std::vector<std::set<int>> data;
+	std::vector<int> data;
 	std::vector<int> iMap;
 	int size;
 };

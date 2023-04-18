@@ -3,19 +3,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
-#include <iomanip>
 
 namespace bff {
 
 void AdjacencyTable::construct(int n, const std::vector<int>& indices)
 {
-	data.clear();
-	iMap.clear();
-	data.resize(n);
-	iMap.resize(n);
-	size = 0;
-
 	// build table
+	std::vector<std::vector<int>> temp(n);
 	for (int I = 0; I < (int)indices.size(); I += 3) {
 		for (int J = 0; J < 3; J++) {
 			int K = (J + 1) % 3;
@@ -23,15 +17,27 @@ void AdjacencyTable::construct(int n, const std::vector<int>& indices)
 			int j = indices[I + K];
 
 			if (i > j) std::swap(i, j);
-			data[i].emplace(j);
+			temp[i].emplace_back(j);
 		}
 	}
 
-	// build iMap
+	// build map
+	data.clear();
+	iMap.clear();
+	iMap.resize(n + 1, 0);
+
 	for (int i = 0; i < n; i++) {
-		iMap[i] = size;
-		size += data[i].size();
+		std::sort(temp[i].begin(), temp[i].end());
+		std::vector<int>::iterator end = std::unique(temp[i].begin(), temp[i].end());
+
+		for (std::vector<int>::iterator it = temp[i].begin(); it != end; it++) {
+			data.emplace_back(*it);
+		}
+
+		iMap[i + 1] = (int)data.size();
 	}
+
+	size = iMap[n];
 }
 
 int AdjacencyTable::getIndex(int i, int j) const
@@ -39,8 +45,8 @@ int AdjacencyTable::getIndex(int i, int j) const
 	if (i > j) std::swap(i, j);
 
 	int k = 0;
-	for (std::set<int>::iterator it = data[i].begin(); it != data[i].end(); it++) {
-		if (*it == j) break;
+	for (int l = iMap[i]; l < iMap[i + 1]; l++) {
+		if (data[l] == j) break;
 		k++;
 	}
 
