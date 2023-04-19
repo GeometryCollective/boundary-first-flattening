@@ -101,18 +101,16 @@ void Mesh::projectUvsToPcaAxis()
 {
 	// compute center of mass
 	Vector cm;
-	double totalArea = 1e-8;
-	FaceData<double> areaUV(*this);
+	int nUvs = 0;
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
 			Vector centroid = f->centroidUV();
-			areaUV[f] = f->areaUV();
 
-			cm += centroid*areaUV[f];
-			totalArea += areaUV[f];
+			cm += centroid;
+			nUvs++;
 		}
 	}
-	cm /= totalArea;
+	cm /= nUvs;
 
 	// translate UVs to origin
 	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
@@ -126,11 +124,10 @@ void Mesh::projectUvsToPcaAxis()
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
 			Vector centroid = f->centroidUV();
-			double area = areaUV[f];
 
-			a += centroid.x*centroid.x*area;
-			b += centroid.x*centroid.y*area;
-			c += centroid.y*centroid.y*area;
+			a += centroid.x*centroid.x;
+			b += centroid.x*centroid.y;
+			c += centroid.y*centroid.y;
 		}
 	}
 
