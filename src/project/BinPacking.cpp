@@ -74,6 +74,9 @@ void BinPacking::pack(const Model& model,
 			radius = model[i].radius;
 		}
 
+		// compute the ratio of the surface areas of the mesh and flattened mesh
+		double lengthRatio = std::sqrt(model[i].areaRatio());
+
 		// scale UVs by radius and compute bounds
 		for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
 			Vector uv = w->uv;
@@ -83,7 +86,7 @@ void BinPacking::pack(const Model& model,
 				uv.y = 0.5 - asin(uv.y)/M_PI;
 
 			} else {
-				uv *= radius;
+				uv *= radius*lengthRatio;
 			}
 
 			minBounds[i].x = std::min(uv.x, minBounds[i].x);

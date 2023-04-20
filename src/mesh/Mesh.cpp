@@ -145,6 +145,20 @@ void Mesh::projectUvsToPcaAxis()
 	}
 }
 
+double Mesh::areaRatio() const
+{
+	double area = 0.0f;
+	double areaUV = 0.0f;
+	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
+		if (f->isReal() && !f->fillsHole) {
+			area += f->area();
+			areaUV += f->areaUV();
+		}
+	}
+
+	return areaUV > 0.0f ? area/areaUV : 1.0f;
+}
+
 CutPtrSet Mesh::cutBoundary()
 {
 	if (boundaries.size() == 0) {

@@ -26,6 +26,9 @@ public:
 	// projects UVs to PCA axis
 	void projectUvsToPcaAxis();
 
+	// computes the ratio of the surface areas of the mesh and flattened mesh
+	double areaRatio() const;
+
 	// range based for loop over the cut boundary
 	CutPtrSet cutBoundary(); // valid only for 1 boundary loop, by default, this is the first loop
 

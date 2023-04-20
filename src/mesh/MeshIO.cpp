@@ -685,6 +685,9 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 		int uvCount = 0;
 		HalfEdgeData<int> uvIndexMap(model[i]);
 
+		// compute the ratio of the surface areas of the mesh and flattened mesh
+		double lengthRatio = std::sqrt(model[i].areaRatio());
+
 		for (VertexCIter v = model[i].vertices.begin(); v != model[i].vertices.end(); v++) {
 			if (!v->onBoundary()) {
 				Vector uv = v->wedge()->uv;
@@ -694,7 +697,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 					uv.y = 0.5 - asin(uv.y)/M_PI;
 
 				} else {
-					uv *= model[i].radius;
+					uv *= model[i].radius*lengthRatio;
 				}
 
 				uv -= originalUvIslandCenters[i];
@@ -724,7 +727,7 @@ void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
 				uv.y = 0.5 - asin(uv.y)/M_PI;
 
 			} else {
-				uv *= model[i].radius;
+				uv *= model[i].radius*lengthRatio;
 			}
 
 			uv -= originalUvIslandCenters[i];
