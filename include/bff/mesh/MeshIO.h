@@ -40,7 +40,12 @@ public:
 	static bool readOBJ(const std::string& fileName, PolygonSoup& soup,
 						std::vector<std::pair<int, int>>& uncuttableEdges,
 						std::string& error);
-
+#ifdef USE_USD
+	// reads polygon soup from USD file
+	static bool readUSD(const std::string& fileName, PolygonSoup& soup,
+						std::vector<std::pair<int, int>>& uncuttableEdges,
+						std::string& error);
+#endif
 	// builds model
 	static bool buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						   PolygonSoup& soup, Model& model, std::string& error);
@@ -78,7 +83,15 @@ public:
 						 const std::vector<int>& vIndices,
 						 const std::vector<int>& uvIndices,
 						 const std::vector<int>& indicesOffset);
-
+#ifdef USE_USD
+	// writes model positions and UVs to USD file
+	static bool writeUSD(const std::string& fileName, bool writeOnlyUvs,
+						 const std::vector<Vector>& positions,
+						 const std::vector<Vector>& uvs,
+						 const std::vector<int>& vIndices,
+						 const std::vector<int>& uvIndices,
+						 const std::vector<int>& indicesOffset);
+#endif
 private:
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,

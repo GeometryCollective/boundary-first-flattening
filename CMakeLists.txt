@@ -10,6 +10,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# define a variable for the path to the USD directory
+set(USD_DIR "" CACHE PATH "Path to USD directory")
+if(NOT USD_DIR STREQUAL "")
+	set(CMAKE_CXX_STANDARD 17)
+	include("${USD_DIR}/pxrConfig.cmake")
+	MESSAGE(STATUS "PXR_INCLUDE_DIRS: ${PXR_INCLUDE_DIRS}")
+	MESSAGE(STATUS ": ${PXR_LIBRARIES}")
+endif()
+
 # suitesparse
 # ------------------------------------------------------------------
 # Detect SuiteSparse libraries:
@@ -39,6 +48,11 @@ file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/GuillotineBinPack.cpp"
 add_library(bff ${BFF_SOURCES})
 target_link_libraries(bff ${SuiteSparse_LIBRARIES})
 target_include_directories(bff PUBLIC ${BFF_INCLUDE_DIRS})
+if(NOT USD_DIR STREQUAL "")
+	target_link_libraries(bff ${PXR_LIBRARIES})
+	target_include_directories(bff PRIVATE ${PXR_INCLUDE_DIRS})
+	target_compile_definitions(bff PRIVATE -DUSE_USD)
+endif()
 
 if (BFF_BUILD_CLI)
 	# build command line app

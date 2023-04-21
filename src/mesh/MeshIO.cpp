@@ -3,6 +3,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
+#ifdef USE_USD
+	#include <pxr/usd/usd/prim.h>
+	#include <pxr/usd/usd/stage.h>
+	#include <pxr/usd/usd/primRange.h>
+	#include <pxr/usd/usdGeom/mesh.h>
+	#include <pxr/usd/usdGeom/primvarsAPI.h>
+#endif
 
 namespace bff {
 
@@ -138,6 +145,80 @@ bool MeshIO::readOBJ(const std::string& fileName, PolygonSoup& soup,
 	in.close();
 	return true;
 }
+
+#ifdef USE_USD
+bool MeshIO::readUSD(const std::string& fileName, PolygonSoup& soup,
+					 std::vector<std::pair<int, int>>& uncuttableEdges,
+					 std::string& error)
+{
+	// open USD file
+	auto stage = pxr::UsdStage::Open(fileName);
+	if (!stage) {
+		error = "Unable to open file";
+		return false;
+	}
+
+	// iterate over all the meshes in the USD file and get 
+	// their vertex positions and face indices
+	for (auto prim : stage->Traverse()) {
+		if (prim.IsA<pxr::UsdGeomMesh>()) {
+			pxr::UsdGeomMesh mesh(prim);
+
+			// get vertex positions and face indices
+			pxr::VtVec3fArray points;
+			mesh.GetPointsAttr().Get(&points);
+			pxr::VtIntArray faceVertexCounts;
+			mesh.GetFaceVertexCountsAttr().Get(&faceVertexCounts);
+			pxr::VtIntArray faceVertexIndices;
+			mesh.GetFaceVertexIndicesAttr().Get(&faceVertexIndices);
+			if (points.size() == 0 || faceVertexCounts.size() == 0 || faceVertexIndices.size() == 0) {
+				continue;
+			}
+
+			// add vertex positions to soup
+			int globalVertexCount = (int)soup.positions.size();
+			for (int i = 0; i < (int)points.size(); i++) {
+				soup.positions.emplace_back(Vector(points[i][0], points[i][1], points[i][2]));
+			}
+
+			// add face indices to soup
+			int index = 0;
+			for (int i = 0; i < (int)faceVertexCounts.size(); i++) {
+				int vertexCount = faceVertexCounts[i];
+				int rootIndex = globalVertexCount + faceVertexIndices[index];
+				int prevIndex = globalVertexCount + faceVertexIndices[index];
+
+				for (int j = 0; j < vertexCount; j++) {
+					int currentIndex = globalVertexCount + faceVertexIndices[index + j];
+
+					if (j == 0) rootIndex = currentIndex;
+					if (j > 2) {
+						// triangulate polygon if vertexCount > 3
+						soup.indices.emplace_back(rootIndex);
+						soup.indices.emplace_back(prevIndex);
+						soup.indices.emplace_back(currentIndex);
+
+						// tag edge as uncuttable
+						int i = rootIndex;
+						int j = prevIndex;
+						std::pair<int, int> edge(i, j);
+						uncuttableEdges.emplace_back(edge);
+
+					} else {
+						soup.indices.emplace_back(currentIndex);
+					}
+
+					prevIndex = currentIndex;
+				}
+
+				index += vertexCount;
+			}
+		}
+	}
+
+	return true;
+}
+#endif
 
 void MeshIO::separateComponents(const PolygonSoup& soup,
 								const std::vector<uint8_t>& isCuttableModelEdge,
@@ -588,8 +669,19 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	// read polygon soup from obj file
 	PolygonSoup soup;
-	std::vector<std::pair<int, int>> uncuttableEdges;
-	if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
+	std::vector<std::pair<int, int>> uncuttableEdges; 
+	if (fileName.find(".obj") != std::string::npos) {
+		if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
+			return false;
+		}
+#ifdef USE_USD
+	} else if (fileName.find(".usd") != std::string::npos) {
+		if (!readUSD(fileName, soup, uncuttableEdges, error)) {
+			return false;
+		}
+#endif
+	} else {
+		error = "Unable to open file";
 		return false;
 	}
 
@@ -844,6 +936,19 @@ bool MeshIO::writeOBJ(const std::string& fileName, bool writeOnlyUvs,
 	return true;
 }
 
+#ifdef USE_USD
+bool MeshIO::writeUSD(const std::string& fileName, bool writeOnlyUvs,
+					  const std::vector<Vector>& positions,
+					  const std::vector<Vector>& uvs,
+					  const std::vector<int>& vIndices,
+					  const std::vector<int>& uvIndices,
+					  const std::vector<int>& indicesOffset)
+{	
+	// TODO
+	return false;
+}
+#endif
+
 bool MeshIO::write(const std::string& fileName, Model& model,
 				   const std::vector<uint8_t>& isSurfaceMappedToSphere,
 				   bool normalizeUvs, bool writeOnlyUvs)
@@ -865,8 +970,17 @@ bool MeshIO::write(const std::string& fileName, Model& model,
 					positions, uvs, vIndices, uvIndices, indicesOffset);
 
 	// write OBJ
-	return writeOBJ(fileName, writeOnlyUvs, positions, uvs,
-					vIndices, uvIndices, indicesOffset);
+	if (fileName.find(".obj") != std::string::npos) {
+		return writeOBJ(fileName, writeOnlyUvs, positions, uvs, 
+						vIndices, uvIndices, indicesOffset);
+#ifdef USE_USD
+	} else if (fileName.find(".usd") != std::string::npos) {
+		return writeUSD(fileName, writeOnlyUvs, positions, uvs, 
+						vIndices, uvIndices, indicesOffset);
+#endif
+	} else {
+		return false;
+	}
 }
 
 } // namespace bff
