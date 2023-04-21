@@ -8,6 +8,7 @@
 	#include <pxr/usd/usd/stage.h>
 	#include <pxr/usd/usd/primRange.h>
 	#include <pxr/usd/usdGeom/mesh.h>
+	#include <pxr/usd/usdGeom/primvar.h>
 	#include <pxr/usd/usdGeom/primvarsAPI.h>
 #endif
 
@@ -943,9 +944,76 @@ bool MeshIO::writeUSD(const std::string& fileName, bool writeOnlyUvs,
 					  const std::vector<int>& vIndices,
 					  const std::vector<int>& uvIndices,
 					  const std::vector<int>& indicesOffset)
-{	
-	// TODO
-	return false;
+{
+	// create USD stage
+	auto stage = pxr::UsdStage::CreateNew(fileName);
+	if (!stage) return false;
+
+	// create USD mesh
+	pxr::UsdGeomMesh mesh = pxr::UsdGeomMesh::Define(stage, pxr::SdfPath("/Mesh"));
+
+	if (writeOnlyUvs) {
+		// create USD points
+		pxr::VtArray<pxr::GfVec3f> points;
+		for (int i = 0; i < (int)uvs.size(); i++) {
+			const Vector& uv = uvs[i];
+			points.emplace_back(pxr::GfVec3f(uv.x, uv.y, 0.0f));
+		}
+
+		// create USD face vertex counts and indices
+		pxr::VtArray<int> faceVertexCounts, faceVertexIndices;
+		for (int i = 0; i < (int)indicesOffset.size() - 1; i++) {
+			faceVertexCounts.emplace_back(indicesOffset[i + 1] - indicesOffset[i]);
+			for (int j = indicesOffset[i]; j < indicesOffset[i + 1]; j++) {
+				faceVertexIndices.emplace_back(uvIndices[j]);
+			}
+		}
+
+		mesh.GetPointsAttr().Set(points);
+		mesh.GetFaceVertexCountsAttr().Set(faceVertexCounts);
+		mesh.GetFaceVertexIndicesAttr().Set(faceVertexIndices);
+
+	} else {
+		// create USD points
+		pxr::VtArray<pxr::GfVec3f> points;
+		for (int i = 0; i < (int)positions.size(); i++) {
+			const Vector& p = positions[i];
+			points.emplace_back(pxr::GfVec3f(p.x, p.y, p.z));
+		}
+
+		// create USD UVs array
+		pxr::VtArray<pxr::GfVec2f> uvsArray;
+		for (int i = 0; i < (int)uvs.size(); i++) {
+			const Vector& uv = uvs[i];
+			uvsArray.emplace_back(pxr::GfVec2f(uv.x, uv.y));
+		}
+
+		// create USD face vertex counts and indices
+		pxr::VtArray<int> faceVertexCounts, faceVertexIndices, faceUvIndices;
+		for (int i = 0; i < (int)indicesOffset.size() - 1; i++) {
+			faceVertexCounts.emplace_back(indicesOffset[i + 1] - indicesOffset[i]);
+			for (int j = indicesOffset[i]; j < indicesOffset[i + 1]; j++) {
+				faceVertexIndices.emplace_back(vIndices[j]);
+				faceUvIndices.emplace_back(uvIndices[j]);
+			}
+		}
+
+		mesh.GetPointsAttr().Set(points);
+		mesh.GetFaceVertexCountsAttr().Set(faceVertexCounts);
+		mesh.GetFaceVertexIndicesAttr().Set(faceVertexIndices);
+	
+		// create USD UV primvar
+		pxr::UsdGeomPrimvarsAPI primvarsAPI(mesh);
+		pxr::UsdGeomPrimvar uvPrimvar = primvarsAPI.CreatePrimvar(pxr::TfToken("st"),
+																  pxr::SdfValueTypeNames->TexCoord2fArray,
+																  pxr::UsdGeomTokens->faceVarying);
+		uvPrimvar.Set(uvsArray);
+		uvPrimvar.SetIndices(faceUvIndices);
+	}
+
+	// save to disk
+	stage->GetRootLayer()->Save();
+	return true;
 }
 #endif
 
