@@ -96,6 +96,7 @@ private:
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,
 								   const std::vector<uint8_t>& isCuttableModelEdge,
+								   const std::vector<std::pair<int, int>>& edgeToFacesMap,
 								   std::vector<PolygonSoup>& soups,
 								   std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								   std::vector<std::pair<int, int>>& modelToMeshMap,
