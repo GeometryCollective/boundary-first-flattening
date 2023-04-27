@@ -600,13 +600,6 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		if (!buildMesh(soups[i], isCuttableSoupEdge[i], model[i], error)) {
 			return false;
 		}
-
-		std::cout << "nVertices: " << model[i].vertices.size() << std::endl;
-		std::cout << "nEdges: " << model[i].edges.size() << std::endl;
-		std::cout << "nFaces: " << model[i].faces.size() << std::endl;
-		std::cout << "nCorner: " << model[i].corners.size() << std::endl;
-		std::cout << "nHalfEdges: " << model[i].halfEdges.size() << std::endl;
-		std::cout << "nBoundaries: " << model[i].boundaries.size() << std::endl;
 	}
 
 	// normalize model
@@ -614,14 +607,8 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	return true;
 }
 
-#include <chrono>
-#include <ctime>
-
 bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-
 	// read polygon soup from obj file
 	PolygonSoup soup;
 	std::vector<std::pair<int, int>> uncuttableEdges; 
@@ -644,11 +631,6 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 	if (!buildModel(uncuttableEdges, soup, model, error)) {
 		return false;
 	}
-
-	end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
- 
-    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 	return true;
 }

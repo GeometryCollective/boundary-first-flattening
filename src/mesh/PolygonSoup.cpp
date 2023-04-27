@@ -18,11 +18,9 @@ void VertexEdgeAdjacencyMap::construct(int nV, const std::vector<int>& indices)
 	}
 
 	// sort edges and remove duplicates
-	std::cout << "before vertexPairs.size(): " << vertexPairs.size() << std::endl;
 	std::sort(vertexPairs.begin(), vertexPairs.end());
 	std::vector<std::pair<int, int>>::iterator end = std::unique(vertexPairs.begin(), vertexPairs.end());
 	vertexPairs.resize(std::distance(vertexPairs.begin(), end));
-	std::cout << "after vertexPairs.size(): " << vertexPairs.size() << std::endl;
 
 	// construct map
 	data.clear();
@@ -40,10 +38,6 @@ void VertexEdgeAdjacencyMap::construct(int nV, const std::vector<int>& indices)
 			offsets[i + 1] = j;
 		}
 	}
-
-	std::cout << "VertexEdgeAdjacencyMap" << std::endl;
-	std::cout << "    data.size(): " << data.size() << std::endl;
-	std::cout << "    offsets.size(): " << offsets.size() << std::endl;
 }
 
 int VertexEdgeAdjacencyMap::getEdgeIndex(int vi, int vj) const
@@ -105,10 +99,6 @@ void EdgeFaceAdjacencyMap::construct(const VertexEdgeAdjacencyMap& vertexEdgeAdj
 			offsets[i + 1] = j;
 		}
 	}
-
-	std::cout << "EdgeFaceAdjacencyMap" << std::endl;
-	std::cout << "    data.size(): " << data.size() << std::endl;
-	std::cout << "    offsets.size(): " << offsets.size() << std::endl;
 }
 
 int EdgeFaceAdjacencyMap::getAdjacentFaceCount(int e) const
