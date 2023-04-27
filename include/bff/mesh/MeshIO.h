@@ -2,34 +2,10 @@
 
 #include <fstream>
 #include <sstream>
+#include "bff/mesh/PolygonSoup.h"
 #include "bff/mesh/MeshData.h"
 
 namespace bff {
-
-class AdjacencyTable {
-public:
-	// constructs table
-	void construct(int n, const std::vector<int>& indices);
-
-	// returns unique index corresponding to entry (i, j)
-	int getIndex(int i, int j) const;
-
-	// returns table size
-	int getSize() const;
-
-private:
-	// members
-	std::vector<int> data;
-	std::vector<int> iMap;
-	int size;
-};
-
-class PolygonSoup {
-public:
-	std::vector<Vector> positions;
-	std::vector<int> indices;
-	AdjacencyTable table; // construct after filling positions and indices
-};
 
 class MeshIO {
 public:
@@ -96,7 +72,6 @@ private:
 	// separates model into components
 	static void separateComponents(const PolygonSoup& soup,
 								   const std::vector<uint8_t>& isCuttableModelEdge,
-								   const std::vector<std::pair<int, int>>& edgeToFacesMap,
 								   std::vector<PolygonSoup>& soups,
 								   std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								   std::vector<std::pair<int, int>>& modelToMeshMap,

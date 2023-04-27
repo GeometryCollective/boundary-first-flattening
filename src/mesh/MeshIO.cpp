@@ -14,57 +14,6 @@
 
 namespace bff {
 
-void AdjacencyTable::construct(int n, const std::vector<int>& indices)
-{
-	// build table
-	std::vector<std::vector<int>> temp(n);
-	for (int I = 0; I < (int)indices.size(); I += 3) {
-		for (int J = 0; J < 3; J++) {
-			int K = (J + 1) % 3;
-			int i = indices[I + J];
-			int j = indices[I + K];
-
-			if (i > j) std::swap(i, j);
-			temp[i].emplace_back(j);
-		}
-	}
-
-	// build map
-	data.clear();
-	iMap.clear();
-	iMap.resize(n + 1, 0);
-
-	for (int i = 0; i < n; i++) {
-		std::sort(temp[i].begin(), temp[i].end());
-		std::vector<int>::iterator end = std::unique(temp[i].begin(), temp[i].end());
-		for (std::vector<int>::iterator it = temp[i].begin(); it != end; it++) {
-			data.emplace_back(*it);
-		}
-
-		iMap[i + 1] = (int)data.size();
-	}
-
-	size = iMap[n];
-}
-
-int AdjacencyTable::getIndex(int i, int j) const
-{
-	if (i > j) std::swap(i, j);
-
-	int k = 0;
-	for (int l = iMap[i]; l < iMap[i + 1]; l++) {
-		if (data[l] == j) break;
-		k++;
-	}
-
-	return iMap[i] + k;
-}
-
-int AdjacencyTable::getSize() const
-{
-	return size;
-}
-
 bool MeshIO::readOBJ(const std::string& fileName, PolygonSoup& soup,
 					 std::vector<std::pair<int, int>>& uncuttableEdges,
 					 std::string& error)
@@ -224,7 +173,6 @@ bool MeshIO::readUSD(const std::string& fileName, PolygonSoup& soup,
 
 void MeshIO::separateComponents(const PolygonSoup& soup,
 								const std::vector<uint8_t>& isCuttableModelEdge,
-								const std::vector<std::pair<int, int>>& edgeToFacesMap,
 								std::vector<PolygonSoup>& soups,
 								std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								std::vector<std::pair<int, int>>& modelToMeshMap,
@@ -256,13 +204,12 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[f + J];
 				int j = soup.indices[f + K];
 
-				int eIndex = soup.table.getIndex(i, j);
+				int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
 
 				// check if the edge is not on the boundary
-				if (edgeToFacesMap[eIndex].first != -1 && edgeToFacesMap[eIndex].second != -1) {
-					int g = f == edgeToFacesMap[eIndex].first ?
-							edgeToFacesMap[eIndex].second :
-							edgeToFacesMap[eIndex].first;
+				if (soup.edgeFaceAdjacency.getAdjacentFaceCount(eIndex) == 2) {
+					int g = soup.edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 0);
+					if (g == f) g = soup.edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 1);
 
 					if (!seenFace[g]) {
 						seenFace[g] = 1;
@@ -315,8 +262,8 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 		// construct tables
 		for (int c = 0; c < components; c++) {
-			soups[c].table.construct(soups[c].positions.size(), soups[c].indices);
-			isCuttableSoupEdge[c].resize(soups[c].table.getSize(), 1);
+			soups[c].vertexEdgeAdjacency.construct(soups[c].positions.size(), soups[c].indices);
+			isCuttableSoupEdge[c].resize(soups[c].vertexEdgeAdjacency.getEdgeCount(), 1);
 		}
 
 		// mark cuttable edges for each soup
@@ -328,14 +275,14 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[I + J];
 				int j = soup.indices[I + K];
 
-				int eIndex = soup.table.getIndex(i, j);
+				int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
 
 				// add edge if uncuttable
 				if (!isCuttableModelEdge[eIndex]) {
 					int ii = soupVertexIndexMap[c][i];
 					int jj = soupVertexIndexMap[c][j];
 
-					int eIndexSoup = soups[c].table.getIndex(ii, jj);
+					int eIndexSoup = soups[c].vertexEdgeAdjacency.getEdgeIndex(ii, jj);
 					isCuttableSoupEdge[c][eIndexSoup] = 0;
 				}
 			}
@@ -355,7 +302,7 @@ void MeshIO::preallocateElements(const PolygonSoup& soup, Mesh& mesh)
 
 	// reserve space (reserving extra for hole filling and generators)
 	int nVertices = (int)soup.positions.size();
-	int nEdges = soup.table.getSize();
+	int nEdges = soup.vertexEdgeAdjacency.getEdgeCount();
 	int nFaces = (int)soup.indices.size()/3;
 	int nCorners = 3*nFaces;
 	int nHalfedges = 2*nEdges;
@@ -426,10 +373,10 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	}
 
 	// create and insert halfedges, edges and "real" faces
-	int tableSize = soup.table.getSize();
-	std::vector<int> edgeCount(tableSize, 0);
-	std::vector<HalfEdgeIter> existingHalfEdges(tableSize);
-	std::vector<int> hasFlipEdge(2*tableSize, 0);
+	int nEdges = soup.vertexEdgeAdjacency.getEdgeCount();
+	std::vector<int> edgeCount(nEdges, 0);
+	std::vector<HalfEdgeIter> existingHalfEdges(nEdges);
+	std::vector<int> hasFlipEdge(2*nEdges, 0);
 
 	for (int I = 0; I < (int)soup.indices.size(); I += 3) {
 		// create new face
@@ -466,7 +413,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 			h->setFace(f);
 			f->setHalfEdge(h);
 
-			int eIndex = soup.table.getIndex(i, j);
+			int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
 			if (edgeCount[eIndex] > 0) {
 				// if a halfedge between vertex i and j has been created in the past,
 				// then it is the flip halfedge of the current halfedge
@@ -618,33 +565,20 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						PolygonSoup& soup, Model& model, std::string& error)
 {
 	// construct vertex edge adjacency table
-	soup.table.construct(soup.positions.size(), soup.indices);
-	std::vector<uint8_t> isCuttableModelEdge(soup.table.getSize(), 1);
+	soup.vertexEdgeAdjacency.construct(soup.positions.size(), soup.indices);
+	soup.edgeFaceAdjacency.construct(soup.vertexEdgeAdjacency, soup.indices);
+	std::vector<uint8_t> isCuttableModelEdge(soup.vertexEdgeAdjacency.getEdgeCount(), 1);
 	for (int i = 0; i < (int)uncuttableEdges.size(); i++) {
-		int eIndex = soup.table.getIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
+		int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
 		isCuttableModelEdge[eIndex] = 0;
 	}
 
-	// construct edge face adjacency table
+	// check if soup has non-manifold edges
 	bool hasNonManifoldEdges = false;
-	std::vector<std::pair<int, int>> edgeToFacesMap(soup.table.getSize(), std::make_pair(-1, -1));
-	for (int I = 0; I < (int)soup.indices.size(); I += 3) {
-		for (int J = 0; J < 3; J++) {
-			int K = (J + 1) % 3;
-			int i = soup.indices[I + J];
-			int j = soup.indices[I + K];
-
-			int eIndex = soup.table.getIndex(i, j);
-			if (edgeToFacesMap[eIndex].first == -1) {
-				edgeToFacesMap[eIndex].first = I;
-
-			} else if (edgeToFacesMap[eIndex].second == -1) {
-				edgeToFacesMap[eIndex].second = I;
-
-			} else {
-				hasNonManifoldEdges = true;
-				break;
-			}
+	for (int i = 0; i < soup.vertexEdgeAdjacency.getEdgeCount(); i++) {
+		if (soup.edgeFaceAdjacency.getAdjacentFaceCount(i) > 2) {
+			hasNonManifoldEdges = true;
+			break;
 		}
 	}
 
@@ -656,9 +590,8 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		return false;
 
 	} else {
-		separateComponents(soup, isCuttableModelEdge, edgeToFacesMap,
-						   soups, isCuttableSoupEdge, model.modelToMeshMap, 
-						   model.meshToModelMap);
+		separateComponents(soup, isCuttableModelEdge, soups, isCuttableSoupEdge,
+						   model.modelToMeshMap, model.meshToModelMap);
 	}
 
 	// build halfedge meshes
@@ -667,6 +600,13 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		if (!buildMesh(soups[i], isCuttableSoupEdge[i], model[i], error)) {
 			return false;
 		}
+
+		std::cout << "nVertices: " << model[i].vertices.size() << std::endl;
+		std::cout << "nEdges: " << model[i].edges.size() << std::endl;
+		std::cout << "nFaces: " << model[i].faces.size() << std::endl;
+		std::cout << "nCorner: " << model[i].corners.size() << std::endl;
+		std::cout << "nHalfEdges: " << model[i].halfEdges.size() << std::endl;
+		std::cout << "nBoundaries: " << model[i].boundaries.size() << std::endl;
 	}
 
 	// normalize model
@@ -674,8 +614,14 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	return true;
 }
 
+#include <chrono>
+#include <ctime>
+
 bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+	start = std::chrono::system_clock::now();
+
 	// read polygon soup from obj file
 	PolygonSoup soup;
 	std::vector<std::pair<int, int>> uncuttableEdges; 
@@ -698,6 +644,11 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 	if (!buildModel(uncuttableEdges, soup, model, error)) {
 		return false;
 	}
+
+	end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end - start;
+ 
+    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 	return true;
 }
