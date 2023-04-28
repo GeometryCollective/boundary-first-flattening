@@ -9,10 +9,16 @@
 
 namespace bff {
 
-class VertexEdgeAdjacencyMap {
+class VertexAdjacencyMaps {
 public:
 	// constructs adjacency map
 	void construct(int nV, const std::vector<int>& indices);
+
+	// returns adjacent face count for vertex v
+	int getAdjacentFaceCount(int v) const;
+
+	// returns face index for v and 0 <= f <= getAdjacentFaceCount(v)
+	int getAdjacentFaceIndex(int v, int f) const;
 
 	// returns edge index corresponding to vertex entry (vi, vj)
 	int getEdgeIndex(int vi, int vj) const;
@@ -22,14 +28,14 @@ public:
 
 private:
 	// members
-	std::vector<int> data;
-	std::vector<int> offsets;
+	std::vector<int> eData, fData;
+	std::vector<int> eOffsets, fOffsets;
 };
 
 class EdgeFaceAdjacencyMap {
 public:
 	// constructs adjacency map
-	void construct(const VertexEdgeAdjacencyMap& vertexEdgeAdjacency, 
+	void construct(const VertexAdjacencyMaps& vertexAdjacency,
 				   const std::vector<int>& indices);
 
 	// returns adjacent face count for edge e
@@ -49,8 +55,8 @@ public:
 	// members
 	std::vector<Vector> positions;
 	std::vector<int> indices;
-	VertexEdgeAdjacencyMap vertexEdgeAdjacency; // build after filling positions and indices
-	EdgeFaceAdjacencyMap edgeFaceAdjacency; // build after constructing vertexEdgeAdjacency
+	VertexAdjacencyMaps vertexAdjacency; // build after filling positions and indices
+	EdgeFaceAdjacencyMap edgeFaceAdjacency; // build after constructing vertexAdjacency
 };
 
 } // namespace bff

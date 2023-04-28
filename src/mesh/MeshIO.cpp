@@ -109,7 +109,7 @@ bool MeshIO::readUSD(const std::string& fileName, PolygonSoup& soup,
 		return false;
 	}
 
-	// iterate over all the meshes in the USD file and get 
+	// iterate over all the meshes in the USD file and get
 	// their vertex positions and face indices
 	for (auto prim : stage->Traverse()) {
 		if (prim.IsA<pxr::UsdGeomMesh>()) {
@@ -204,7 +204,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[f + J];
 				int j = soup.indices[f + K];
 
-				int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
+				int eIndex = soup.vertexAdjacency.getEdgeIndex(i, j);
 
 				// check if the edge is not on the boundary
 				if (soup.edgeFaceAdjacency.getAdjacentFaceCount(eIndex) == 2) {
@@ -263,8 +263,8 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 
 		// construct tables
 		for (int c = 0; c < components; c++) {
-			soups[c].vertexEdgeAdjacency.construct(soups[c].positions.size(), soups[c].indices);
-			isCuttableSoupEdge[c].resize(soups[c].vertexEdgeAdjacency.getEdgeCount(), 1);
+			soups[c].vertexAdjacency.construct(soups[c].positions.size(), soups[c].indices);
+			isCuttableSoupEdge[c].resize(soups[c].vertexAdjacency.getEdgeCount(), 1);
 		}
 
 		// mark cuttable edges for each soup
@@ -276,14 +276,14 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 				int i = soup.indices[I + J];
 				int j = soup.indices[I + K];
 
-				int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
+				int eIndex = soup.vertexAdjacency.getEdgeIndex(i, j);
 
 				// add edge if uncuttable
 				if (!isCuttableModelEdge[eIndex]) {
 					int ii = soupVertexIndexMap[c][i];
 					int jj = soupVertexIndexMap[c][j];
 
-					int eIndexSoup = soups[c].vertexEdgeAdjacency.getEdgeIndex(ii, jj);
+					int eIndexSoup = soups[c].vertexAdjacency.getEdgeIndex(ii, jj);
 					isCuttableSoupEdge[c][eIndexSoup] = 0;
 				}
 			}
@@ -303,7 +303,7 @@ void MeshIO::preallocateElements(const PolygonSoup& soup, Mesh& mesh)
 
 	// reserve space (reserving extra for hole filling and generators)
 	int nVertices = (int)soup.positions.size();
-	int nEdges = soup.vertexEdgeAdjacency.getEdgeCount();
+	int nEdges = soup.vertexAdjacency.getEdgeCount();
 	int nFaces = (int)soup.indices.size()/3;
 	int nCorners = 3*nFaces;
 	int nHalfedges = 2*nEdges;
@@ -374,7 +374,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 	}
 
 	// create and insert halfedges, edges and "real" faces
-	int nEdges = soup.vertexEdgeAdjacency.getEdgeCount();
+	int nEdges = soup.vertexAdjacency.getEdgeCount();
 	std::vector<int> edgeCount(nEdges, 0);
 	std::vector<HalfEdgeIter> existingHalfEdges(nEdges);
 	std::vector<int> hasFlipEdge(2*nEdges, 0);
@@ -414,7 +414,7 @@ bool MeshIO::buildMesh(const PolygonSoup& soup,
 			h->setFace(f);
 			f->setHalfEdge(h);
 
-			int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(i, j);
+			int eIndex = soup.vertexAdjacency.getEdgeIndex(i, j);
 			if (edgeCount[eIndex] > 0) {
 				// if a halfedge between vertex i and j has been created in the past,
 				// then it is the flip halfedge of the current halfedge
@@ -566,19 +566,19 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						PolygonSoup& soup, Model& model, std::string& error)
 {
 	// construct vertex-edge and edge-face adjacency maps
-	soup.vertexEdgeAdjacency.construct(soup.positions.size(), soup.indices);
-	soup.edgeFaceAdjacency.construct(soup.vertexEdgeAdjacency, soup.indices);
+	soup.vertexAdjacency.construct(soup.positions.size(), soup.indices);
+	soup.edgeFaceAdjacency.construct(soup.vertexAdjacency, soup.indices);
 
 	// mark uncuttable edges
-	std::vector<uint8_t> isCuttableModelEdge(soup.vertexEdgeAdjacency.getEdgeCount(), 1);
+	std::vector<uint8_t> isCuttableModelEdge(soup.vertexAdjacency.getEdgeCount(), 1);
 	for (int i = 0; i < (int)uncuttableEdges.size(); i++) {
-		int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
+		int eIndex = soup.vertexAdjacency.getEdgeIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
 		isCuttableModelEdge[eIndex] = 0;
 	}
 
 	// check if soup has non-manifold edges
 	bool hasNonManifoldEdges = false;
-	for (int i = 0; i < soup.vertexEdgeAdjacency.getEdgeCount(); i++) {
+	for (int i = 0; i < soup.vertexAdjacency.getEdgeCount(); i++) {
 		if (soup.edgeFaceAdjacency.getAdjacentFaceCount(i) > 2) {
 			hasNonManifoldEdges = true;
 			break;
@@ -614,7 +614,7 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 {
 	// read polygon soup from obj file
 	PolygonSoup soup;
-	std::vector<std::pair<int, int>> uncuttableEdges; 
+	std::vector<std::pair<int, int>> uncuttableEdges;
 	if (fileName.find(".obj") != std::string::npos) {
 		if (!readOBJ(fileName, soup, uncuttableEdges, error)) {
 			return false;
@@ -945,7 +945,7 @@ bool MeshIO::writeUSD(const std::string& fileName, bool writeOnlyUvs,
 		mesh.GetPointsAttr().Set(points);
 		mesh.GetFaceVertexCountsAttr().Set(faceVertexCounts);
 		mesh.GetFaceVertexIndicesAttr().Set(faceVertexIndices);
-	
+
 		// create USD UV primvar
 		pxr::UsdGeomPrimvarsAPI primvarsAPI(mesh);
 		pxr::UsdGeomPrimvar uvPrimvar = primvarsAPI.CreatePrimvar(pxr::TfToken("st"),
@@ -983,11 +983,11 @@ bool MeshIO::write(const std::string& fileName, Model& model,
 
 	// write OBJ
 	if (fileName.find(".obj") != std::string::npos) {
-		return writeOBJ(fileName, writeOnlyUvs, positions, uvs, 
+		return writeOBJ(fileName, writeOnlyUvs, positions, uvs,
 						vIndices, uvIndices, indicesOffset);
 #ifdef USE_USD
 	} else if (fileName.find(".usd") != std::string::npos) {
-		return writeUSD(fileName, writeOnlyUvs, positions, uvs, 
+		return writeUSD(fileName, writeOnlyUvs, positions, uvs,
 						vIndices, uvIndices, indicesOffset);
 #endif
 	} else {
