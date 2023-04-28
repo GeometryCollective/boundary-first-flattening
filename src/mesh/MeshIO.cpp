@@ -564,9 +564,11 @@ void MeshIO::normalize(Model& model)
 bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						PolygonSoup& soup, Model& model, std::string& error)
 {
-	// construct vertex edge adjacency table
+	// construct vertex-edge and edge-face adjacency maps
 	soup.vertexEdgeAdjacency.construct(soup.positions.size(), soup.indices);
 	soup.edgeFaceAdjacency.construct(soup.vertexEdgeAdjacency, soup.indices);
+
+	// mark uncuttable edges
 	std::vector<uint8_t> isCuttableModelEdge(soup.vertexEdgeAdjacency.getEdgeCount(), 1);
 	for (int i = 0; i < (int)uncuttableEdges.size(); i++) {
 		int eIndex = soup.vertexEdgeAdjacency.getEdgeIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
