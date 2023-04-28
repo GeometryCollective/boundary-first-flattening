@@ -224,13 +224,15 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 	}
 
 	meshToModelMap.resize(components);
+	modelToMeshMap.resize(nVertices);
 	if (components == 1) {
 		soups.emplace_back(soup);
 		isCuttableSoupEdge.emplace_back(isCuttableModelEdge);
+		meshToModelMap[0].resize(nVertices);
 
 		for (int i = 0; i < nVertices; i++) {
-			meshToModelMap[0].emplace_back(i);
-			modelToMeshMap.emplace_back(std::make_pair(0, i));
+			meshToModelMap[0][i] = i;
+			modelToMeshMap[i] = std::make_pair(0, i);
 		}
 
 	} else {
@@ -238,7 +240,6 @@ void MeshIO::separateComponents(const PolygonSoup& soup,
 		soups.resize(components);
 		isCuttableSoupEdge.resize(components);
 		std::vector<std::unordered_map<int, int>> soupVertexIndexMap(components);
-		modelToMeshMap.resize(nVertices);
 
 		for (int I = 0; I < nIndices; I += 3) {
 			int c = faceComponent[I];
