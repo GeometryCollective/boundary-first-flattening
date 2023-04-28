@@ -24,6 +24,7 @@ void VertexEdgeAdjacencyMap::construct(int nV, const std::vector<int>& indices)
 
 	// construct map
 	data.clear();
+	data.reserve(vertexPairs.size());
 	offsets.clear();
 	offsets.resize(nV + 1, 0);
 
@@ -85,6 +86,7 @@ void EdgeFaceAdjacencyMap::construct(const VertexEdgeAdjacencyMap& vertexEdgeAdj
 
 	// construct map
 	data.clear();
+	data.reserve(edgeFacePairs.size());
 	offsets.clear();
 	offsets.resize(nE + 1, 0);
 
