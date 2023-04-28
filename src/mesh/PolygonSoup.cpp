@@ -16,9 +16,6 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 
 			faceCount[i].first++;
 			faceCount[i].second = I;
-			faceCount[j].first++;
-			faceCount[j].second = I;
-
 			if (i > j) std::swap(i, j);
 			vertexPairs.emplace_back(std::make_pair(i, j));
 		}
