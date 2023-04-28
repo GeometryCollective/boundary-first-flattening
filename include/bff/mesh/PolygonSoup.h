@@ -14,11 +14,8 @@ public:
 	// constructs adjacency map
 	void construct(int nV, const std::vector<int>& indices);
 
-	// returns adjacent face count for vertex v
-	int getAdjacentFaceCount(int v) const;
-
-	// returns face index for v and 0 <= f <= getAdjacentFaceCount(v)
-	int getAdjacentFaceIndex(int v, int f) const;
+	// returns a single adjacent face and adjacent face count for vertex v
+	std::pair<int, int> getAdjacentFaceCount(int v) const;
 
 	// returns edge index corresponding to vertex entry (vi, vj)
 	int getEdgeIndex(int vi, int vj) const;
@@ -28,8 +25,9 @@ public:
 
 private:
 	// members
-	std::vector<int> eData, fData;
-	std::vector<int> eOffsets, fOffsets;
+	std::vector<int> data;
+	std::vector<int> offsets;
+	std::vector<std::pair<int, int>> faceCount;
 };
 
 class EdgeFaceAdjacencyMap {

@@ -5,69 +5,52 @@ namespace bff {
 void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 {
 	// collect vertex-face and vertex-vertex pairs
-	std::vector<std::pair<int, int>> vertexFacePairs, vertexPairs;
+	faceCount.clear();
+	faceCount.resize(nV, std::make_pair(0, 0));
+	std::vector<std::pair<int, int>> vertexPairs;
 	for (int I = 0; I < (int)indices.size(); I += 3) {
 		for (int J = 0; J < 3; J++) {
 			int K = (J + 1) % 3;
 			int i = indices[I + J];
 			int j = indices[I + K];
 
-			vertexFacePairs.emplace_back(std::make_pair(i, I));
+			faceCount[i].first++;
+			faceCount[i].second = I;
+			faceCount[j].first++;
+			faceCount[j].second = I;
+
 			if (i > j) std::swap(i, j);
 			vertexPairs.emplace_back(std::make_pair(i, j));
 		}
 	}
 
 	// sort edges and remove duplicates
-	std::sort(vertexFacePairs.begin(), vertexFacePairs.end());
 	std::sort(vertexPairs.begin(), vertexPairs.end());
 	std::vector<std::pair<int, int>>::iterator end = std::unique(vertexPairs.begin(), vertexPairs.end());
 	vertexPairs.resize(std::distance(vertexPairs.begin(), end));
 
 	// construct maps
-	eData.clear();
-	fData.clear();
-	eOffsets.clear();
-	fOffsets.clear();
-
-	eData.reserve(vertexPairs.size());
-	fData.reserve(vertexFacePairs.size());
-	eOffsets.resize(nV + 1, 0);
-	fOffsets.resize(nV + 1, 0);
-
-	if (vertexFacePairs.size() > 0) {
-		int j = 0;
-		for (int i = 0; i < nV; i++) {
-			while (i == vertexFacePairs[j].first) {
-				fData.push_back(vertexFacePairs[j].second);
-				j++;
-			}
-
-			fOffsets[i + 1] = j;
-		}
-	}
+	data.clear();
+	offsets.clear();
+	data.reserve(vertexPairs.size());
+	offsets.resize(nV + 1, 0);
 
 	if (vertexPairs.size() > 0) {
 		int j = 0;
 		for (int i = 0; i < nV; i++) {
 			while (i == vertexPairs[j].first) {
-				eData.push_back(vertexPairs[j].second);
+				data.emplace_back(vertexPairs[j].second);
 				j++;
 			}
 
-			eOffsets[i + 1] = j;
+			offsets[i + 1] = j;
 		}
 	}
 }
 
-int VertexAdjacencyMaps::getAdjacentFaceCount(int v) const
+std::pair<int, int> VertexAdjacencyMaps::getAdjacentFaceCount(int v) const
 {
-	return fOffsets[v + 1] - fOffsets[v];
-}
-
-int VertexAdjacencyMaps::getAdjacentFaceIndex(int v, int f) const
-{
-	return fData[fOffsets[v] + f];
+	return faceCount[v];
 }
 
 int VertexAdjacencyMaps::getEdgeIndex(int vi, int vj) const
@@ -75,17 +58,17 @@ int VertexAdjacencyMaps::getEdgeIndex(int vi, int vj) const
 	if (vi > vj) std::swap(vi, vj);
 
 	int k = 0;
-	for (int l = eOffsets[vi]; l < eOffsets[vi + 1]; l++) {
-		if (eData[l] == vj) break;
+	for (int l = offsets[vi]; l < offsets[vi + 1]; l++) {
+		if (data[l] == vj) break;
 		k++;
 	}
 
-	return eOffsets[vi] + k;
+	return offsets[vi] + k;
 }
 
 int VertexAdjacencyMaps::getEdgeCount() const
 {
-	return eOffsets[eOffsets.size() - 1];
+	return offsets[offsets.size() - 1];
 }
 
 void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
@@ -123,7 +106,7 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 		int j = 0;
 		for (int i = 0; i < nE; i++) {
 			while (i == edgeFacePairs[j].first) {
-				data.push_back(edgeFacePairs[j].second);
+				data.emplace_back(edgeFacePairs[j].second);
 				j++;
 			}
 
