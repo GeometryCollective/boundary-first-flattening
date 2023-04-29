@@ -1,4 +1,5 @@
 #include "bff/mesh/PolygonSoup.h"
+#include <queue>
 
 namespace bff {
 
@@ -120,6 +121,55 @@ int EdgeFaceAdjacencyMap::getAdjacentFaceCount(int e) const
 int EdgeFaceAdjacencyMap::getAdjacentFaceIndex(int e, int f) const
 {
 	return data[offsets[e] + f];
+}
+
+int PolygonSoup::separateFacesIntoComponents()
+{
+	int nComponents = 0;
+	int nIndices = (int)indices.size();
+	faceComponent.resize(nIndices);
+	std::vector<uint8_t> seenFace(nIndices, 0);
+
+	for (int I = 0; I < nIndices; I += 3) {
+		// continue if face has already been seen
+		if (seenFace[I] == 1) continue;
+
+		// collect all faces in a single component and mark them as seen
+		seenFace[I] = 1;
+		faceComponent[I] = nComponents;
+		std::queue<int> q;
+		q.push(I);
+
+		while (!q.empty()) {
+			int f = q.front();
+			q.pop();
+
+			// loop over all edges in the face
+			for (int J = 0; J < 3; J++) {
+				int K = (J + 1) % 3;
+				int i = indices[f + J];
+				int j = indices[f + K];
+
+				int eIndex = vertexAdjacency.getEdgeIndex(i, j);
+
+				// check if the edge is not on the boundary
+				if (edgeFaceAdjacency.getAdjacentFaceCount(eIndex) == 2) {
+					int g = edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 0);
+					if (g == f) g = edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 1);
+
+					if (!seenFace[g]) {
+						seenFace[g] = 1;
+						faceComponent[g] = nComponents;
+						q.push(g);
+					}
+				}
+			}
+		}
+
+		nComponents++;
+	}
+
+	return nComponents;
 }
 
 } // namespace bff

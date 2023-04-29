@@ -50,9 +50,13 @@ private:
 
 class PolygonSoup {
 public:
+	// separates faces into components
+	int separateFacesIntoComponents();
+
 	// members
 	std::vector<Vector> positions;
 	std::vector<int> indices;
+	std::vector<int> faceComponent;
 	VertexAdjacencyMaps vertexAdjacency; // build after filling positions and indices
 	EdgeFaceAdjacencyMap edgeFaceAdjacency; // build after constructing vertexAdjacency
 };
