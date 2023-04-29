@@ -17,7 +17,7 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 
 			faceCount[i].first++;
 			faceCount[i].second = I;
-			if (i > j) std::swap(i, j);
+			if (i < j) std::swap(i, j);
 			vertexPairs.emplace_back(std::make_pair(i, j));
 		}
 	}
@@ -53,7 +53,7 @@ std::pair<int, int> VertexAdjacencyMaps::getAdjacentFaceCount(int v) const
 
 int VertexAdjacencyMaps::getEdgeIndex(int vi, int vj) const
 {
-	if (vi > vj) std::swap(vi, vj);
+	if (vi < vj) std::swap(vi, vj);
 
 	int k = 0;
 	for (int l = offsets[vi]; l < offsets[vi + 1]; l++) {
@@ -89,10 +89,7 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 	}
 
 	// sort edge face pairs
-	std::sort(edgeFacePairs.begin(), edgeFacePairs.end(),
-		[](const std::pair<int,int>& a, const std::pair<int,int>& b) {
-		return a.first < b.first;
-	});
+	std::sort(edgeFacePairs.begin(), edgeFacePairs.end());
 
 	// construct map
 	data.clear();
