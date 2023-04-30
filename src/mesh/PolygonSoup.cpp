@@ -22,26 +22,32 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 		}
 	}
 
+	// construct map
+	data.clear();
+	offsets.clear();
+	offsets.emplace_back(0);
+	insert(nV, vertexPairs);
+}
+
+void VertexAdjacencyMaps::insert(int nV, std::vector<std::pair<int, int>>& vertexPairs)
+{
 	// sort edges and remove duplicates
 	std::sort(vertexPairs.begin(), vertexPairs.end());
 	std::vector<std::pair<int, int>>::iterator end = std::unique(vertexPairs.begin(), vertexPairs.end());
 	vertexPairs.resize(std::distance(vertexPairs.begin(), end));
 
-	// construct map
-	data.clear();
-	offsets.clear();
-	data.reserve(vertexPairs.size());
-	offsets.resize(nV + 1, 0);
-
+	// update map
 	if (vertexPairs.size() > 0) {
+		int cV = (int)offsets.size() - 1;
 		int j = 0;
-		for (int i = 0; i < nV; i++) {
+
+		for (int i = cV; i < nV; i++) {
 			while (i == vertexPairs[j].first) {
 				data.emplace_back(vertexPairs[j].second);
 				j++;
 			}
 
-			offsets[i + 1] = j;
+			offsets.emplace_back(offsets[cV] + j);
 		}
 	}
 }
@@ -83,25 +89,33 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 		}
 	}
 
+	// construct map
+	data.clear();
+	offsets.clear();
+	offsets.emplace_back(0);
+	insert(vertexAdjacency, edgeFacePairs);
+}
+
+void EdgeFaceAdjacencyMap::insert(const VertexAdjacencyMaps& vertexAdjacency,
+                                  std::vector<std::pair<int, int>>& edgeFacePairs)
+{
 	// sort edge face pairs
 	std::sort(edgeFacePairs.begin(), edgeFacePairs.end());
 
-	// construct map
-	data.clear();
-	data.reserve(edgeFacePairs.size());
-	offsets.clear();
-	offsets.resize(nE + 1, 0);
-
+	// update map
 	if (edgeFacePairs.size() > 0) {
+		int nE = vertexAdjacency.getEdgeCount();
+		int cE = (int)offsets.size() - 1;
 		int j = 0;
-		for (int i = 0; i < nE; i++) {
+
+		for (int i = cE; i < nE; i++) {
 			while (i == edgeFacePairs[j].first) {
 				data.emplace_back(edgeFacePairs[j].second);
 				isAdjacentFace.emplace_back(1);
 				j++;
 			}
 
-			offsets[i + 1] = j;
+			offsets.emplace_back(offsets[cE] + j);
 		}
 	}
 }

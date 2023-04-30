@@ -23,6 +23,9 @@ public:
 	int getEdgeCount() const;
 
 private:
+	// inserts new vertex pairs into map
+	void insert(int nV, std::vector<std::pair<int, int>>& vertexPairs);
+
 	// members
 	std::vector<int> data;
 	std::vector<int> offsets;
@@ -43,6 +46,10 @@ public:
 	std::pair<int, int> getAdjacentFaceIndex(int e, int f) const;
 
 private:
+    // inserts new edge face pairs into map
+	void insert(const VertexAdjacencyMaps& vertexAdjacency,
+				std::vector<std::pair<int, int>>& edgeFacePairs);
+			
 	// members
 	std::vector<int> data;
 	std::vector<int> offsets;
