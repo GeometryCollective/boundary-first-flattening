@@ -97,6 +97,7 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 		for (int i = 0; i < nE; i++) {
 			while (i == edgeFacePairs[j].first) {
 				data.emplace_back(edgeFacePairs[j].second);
+				isAdjacentFace.emplace_back(1);
 				j++;
 			}
 
@@ -110,9 +111,10 @@ int EdgeFaceAdjacencyMap::getAdjacentFaceCount(int e) const
 	return offsets[e + 1] - offsets[e];
 }
 
-int EdgeFaceAdjacencyMap::getAdjacentFaceIndex(int e, int f) const
+std::pair<int, int> EdgeFaceAdjacencyMap::getAdjacentFaceIndex(int e, int f) const
 {
-	return data[offsets[e] + f];
+	int offset = offsets[e] + f;
+	return std::make_pair(data[offset], isAdjacentFace[offset]);
 }
 
 int PolygonSoup::separateFacesIntoComponents()
@@ -145,11 +147,18 @@ int PolygonSoup::separateFacesIntoComponents()
 				int eIndex = vertexAdjacency.getEdgeIndex(i, j);
 
 				// check if the edge is not on the boundary
-				if (edgeFaceAdjacency.getAdjacentFaceCount(eIndex) == 2) {
-					int g = edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 0);
-					if (g == f) g = edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, 1);
+				int nAdjacentFaces = edgeFaceAdjacency.getAdjacentFaceCount(eIndex);
+				if (nAdjacentFaces > 1) {
+					int g = -1;
+					for (int L = 0; L < nAdjacentFaces; L++) {
+						std::pair<int, int> faceIndex = edgeFaceAdjacency.getAdjacentFaceIndex(eIndex, L);
+						if (faceIndex.first != f && faceIndex.second == 1) {
+							g = faceIndex.first;
+							break;
+						}
+					}
 
-					if (!seenFace[g]) {
+					if (g != -1 && !seenFace[g]) {
 						seenFace[g] = 1;
 						faceComponent[g] = nComponents;
 						q.push(g);

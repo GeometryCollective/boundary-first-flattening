@@ -39,13 +39,14 @@ public:
 	// returns adjacent face count for edge e
 	int getAdjacentFaceCount(int e) const;
 
-	// returns face index for edge e and 0 <= f <= getAdjacentFaceCount(e)
-	int getAdjacentFaceIndex(int e, int f) const;
+	// returns face index and isAdjacent flag for edge e and 0 <= f <= getAdjacentFaceCount(e)
+	std::pair<int, int> getAdjacentFaceIndex(int e, int f) const;
 
 private:
 	// members
 	std::vector<int> data;
 	std::vector<int> offsets;
+	std::vector<uint8_t> isAdjacentFace;
 	friend PolygonSoup;
 };
 
