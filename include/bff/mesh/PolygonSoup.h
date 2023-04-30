@@ -9,13 +9,12 @@
 
 namespace bff {
 
+class PolygonSoup;
+
 class VertexAdjacencyMaps {
 public:
 	// constructs adjacency map
 	void construct(int nV, const std::vector<int>& indices);
-
-	// returns a single adjacent face and adjacent face count for vertex v
-	std::pair<int, int> getAdjacentFaceCount(int v) const;
 
 	// returns edge index corresponding to vertex entry (vi, vj)
 	int getEdgeIndex(int vi, int vj) const;
@@ -28,6 +27,7 @@ private:
 	std::vector<int> data;
 	std::vector<int> offsets;
 	std::vector<std::pair<int, int>> faceCount;
+	friend PolygonSoup;
 };
 
 class EdgeFaceAdjacencyMap {
@@ -46,6 +46,7 @@ private:
 	// members
 	std::vector<int> data;
 	std::vector<int> offsets;
+	friend PolygonSoup;
 };
 
 class PolygonSoup {

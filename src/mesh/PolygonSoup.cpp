@@ -46,11 +46,6 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 	}
 }
 
-std::pair<int, int> VertexAdjacencyMaps::getAdjacentFaceCount(int v) const
-{
-	return faceCount[v];
-}
-
 int VertexAdjacencyMaps::getEdgeIndex(int vi, int vj) const
 {
 	if (vi < vj) std::swap(vi, vj);
