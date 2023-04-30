@@ -39,7 +39,7 @@ public:
 	// returns adjacent face count for edge e
 	int getAdjacentFaceCount(int e) const;
 
-	// returns face index and isAdjacent flag for edge e and 0 <= f <= getAdjacentFaceCount(e)
+	// returns face index and isAdjacent flag for edge e and 0 <= f < getAdjacentFaceCount(e)
 	std::pair<int, int> getAdjacentFaceIndex(int e, int f) const;
 
 private:

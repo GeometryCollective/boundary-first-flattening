@@ -27,7 +27,7 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 	std::vector<std::pair<int, int>>::iterator end = std::unique(vertexPairs.begin(), vertexPairs.end());
 	vertexPairs.resize(std::distance(vertexPairs.begin(), end));
 
-	// construct maps
+	// construct map
 	data.clear();
 	offsets.clear();
 	data.reserve(vertexPairs.size());
