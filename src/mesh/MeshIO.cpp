@@ -533,8 +533,13 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		isCuttableModelEdge[eIndex] = 0;
 	}
 
-	// split non-manifold vertices; TODO: deal with uncuttable edges
-	// soup.splitNonManifoldVertices();
+	// split non-manifold vertices
+	if (soup.splitNonManifoldVertices()) {
+		// for simplicity, allow uncuttable edges to be cut during flattening when 
+		// vertices are split since connectivity is being changed in any case
+		isCuttableModelEdge.clear();
+		isCuttableModelEdge.resize(soup.vertexAdjacency.getEdgeCount(), 1);
+	}
 
 	// check if soup has non-manifold edges
 	bool hasNonManifoldEdges = false;

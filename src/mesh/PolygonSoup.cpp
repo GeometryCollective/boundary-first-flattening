@@ -201,7 +201,7 @@ void PolygonSoup::collectAdjacentFaces(const std::vector<uint8_t>& isNonManifold
 	}
 }
 
-void PolygonSoup::splitNonManifoldVertices()
+bool PolygonSoup::splitNonManifoldVertices()
 {
 	// identify non-manifold vertices
 	std::vector<uint8_t> isNonManifoldVertex(positions.size(), 0);
@@ -310,7 +310,11 @@ void PolygonSoup::splitNonManifoldVertices()
 		// TODO: reconstruct locally
 		vertexAdjacency.construct(positions.size(), indices);
 		edgeFaceAdjacency.construct(vertexAdjacency, indices);
+		
+		return true;
 	}
+
+	return false;
 }
 
 int PolygonSoup::separateFacesIntoComponents()

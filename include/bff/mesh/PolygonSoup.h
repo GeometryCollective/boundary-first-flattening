@@ -61,7 +61,7 @@ private:
 class PolygonSoup {
 public:
 	// splits non-manifold vertices
-	void splitNonManifoldVertices();
+	bool splitNonManifoldVertices();
 
 	// separates faces into components
 	int separateFacesIntoComponents();
