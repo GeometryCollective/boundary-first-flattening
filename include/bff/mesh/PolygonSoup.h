@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -59,6 +60,9 @@ private:
 
 class PolygonSoup {
 public:
+	// splits non-manifold vertices
+	void splitNonManifoldVertices();
+
 	// separates faces into components
 	int separateFacesIntoComponents();
 
@@ -68,6 +72,14 @@ public:
 	std::vector<int> faceComponent;
 	VertexAdjacencyMaps vertexAdjacency; // build after filling positions and indices
 	EdgeFaceAdjacencyMap edgeFaceAdjacency; // build after constructing vertexAdjacency
+
+private:
+	// identifies non-manifold vertices
+	int identifyNonManifoldVertices(std::vector<uint8_t>& isNonManifoldVertex) const;
+
+	// collects adjacent faces for each non-manifold vertex
+	void collectAdjacentFaces(const std::vector<uint8_t>& isNonManifoldVertex,
+							  std::unordered_map<int, std::vector<int>>& vertexToFacesMap) const;
 };
 
 } // namespace bff

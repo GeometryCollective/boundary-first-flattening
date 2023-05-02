@@ -1,6 +1,5 @@
 #include "bff/mesh/MeshIO.h"
 #include "bff/project/BinPacking.h"
-#include <unordered_map>
 #include <unordered_set>
 #include <queue>
 #ifdef USE_USD
@@ -533,6 +532,9 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		int eIndex = soup.vertexAdjacency.getEdgeIndex(uncuttableEdges[i].first, uncuttableEdges[i].second);
 		isCuttableModelEdge[eIndex] = 0;
 	}
+
+	// split non-manifold vertices; TODO: deal with uncuttable edges
+	// soup.splitNonManifoldVertices();
 
 	// check if soup has non-manifold edges
 	bool hasNonManifoldEdges = false;
