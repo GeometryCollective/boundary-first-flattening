@@ -290,6 +290,30 @@ bool PolygonSoup::splitNonManifoldVertices()
 			}
 		}
 
+		// collect new vertex pairs
+		std::vector<std::pair<int, int>> newVertexPairs;
+		for (auto it = updatedFaceIndices.begin(); it != updatedFaceIndices.end(); it++) {
+			int f = it->first;
+			const std::array<int, 3>& updatedIndices = it->second;
+
+			for (int I = 0; I < 3; I++) {
+				int J = (I + 1) % 3;
+				int i = indices[f + I];
+				int j = indices[f + J];
+				int ii = updatedIndices[I];
+				int jj = updatedIndices[J];
+
+				if (ii != i || jj != j) {
+					// record new vertex pair
+					if (ii < jj) std::swap(ii, jj);
+					newVertexPairs.emplace_back(std::make_pair(ii, jj));
+				}
+			}
+		}
+
+		// update vertex adjacency
+		vertexAdjacency.insert(positions.size(), newVertexPairs);
+
 		// update indices
 		for (auto it = updatedFaceIndices.begin(); it != updatedFaceIndices.end(); it++) {
 			int f = it->first;
@@ -300,10 +324,8 @@ bool PolygonSoup::splitNonManifoldVertices()
 			}
 		}
 
-		// update adjacency maps; TODO: reconstruct locally
-		vertexAdjacency.construct(positions.size(), indices);
+		// update edge face adjacency; TODO: reconstruct locally
 		edgeFaceAdjacency.construct(vertexAdjacency, indices);
-		
 		return true;
 	}
 
