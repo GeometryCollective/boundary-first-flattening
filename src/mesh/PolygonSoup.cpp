@@ -291,7 +291,6 @@ bool PolygonSoup::splitNonManifoldVertices()
 		}
 
 		// update indices
-		std::vector<std::pair<int, int>> newEdgeFacePairs;
 		for (auto it = updatedFaceIndices.begin(); it != updatedFaceIndices.end(); it++) {
 			int f = it->first;
 			const std::array<int, 3>& updatedIndices = it->second;
@@ -306,8 +305,7 @@ bool PolygonSoup::splitNonManifoldVertices()
 			}
 		}
 
-		// update adjacency maps
-		// TODO: reconstruct locally
+		// update adjacency maps; TODO: reconstruct locally
 		vertexAdjacency.construct(positions.size(), indices);
 		edgeFaceAdjacency.construct(vertexAdjacency, indices);
 		
