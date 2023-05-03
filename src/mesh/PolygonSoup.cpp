@@ -296,12 +296,7 @@ bool PolygonSoup::splitNonManifoldVertices()
 			const std::array<int, 3>& updatedIndices = it->second;
 
 			for (int I = 0; I < 3; I++) {
-				int J = (I + 1) % 3;
-				int ii = updatedIndices[I];
-				int jj = updatedIndices[J];
-
-				indices[f + I] = ii;
-				indices[f + J] = jj;
+				indices[f + I] = updatedIndices[I];
 			}
 		}
 
