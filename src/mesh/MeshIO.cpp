@@ -184,8 +184,8 @@ void MeshIO::separateComponents(const PolygonSoup& soup, int nComponents,
 	modelToMeshMap.resize(nVertices);
 
 	if (nComponents == 1) {
-		soups.emplace_back(soup);
-		isCuttableSoupEdge.emplace_back(isCuttableModelEdge);
+		soups.emplace_back(std::move(soup));
+		isCuttableSoupEdge.emplace_back(std::move(isCuttableModelEdge));
 		meshToModelMap[0].resize(nVertices);
 
 		for (int i = 0; i < nVertices; i++) {
