@@ -237,13 +237,12 @@ bool PolygonSoup::splitNonManifoldVertices()
 			int nFacesSeen = 0;
 			int nComponents = 0;
 			int start = 0;
-			int faceCount = (int)adjacentFaces.size();
 			std::unordered_set<int> seenFaces;
 			std::queue<int> queue;
 
-			while (nFacesSeen != faceCount) {
+			while (nFacesSeen != adjacentFaces.size()) {
 				// put an unvisited face on the queue
-				for (int i = start; i < faceCount; i++) {
+				for (int i = start; i < (int)adjacentFaces.size(); i++) {
 					int f = adjacentFaces[i];
 
 					if (seenFaces.find(f) == seenFaces.end()) {
