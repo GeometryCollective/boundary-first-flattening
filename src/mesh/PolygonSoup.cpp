@@ -25,9 +25,8 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 	}
 
 	// construct map
-	data.clear();
+	clear();
 	data.reserve(vertexPairs.size());
-	offsets.clear();
 	offsets.reserve(nV + 1);
 	offsets.emplace_back(0);
 	insert(nV, vertexPairs);
@@ -74,6 +73,12 @@ int VertexAdjacencyMaps::getEdgeCount() const
 	return offsets[offsets.size() - 1];
 }
 
+void VertexAdjacencyMaps::clear()
+{
+	data.clear();
+	offsets.clear();
+}
+
 void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 									 const std::vector<int>& indices)
 {
@@ -94,12 +99,10 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 	}
 
 	// construct map
-	data.clear();
+	clear();
 	data.reserve(edgeFacePairs.size());
-	offsets.clear();
 	offsets.reserve(nE + 1);
 	offsets.emplace_back(0);
-	isAdjacentFace.clear();
 	isAdjacentFace.reserve(edgeFacePairs.size());
 	insert(vertexAdjacency, edgeFacePairs);
 }
@@ -137,6 +140,13 @@ std::pair<int, int> EdgeFaceAdjacencyMap::getAdjacentFaceIndex(int e, int f) con
 {
 	int offset = offsets[e] + f;
 	return std::make_pair(data[offset], isAdjacentFace[offset]);
+}
+
+void EdgeFaceAdjacencyMap::clear()
+{
+	data.clear();
+	offsets.clear();
+	isAdjacentFace.clear();
 }
 
 int PolygonSoup::identifyNonManifoldVertices(std::vector<uint8_t>& isNonManifoldVertex) const

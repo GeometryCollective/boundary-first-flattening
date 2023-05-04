@@ -545,6 +545,9 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	std::vector<int> faceComponent;
 	int nComponents = soup.assignComponentToFaces(faceComponent);
 
+	// clear edge-face adjacency map as its no longer needed
+	soup.edgeFaceAdjacency.clear();
+
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<uint8_t>> isCuttableSoupEdge;

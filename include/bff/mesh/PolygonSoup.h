@@ -23,6 +23,9 @@ public:
 	// returns edge count
 	int getEdgeCount() const;
 
+	// clears adjacency map
+	void clear();
+
 private:
 	// inserts new vertex pairs into map
 	void insert(int nV, std::vector<std::pair<int, int>>& vertexPairs);
@@ -45,6 +48,9 @@ public:
 
 	// returns face index and isAdjacent flag for edge e and 0 <= f < getAdjacentFaceCount(e)
 	std::pair<int, int> getAdjacentFaceIndex(int e, int f) const;
+
+	// clears adjacency map
+	void clear();
 
 private:
     // inserts new edge face pairs into map
