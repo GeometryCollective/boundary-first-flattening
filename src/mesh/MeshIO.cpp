@@ -523,13 +523,17 @@ void MeshIO::normalize(Model& model)
 bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 						PolygonSoup& soup, Model& model, std::string& error)
 {
+	// remove isolated vertices
+	bool removedIsolatedVertices = soup.removeIsolatedVertices();
+
 	// construct vertex-edge and edge-face adjacency maps
 	soup.vertexAdjacency.construct(soup.positions.size(), soup.indices);
 	soup.edgeFaceAdjacency.construct(soup.vertexAdjacency, soup.indices);
 
 	// split non-manifold vertices
 	std::vector<uint8_t> isCuttableModelEdge(soup.vertexAdjacency.getEdgeCount(), 1);
-	if (soup.splitNonManifoldVertices()) {
+	bool didSplitNonManifoldVertices = soup.splitNonManifoldVertices();
+	if (removedIsolatedVertices || didSplitNonManifoldVertices) {
 		// for simplicity, allow uncuttable edges to be cut during flattening since 
 		// connectivity is being changed in any case when vertices are split
 		isCuttableModelEdge.resize(soup.vertexAdjacency.getEdgeCount(), 1);

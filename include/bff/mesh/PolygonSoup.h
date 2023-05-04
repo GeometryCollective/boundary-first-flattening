@@ -66,6 +66,9 @@ private:
 
 class PolygonSoup {
 public:
+	// removes isolated vertices
+	bool removeIsolatedVertices();
+
 	// splits non-manifold vertices
 	bool splitNonManifoldVertices();
 

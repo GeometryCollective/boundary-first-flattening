@@ -216,6 +216,50 @@ void PolygonSoup::collectAdjacentFaces(const std::vector<uint8_t>& isNonManifold
 	}
 }
 
+bool PolygonSoup::removeIsolatedVertices()
+{
+	int nVertices = (int)positions.size();
+	int nIndices = (int)indices.size();
+	std::vector<Vector> positionsCopy;
+	std::vector<int> indicesCopy;
+	positionsCopy.reserve(nVertices);
+	indicesCopy.reserve(nIndices);
+	std::vector<int> vertexIndexMap(nVertices, -1);
+
+	for (int I = 0; I < nIndices; I += 3) {
+		for (int J = 0; J < 3; J++) {
+			int i = indices[I + J];
+
+			// insert vertex if it hasn't been seen
+			if (vertexIndexMap[i] == -1) {
+				int index = (int)positionsCopy.size();
+				vertexIndexMap[i] = index;
+				positionsCopy.emplace_back(positions[i]);
+			}
+
+			// add index
+			indicesCopy.emplace_back(vertexIndexMap[i]);
+		}
+	}
+
+	// copy over new indices and positions if there are isolated vertices
+	bool hasIsolatedVertices = false;
+	for (int i = 0; i < nVertices; i++) {
+		if (vertexIndexMap[i] == -1) {
+			hasIsolatedVertices = true;
+			break;
+		}
+	}
+
+	if (hasIsolatedVertices) {
+		positions = positionsCopy;
+		indices = indicesCopy;
+		return true;
+	}
+
+	return false;
+}
+
 bool PolygonSoup::splitNonManifoldVertices()
 {
 	// identify non-manifold vertices
