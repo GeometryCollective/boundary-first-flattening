@@ -147,8 +147,8 @@ void Mesh::projectUvsToPcaAxis()
 
 double Mesh::areaRatio() const
 {
-	double area = 0.0f;
-	double areaUV = 0.0f;
+	double area = 0.0;
+	double areaUV = 0.0;
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
 			area += f->area();
@@ -156,7 +156,8 @@ double Mesh::areaRatio() const
 		}
 	}
 
-	return areaUV > 0.0f ? area/areaUV : 1.0f;
+	if (std::isinf(areaUV) || std::isnan(areaUV)) return 1.0;
+	return areaUV > 0.0 ? area/areaUV : 1.0;
 }
 
 CutPtrSet Mesh::cutBoundary()
