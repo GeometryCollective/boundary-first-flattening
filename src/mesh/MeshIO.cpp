@@ -170,13 +170,15 @@ bool MeshIO::readUSD(const std::string& fileName, PolygonSoup& soup,
 }
 #endif
 
-void MeshIO::separateComponents(const PolygonSoup& soup, int nComponents,
+void MeshIO::separateComponents(const PolygonSoup& soup,
 								const std::vector<uint8_t>& isCuttableModelEdge,
 								std::vector<PolygonSoup>& soups,
 								std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								std::vector<std::pair<int, int>>& modelToMeshMap,
 								std::vector<std::vector<int>>& meshToModelMap)
 {
+	std::vector<int> faceComponent;
+	int nComponents = soup.assignComponentToFaces(faceComponent);
 	int nIndices = (int)soup.indices.size();
 	int nVertices = (int)soup.positions.size();
 	meshToModelMap.resize(nComponents);
@@ -199,7 +201,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup, int nComponents,
 		std::vector<int> vertexIndexMap(nVertices, -1);
 
 		for (int I = 0; I < nIndices; I += 3) {
-			int c = soup.faceComponent[I];
+			int c = faceComponent[I];
 
 			for (int J = 0; J < 3; J++) {
 				int i = soup.indices[I + J];
@@ -226,7 +228,7 @@ void MeshIO::separateComponents(const PolygonSoup& soup, int nComponents,
 
 		// mark cuttable edges for each soup
 		for (int I = 0; I < nIndices; I += 3) {
-			int c = soup.faceComponent[I];
+			int c = faceComponent[I];
 
 			for (int J = 0; J < 3; J++) {
 				int K = (J + 1) % 3;
@@ -543,10 +545,8 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<uint8_t>> isCuttableSoupEdge;
-	int nComponents = soup.separateFacesIntoComponents();
-	separateComponents(soup, nComponents, isCuttableModelEdge, soups,
-					   isCuttableSoupEdge, model.modelToMeshMap,
-					   model.meshToModelMap);
+	separateComponents(soup, isCuttableModelEdge, soups, isCuttableSoupEdge, 
+					   model.modelToMeshMap, model.meshToModelMap);
 
 	// build halfedge meshes
 	model.meshes.resize(soups.size());

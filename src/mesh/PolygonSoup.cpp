@@ -361,7 +361,7 @@ bool PolygonSoup::splitNonManifoldVertices()
 	return false;
 }
 
-int PolygonSoup::separateFacesIntoComponents()
+int PolygonSoup::assignComponentToFaces(std::vector<int>& faceComponent) const
 {
 	int nComponents = 0;
 	int nIndices = (int)indices.size();

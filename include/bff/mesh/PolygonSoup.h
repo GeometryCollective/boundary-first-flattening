@@ -63,13 +63,12 @@ public:
 	// splits non-manifold vertices
 	bool splitNonManifoldVertices();
 
-	// separates faces into components
-	int separateFacesIntoComponents();
+	// assigns components to faces
+	int assignComponentToFaces(std::vector<int>& faceComponent) const;
 
 	// members
 	std::vector<Vector> positions;
 	std::vector<int> indices;
-	std::vector<int> faceComponent;
 	VertexAdjacencyMaps vertexAdjacency; // build after filling positions and indices
 	EdgeFaceAdjacencyMap edgeFaceAdjacency; // build after constructing vertexAdjacency
 
