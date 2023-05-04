@@ -545,9 +545,9 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		}
 	}
 
-	// assign component to faces
+	// orient faces and assign components to them
 	std::vector<int> faceComponent;
-	int nComponents = soup.assignComponentToFaces(faceComponent);
+	int nComponents = soup.orientFacesAndAssignComponents(faceComponent);
 
 	// clear edge-face adjacency map as its no longer needed
 	soup.edgeFaceAdjacency.clear();

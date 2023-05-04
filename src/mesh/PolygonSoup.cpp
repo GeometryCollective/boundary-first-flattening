@@ -415,7 +415,23 @@ bool PolygonSoup::splitNonManifoldVertices()
 	return false;
 }
 
-int PolygonSoup::assignComponentToFaces(std::vector<int>& faceComponent) const
+bool PolygonSoup::flipFaceOrientation(int f, int vi, int vj)
+{
+	for (int I = 0; I < 3; I++) {
+		int J = (I + 1) % 3;
+		int& i = indices[f + I];
+		int& j = indices[f + J];
+
+		if (vi == i && vj == j) {
+			std::swap(i, j);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int PolygonSoup::orientFacesAndAssignComponents(std::vector<int>& faceComponent)
 {
 	int nComponents = 0;
 	int nIndices = (int)indices.size();
@@ -453,6 +469,7 @@ int PolygonSoup::assignComponentToFaces(std::vector<int>& faceComponent) const
 						bool isAdjacentFace = faceIndex.second == 1;
 
 						if (g != f && isAdjacentFace && !seenFace[g]) {
+							flipFaceOrientation(g, i, j);
 							seenFace[g] = 1;
 							faceComponent[g] = nComponents;
 							q.push(g);

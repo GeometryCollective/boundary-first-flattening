@@ -72,8 +72,8 @@ public:
 	// splits non-manifold vertices
 	bool splitNonManifoldVertices();
 
-	// assigns components to faces
-	int assignComponentToFaces(std::vector<int>& faceComponent) const;
+	// orients faces and assigns components to them
+	int orientFacesAndAssignComponents(std::vector<int>& faceComponent);
 
 	// members
 	std::vector<Vector> positions;
@@ -88,6 +88,9 @@ private:
 	// collects adjacent faces for each non-manifold vertex
 	void collectAdjacentFaces(const std::vector<uint8_t>& isNonManifoldVertex,
 							  std::unordered_map<int, std::vector<int>>& vertexToFacesMap) const;
+
+	// flips face orientation if f has an edge pointing from vi to vj
+	bool flipFaceOrientation(int f, int vi, int vj);
 };
 
 } // namespace bff
