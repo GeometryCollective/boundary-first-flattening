@@ -26,7 +26,9 @@ void VertexAdjacencyMaps::construct(int nV, const std::vector<int>& indices)
 
 	// construct map
 	data.clear();
+	data.reserve(vertexPairs.size());
 	offsets.clear();
+	offsets.reserve(nV + 1);
 	offsets.emplace_back(0);
 	insert(nV, vertexPairs);
 }
@@ -93,9 +95,12 @@ void EdgeFaceAdjacencyMap::construct(const VertexAdjacencyMaps& vertexAdjacency,
 
 	// construct map
 	data.clear();
+	data.reserve(edgeFacePairs.size());
 	offsets.clear();
+	offsets.reserve(nE + 1);
 	offsets.emplace_back(0);
 	isAdjacentFace.clear();
+	isAdjacentFace.reserve(edgeFacePairs.size());
 	insert(vertexAdjacency, edgeFacePairs);
 }
 
