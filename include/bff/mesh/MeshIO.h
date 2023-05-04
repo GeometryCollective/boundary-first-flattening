@@ -70,7 +70,8 @@ public:
 #endif
 private:
 	// separates model into components
-	static void separateComponents(const PolygonSoup& soup,
+	static void separateComponents(const PolygonSoup& soup, int nComponents,
+								   const std::vector<int>& faceComponent,
 								   const std::vector<uint8_t>& isCuttableModelEdge,
 								   std::vector<PolygonSoup>& soups,
 								   std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,

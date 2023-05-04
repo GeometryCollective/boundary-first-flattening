@@ -170,15 +170,14 @@ bool MeshIO::readUSD(const std::string& fileName, PolygonSoup& soup,
 }
 #endif
 
-void MeshIO::separateComponents(const PolygonSoup& soup,
+void MeshIO::separateComponents(const PolygonSoup& soup, int nComponents,
+								const std::vector<int>& faceComponent,
 								const std::vector<uint8_t>& isCuttableModelEdge,
 								std::vector<PolygonSoup>& soups,
 								std::vector<std::vector<uint8_t>>& isCuttableSoupEdge,
 								std::vector<std::pair<int, int>>& modelToMeshMap,
 								std::vector<std::vector<int>>& meshToModelMap)
 {
-	std::vector<int> faceComponent;
-	int nComponents = soup.assignComponentToFaces(faceComponent);
 	int nIndices = (int)soup.indices.size();
 	int nVertices = (int)soup.positions.size();
 	meshToModelMap.resize(nComponents);
@@ -542,11 +541,16 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		}
 	}
 
+	// assign component to faces
+	std::vector<int> faceComponent;
+	int nComponents = soup.assignComponentToFaces(faceComponent);
+
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<uint8_t>> isCuttableSoupEdge;
-	separateComponents(soup, isCuttableModelEdge, soups, isCuttableSoupEdge, 
-					   model.modelToMeshMap, model.meshToModelMap);
+	separateComponents(soup, nComponents, faceComponent, isCuttableModelEdge,
+					   soups, isCuttableSoupEdge, model.modelToMeshMap, 
+					   model.meshToModelMap);
 
 	// build halfedge meshes
 	model.meshes.resize(soups.size());
