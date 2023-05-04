@@ -540,28 +540,13 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 		}
 	}
 
-	// check if soup has non-manifold edges
-	bool hasNonManifoldEdges = false;
-	for (int i = 0; i < soup.vertexAdjacency.getEdgeCount(); i++) {
-		if (soup.edgeFaceAdjacency.getAdjacentFaceCount(i) > 2) {
-			hasNonManifoldEdges = true;
-			break;
-		}
-	}
-
 	// separate model into components
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<uint8_t>> isCuttableSoupEdge;
-	if (hasNonManifoldEdges) {
-		error = "Mesh has non-manifold edges.";
-		return false;
-
-	} else {
-		int nComponents = soup.separateFacesIntoComponents();
-		separateComponents(soup, nComponents, isCuttableModelEdge, soups,
-						   isCuttableSoupEdge, model.modelToMeshMap, 
-						   model.meshToModelMap);
-	}
+	int nComponents = soup.separateFacesIntoComponents();
+	separateComponents(soup, nComponents, isCuttableModelEdge, soups,
+					   isCuttableSoupEdge, model.modelToMeshMap,
+					   model.meshToModelMap);
 
 	// build halfedge meshes
 	model.meshes.resize(soups.size());

@@ -314,18 +314,42 @@ bool PolygonSoup::splitNonManifoldVertices()
 		// update vertex adjacency
 		vertexAdjacency.insert(positions.size(), newVertexPairs);
 
-		// update indices
+		// collect new edge face pairs and update indices
+		std::vector<std::pair<int, int>> newEdgeFacePairs;
 		for (auto it = updatedFaceIndices.begin(); it != updatedFaceIndices.end(); it++) {
 			int f = it->first;
 			const std::array<int, 3>& updatedIndices = it->second;
+
+			for (int I = 0; I < 3; I++) {
+				int J = (I + 1) % 3;
+				int i = indices[f + I];
+				int j = indices[f + J];
+				int ii = updatedIndices[I];
+				int jj = updatedIndices[J];
+
+				if (ii != i || jj != j) {
+					// tag face as no longer adjacent to existing edge
+					int eIndex = vertexAdjacency.getEdgeIndex(i, j);
+					for (int k = edgeFaceAdjacency.offsets[eIndex]; k < edgeFaceAdjacency.offsets[eIndex + 1]; k++) {
+						if (edgeFaceAdjacency.data[k] == f) {
+							edgeFaceAdjacency.isAdjacentFace[k] = 0;
+							break;
+						}
+					}
+
+					// record new edge face pair
+					eIndex = vertexAdjacency.getEdgeIndex(ii, jj);
+					newEdgeFacePairs.emplace_back(std::make_pair(eIndex, f));
+				}
+			}
 
 			for (int I = 0; I < 3; I++) {
 				indices[f + I] = updatedIndices[I];
 			}
 		}
 
-		// update edge face adjacency; TODO: reconstruct locally
-		edgeFaceAdjacency.construct(vertexAdjacency, indices);
+		// update edge face adjacency
+		edgeFaceAdjacency.insert(vertexAdjacency, newEdgeFacePairs);
 		return true;
 	}
 
