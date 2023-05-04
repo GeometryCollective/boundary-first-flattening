@@ -221,6 +221,7 @@ bool PolygonSoup::splitNonManifoldVertices()
 	// identify non-manifold vertices
 	std::vector<uint8_t> isNonManifoldVertex(positions.size(), 0);
 	int nNonManifoldVertices = identifyNonManifoldVertices(isNonManifoldVertex);
+	vertexAdjacency.faceCount.clear(); // no longer needed
 
 	if (nNonManifoldVertices > 0) {
 		// collect adjacent faces to each non-manifold vertex
