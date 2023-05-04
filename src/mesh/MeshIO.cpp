@@ -535,7 +535,7 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	bool didSplitNonManifoldVertices = soup.splitNonManifoldVertices();
 	if (removedIsolatedVertices || didSplitNonManifoldVertices) {
 		// for simplicity, allow uncuttable edges to be cut during flattening since 
-		// connectivity is being changed in any case when vertices are split
+		// connectivity is being changed in any case when vertices are removed or split
 		isCuttableModelEdge.resize(soup.vertexAdjacency.getEdgeCount(), 1);
 
 	} else {
