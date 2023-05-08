@@ -7,7 +7,7 @@ namespace bff {
 class BinPacking {
 public:
 	// packs UVs
-	static void pack(const Model& model,
+	static void pack(const Model& model, double padding,
 					 const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					 std::vector<Vector>& originalUvIslandCenters,
 					 std::vector<Vector>& newUvIslandCenters,

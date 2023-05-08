@@ -187,10 +187,11 @@ where `in.obj` is the mesh you want to flatten, and `out.obj` is the same mesh w
 
 Some optional flags:
 
-* `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)
+* `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically).
 * `--normalizeUVs` Scale all UVs so that they are in the range [0,1] x [0,1].
 * `--writeOnlyUVs` Use the vertex flag 'v' in the [OBJ format](https://en.wikipedia.org/wiki/Wavefront_.obj_file) to store UVs (the 'vt' flag is used by default).
-* `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)
+* `--padding=PADDING` A multiplicative factor to control the amount of padding between UV islands in the texture atlas (default value is 1 indicating no padding).
+* `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane. (See below for more detail.)
 * `--flattenToDisk` For a topological disk, maps to the unit circular disk. (See below for more detail.)
 
 Unlike the GUI, the command line application does not expose some of the interactive features of BFF such editing of boundary lengths, corner angles and cone angles.  These features can still be accessed via the code level interface (see below).

@@ -296,10 +296,11 @@ make -j 4
 Some optional flags:
 
 <ul>
-   <li> <tt>--nCones=N_CONES</tt> Use the specified number of cone singularities to reduce area distortion (these are chosen automatically)</li>
+   <li> <tt>--nCones=N_CONES</tt> Use the specified number of cone singularities to reduce area distortion (these are chosen automatically).</li>
    <li> <tt>--normalizeUVs</tt> Scale all UVs so that they are in the range [0,1] x [0,1].</li>
    <li> <tt>--writeOnlyUVs</tt> Use the vertex flag 'v' in the <a href="https://en.wikipedia.org/wiki/Wavefront_.obj_file">OBJ format</a> to store UVs (the 'vt' flag is used by default).</li>
-   <li> <tt>--mapToSphere</tt> For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane.  (See below for more detail.)</li>
+   <li> <tt>--padding=PADDING</tt> A multiplicative factor to control the amount of padding between UV islands in the texture atlas (default value is 1 indicating no padding).</li>
+   <li> <tt>--mapToSphere</tt> For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane. (See below for more detail.)</li>
    <li> <tt>--flattenToDisk</tt> For a topological disk, maps to the unit circular disk. (See below for more detail.)</li>
 </ul>
 

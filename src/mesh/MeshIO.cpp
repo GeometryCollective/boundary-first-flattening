@@ -600,7 +600,8 @@ bool MeshIO::read(const std::string& fileName, Model& model, std::string& error)
 	return true;
 }
 
-void MeshIO::packUvs(Model& model, const std::vector<uint8_t>& isSurfaceMappedToSphere,
+void MeshIO::packUvs(Model& model, double padding,
+					 const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					 std::vector<Vector>& originalUvIslandCenters,
 					 std::vector<Vector>& newUvIslandCenters,
 					 std::vector<uint8_t>& isUvIslandFlipped,
@@ -612,9 +613,8 @@ void MeshIO::packUvs(Model& model, const std::vector<uint8_t>& isSurfaceMappedTo
 		}
 	}
 
-	BinPacking::pack(model, isSurfaceMappedToSphere, originalUvIslandCenters,
-					 newUvIslandCenters, isUvIslandFlipped,
-					 modelMinBounds, modelMaxBounds);
+	BinPacking::pack(model, padding, isSurfaceMappedToSphere, originalUvIslandCenters,
+					 newUvIslandCenters, isUvIslandFlipped, modelMinBounds, modelMaxBounds);
 }
 
 void MeshIO::collectModelUvs(Model& model, bool normalizeUvs,
@@ -925,15 +925,14 @@ bool MeshIO::writeUSD(const std::string& fileName, bool writeOnlyUvs,
 
 bool MeshIO::write(const std::string& fileName, Model& model,
 				   const std::vector<uint8_t>& isSurfaceMappedToSphere,
-				   bool normalizeUvs, bool writeOnlyUvs)
+				   bool normalizeUvs, bool writeOnlyUvs, double padding)
 {
 	// pack UVs
 	std::vector<Vector> originalUvIslandCenters, newUvIslandCenters;
 	std::vector<uint8_t> isUvIslandFlipped;
 	Vector modelMinBounds, modelMaxBounds;
-	packUvs(model, isSurfaceMappedToSphere, originalUvIslandCenters,
-			newUvIslandCenters, isUvIslandFlipped,
-			modelMinBounds, modelMaxBounds);
+	packUvs(model, padding, isSurfaceMappedToSphere, originalUvIslandCenters,
+			newUvIslandCenters, isUvIslandFlipped, modelMinBounds, modelMaxBounds);
 
 	// collect model UVs
 	std::vector<Vector> positions, uvs;
