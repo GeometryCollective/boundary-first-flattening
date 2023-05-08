@@ -8,11 +8,12 @@ namespace bff {
 using namespace rbp;
 
 bool attemptPacking(int boxLength, double unitsPerInt,
-					const std::vector<RectSize>& rectangleSizes,
+					const std::vector<std::pair<RectSize, int>>& rectangleSizes,
 					std::vector<Vector>& newUvIslandCenters,
 					std::vector<uint8_t>& isUvIslandFlipped,
 					Vector& modelMinBounds, Vector& modelMaxBounds)
 {
+	// initialize packer
 	int n = (int)rectangleSizes.size();
 	modelMinBounds = Vector(std::numeric_limits<double>::max(),
 							std::numeric_limits<double>::max());
@@ -21,22 +22,25 @@ bool attemptPacking(int boxLength, double unitsPerInt,
 	SkylineBinPack packer(boxLength, boxLength, false);
 
 	for (int i = 0; i < n; i++) {
-		Rect rect = packer.Insert(rectangleSizes[i].width, rectangleSizes[i].height,
+		RectSize rectSize = rectangleSizes[i].first;
+		int index = rectangleSizes[i].second;
+
+		Rect rect = packer.Insert(rectSize.width, rectSize.height,
 								  SkylineBinPack::LevelChoiceHeuristic::LevelBottomLeft);
 
 		// check for failure
 		if (rect.width == 0 || rect.height == 0) {
-			if (rectangleSizes[i].width != 0 && rectangleSizes[i].height != 0) {
+			if (rectSize.width != 0 && rectSize.height != 0) {
 				return false;
 			}
 		}
 
 		// check if flipped
-		isUvIslandFlipped[i] = rect.width == rectangleSizes[i].width ? 0 : 1;
+		isUvIslandFlipped[index] = rect.width == rectSize.width ? 0 : 1;
 
 		// compute new centers
-		newUvIslandCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
-		newUvIslandCenters[i] *= unitsPerInt;
+		newUvIslandCenters[index] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
+		newUvIslandCenters[index] *= unitsPerInt;
 		modelMinBounds.x = std::min((double)rect.x, modelMinBounds.x);
 		modelMinBounds.y = std::min((double)rect.y, modelMinBounds.y);
 		modelMaxBounds.x = std::max((double)(rect.x + rect.width), modelMaxBounds.x);
@@ -99,7 +103,7 @@ void BinPacking::pack(const Model& model, double padding,
 
 	// quantize boxes
 	originalUvIslandCenters.resize(n);
-	std::vector<RectSize> rectangleSizes(n);
+	std::vector<std::pair<RectSize, int>> rectangleSizes(n);
 	int minBoxLength = 10000;
 	int maxBoxLength = 10000;
 	double unitsPerInt = std::sqrt(totalArea)/(double)maxBoxLength;
@@ -112,10 +116,20 @@ void BinPacking::pack(const Model& model, double padding,
 
 		int width = maxX - minX;
 		int height = maxY - minY;
-		rectangleSizes[i] = RectSize{width, height};
+		rectangleSizes[i] = std::make_pair(RectSize{width, height}, i);
 		originalUvIslandCenters[i].x = (minX + maxX)/2.0;
 		originalUvIslandCenters[i].y = (minY + maxY)/2.0;
 		originalUvIslandCenters[i] *= unitsPerInt;
+	}
+
+	if (n > 1) {
+		// sort rectangle sizes by the shorter side first, followed by a comparison of the longer side
+		std::sort(rectangleSizes.begin(), rectangleSizes.end(),
+			[](const std::pair<RectSize, int>& a, const std::pair<RectSize, int>& b) {
+			return a.first.width == b.first.width ?
+				   a.first.height > b.first.height :
+				   a.first.width > b.first.width;
+		});
 	}
 
 	// pack islands
