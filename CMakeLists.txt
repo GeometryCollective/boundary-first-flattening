@@ -39,6 +39,7 @@ list(APPEND BFF_INCLUDE_DIRS "deps/rectangle-bin-pack")
 list(APPEND BFF_INCLUDE_DIRS "include")
 
 file(GLOB BFF_SOURCES "deps/rectangle-bin-pack/GuillotineBinPack.cpp"
+					  "deps/rectangle-bin-pack/SkylineBinPack.cpp"
 					  "deps/rectangle-bin-pack/Rect.cpp"
 					  "src/linear-algebra/*.cpp"
 					  "src/mesh/*.cpp"

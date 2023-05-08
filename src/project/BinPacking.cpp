@@ -1,6 +1,6 @@
 #include "bff/project/BinPacking.h"
 #include "Rect.h"
-#include "GuillotineBinPack.h"
+#include "SkylineBinPack.h"
 #include <limits>
 
 namespace bff {
@@ -8,32 +8,31 @@ namespace bff {
 using namespace rbp;
 
 bool attemptPacking(int boxLength, double unitsPerInt,
-					const std::vector<Rect>& rectangles,
+					const std::vector<RectSize>& rectangleSizes,
 					std::vector<Vector>& newUvIslandCenters,
 					std::vector<uint8_t>& isUvIslandFlipped,
 					Vector& modelMinBounds, Vector& modelMaxBounds)
 {
-	int n = (int)rectangles.size();
+	int n = (int)rectangleSizes.size();
 	modelMinBounds = Vector(std::numeric_limits<double>::max(),
 							std::numeric_limits<double>::max());
 	modelMaxBounds = Vector(std::numeric_limits<double>::lowest(),
 							std::numeric_limits<double>::lowest());
-	GuillotineBinPack packer(boxLength, boxLength);
+	SkylineBinPack packer(boxLength, boxLength, false);
 
 	for (int i = 0; i < n; i++) {
-		Rect rect = packer.Insert(rectangles[i].width, rectangles[i].height, true,
-								  GuillotineBinPack::FreeRectChoiceHeuristic::RectBestAreaFit,
-								  GuillotineBinPack::GuillotineSplitHeuristic::SplitMinimizeArea);
+		Rect rect = packer.Insert(rectangleSizes[i].width, rectangleSizes[i].height,
+								  SkylineBinPack::LevelChoiceHeuristic::LevelBottomLeft);
 
 		// check for failure
 		if (rect.width == 0 || rect.height == 0) {
-			if (rectangles[i].width != 0 && rectangles[i].height != 0) {
+			if (rectangleSizes[i].width != 0 && rectangleSizes[i].height != 0) {
 				return false;
 			}
 		}
 
 		// check if flipped
-		isUvIslandFlipped[i] = rect.width == rectangles[i].width ? 0 : 1;
+		isUvIslandFlipped[i] = rect.width == rectangleSizes[i].width ? 0 : 1;
 
 		// compute new centers
 		newUvIslandCenters[i] = Vector(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
@@ -100,7 +99,7 @@ void BinPacking::pack(const Model& model,
 
 	// quantize boxes
 	originalUvIslandCenters.resize(n);
-	std::vector<Rect> rectangles(n);
+	std::vector<RectSize> rectangleSizes(n);
 	int minBoxLength = 10000;
 	int maxBoxLength = 10000;
 	double unitsPerInt = std::sqrt(totalArea)/(double)maxBoxLength;
@@ -113,7 +112,7 @@ void BinPacking::pack(const Model& model,
 
 		int width = maxX - minX;
 		int height = maxY - minY;
-		rectangles[i] = Rect{minX, minY, width, height};
+		rectangleSizes[i] = RectSize{width, height};
 		originalUvIslandCenters[i].x = (minX + maxX)/2.0;
 		originalUvIslandCenters[i].y = (minY + maxY)/2.0;
 		originalUvIslandCenters[i] *= unitsPerInt;
@@ -125,18 +124,18 @@ void BinPacking::pack(const Model& model,
 	int iter = 0;
 
 	do {
-		if (attemptPacking(maxBoxLength, unitsPerInt, rectangles,
+		if (attemptPacking(maxBoxLength, unitsPerInt, rectangleSizes,
 						   newUvIslandCenters, isUvIslandFlipped,
 						   modelMinBounds, modelMaxBounds)) {
 			break;
 		}
 
 		minBoxLength = maxBoxLength;
-		maxBoxLength = static_cast<int>(std::ceil(minBoxLength*1.2));
+		maxBoxLength = static_cast<int>(std::ceil(minBoxLength*1.1));
 		iter++;
 	} while (iter < 50);
 
-	if (iter < 50 && n < 5000) {
+	if (iter < 50 && n > 1) {
 		// binary search on box length
 		minBoxLength = 5000;
 		maxBoxLength += 1;
@@ -145,7 +144,7 @@ void BinPacking::pack(const Model& model,
 			int boxLength = (minBoxLength + maxBoxLength)/2;
 			if (boxLength == minBoxLength) break;
 
-			if (attemptPacking(boxLength, unitsPerInt, rectangles,
+			if (attemptPacking(boxLength, unitsPerInt, rectangleSizes,
 							   newUvIslandCenters, isUvIslandFlipped,
 							   modelMinBounds, modelMaxBounds)) {
 				maxBoxLength = boxLength;
@@ -155,7 +154,7 @@ void BinPacking::pack(const Model& model,
 			}
 		}
 
-		attemptPacking(maxBoxLength, unitsPerInt, rectangles,
+		attemptPacking(maxBoxLength, unitsPerInt, rectangleSizes,
 					   newUvIslandCenters, isUvIslandFlipped,
 					   modelMinBounds, modelMaxBounds);
 	}
