@@ -120,17 +120,17 @@ void loadModel(const std::string& inputPath, Model& model,
 }
 
 void flatten(Model& model, const std::vector<uint8_t>& isSurfaceClosed,
-			 int nCones, bool flattenToDisk, bool mapToSphere)
+			 const std::vector<int>& nCones, bool flattenToDisk, bool mapToSphere)
 {
 	int nMeshes = model.size();
 	for (int i = 0; i < nMeshes; i++) {
 		Mesh& mesh = model[i];
 		BFF bff(mesh);
 
-		if (nCones > 0) {
+		if (nCones[i] > 0) {
 			std::vector<VertexIter> cones;
 			DenseMatrix coneAngles(bff.data->iN);
-			int S = std::min(nCones, (int)mesh.vertices.size() - bff.data->bN);
+			int S = std::min(nCones[i], (int)mesh.vertices.size() - bff.data->bN);
 
 			if (ConePlacement::findConesAndPrescribeAngles(S, cones, coneAngles, bff.data, mesh) ==
 				ConePlacement::ErrorCode::ok) {
@@ -202,15 +202,16 @@ int main(int argc, const char *argv[]) {
 	loadModel(inputPath, model, isSurfaceClosed);
 
 	// set nCones to 8 for closed surfaces
+	std::vector<int> nConesPerMesh(model.size(), nCones);
 	for (int i = 0; i < model.size(); i++) {
 		if (isSurfaceClosed[i] == 1 && !mapToSphere && nCones < 3) {
-			std::cout << "Setting nCones to 8." << std::endl;
-			nCones = 8;
+			std::cout << "Setting nCones to 8 for component " << i << std::endl;
+			nConesPerMesh[i] = 8;
 		}
 	}
 
 	// flatten
-	flatten(model, isSurfaceClosed, nCones, flattenToDisk, mapToSphere);
+	flatten(model, isSurfaceClosed, nConesPerMesh, flattenToDisk, mapToSphere);
 
 	// write model uvs to output path
 	writeModelUVs(outputPath, model, isSurfaceClosed, mapToSphere,
