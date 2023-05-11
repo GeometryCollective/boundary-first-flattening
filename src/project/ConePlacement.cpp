@@ -21,6 +21,7 @@ int ConePlacement::initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh)
 		if (mesh.eulerCharacteristic() > 0) curvature *= -1;
 
 		for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
+			if (v->insideHole()) continue;
 			double angleDefect = v->angleDefect();
 			bool isCandidateCone = mesh.eulerCharacteristic() > 0 ? curvature < angleDefect :
 																	curvature > angleDefect;
@@ -107,7 +108,7 @@ void ConePlacement::computeTargetAngles(DenseMatrix& C, const DenseMatrix& u,
 										const SparseMatrix& A, const VertexData<uint8_t>& isCone,
 										const WedgeData<int>& index, Mesh& mesh)
 {
-	// collect cone, non-cone and boundary indices indices
+	// collect cone, non-cone and boundary indices
 	std::vector<int> s, n, b;
 	separateConeIndices(s, n, isCone, index, mesh, true);
 	for (WedgeCIter w: mesh.cutBoundary()) b.emplace_back(index[w]);
@@ -148,7 +149,7 @@ bool ConePlacement::addConeWithLargestScaleFactor(VertexData<uint8_t>& isCone,
 	double maxU = -std::numeric_limits<double>::infinity();
 
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
-		if (!v->onBoundary() && !isCone[v]) {
+		if (!v->onBoundary() && !v->insideHole() && !isCone[v]) {
 			int i = index[v->wedge()];
 
 			double absU = std::abs(u(i));

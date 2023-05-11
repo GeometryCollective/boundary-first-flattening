@@ -69,6 +69,20 @@ bool Vertex::isIsolated() const
 	return halfEdgeIndex == -1;
 }
 
+bool Vertex::insideHole() const
+{
+	HalfEdgeCIter h = halfEdge();
+	do {
+		if (!h->face()->fillsHole) {
+			return false;
+		}
+
+		h = h->flip()->next();
+	} while (h != halfEdge());
+
+	return true;
+}
+
 int Vertex::degree() const
 {
 	int k = 0;

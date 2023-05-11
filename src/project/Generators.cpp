@@ -81,6 +81,7 @@ void Generators::buildDualSpanningTree(Mesh& mesh,
 		} while (he != fhe);
 
 		uncuttableEdges = (int)seenUncuttableEdges.size();
+		if (f->fillsHole) uncuttableEdges--;
 		dualParent[f] = f;
 	}
 

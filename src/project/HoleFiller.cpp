@@ -64,156 +64,92 @@ int HoleFiller::longestBoundaryLoop(double& loopLength,
 void HoleFiller::fill(const std::vector<HalfEdgeIter>& boundaryHalfEdges, Mesh& mesh)
 {
 	int n = (int)boundaryHalfEdges.size();
-	int nEdges = (int)mesh.edges.size();
-	int nHalfEdges = (int)mesh.halfEdges.size();
-	int nFaces = (int)mesh.faces.size();
-	int nCorners = (int)mesh.corners.size();
+    int nVertices = (int)mesh.vertices.size();
+    int nEdges = (int)mesh.edges.size();
+    int nHalfEdges = (int)mesh.halfEdges.size();
+    int nFaces = (int)mesh.faces.size();
+    int nCorners = (int)mesh.corners.size();
 
-	// inserting halfedges, edges, faces and corners *should* not invalidate iterators as
-	// extra space was reserved in the preallocateElements function in MeshIO
-	for (int i = 0; i < n - 3; i++) {
-		EdgeIter e = mesh.edges.emplace(mesh.edges.end(), Edge(&mesh));
-		HalfEdgeIter he = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
-		HalfEdgeIter flip = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
+    // insert new vertex at the center of the hole
+    VertexIter v = mesh.vertices.emplace(mesh.vertices.end(), Vertex(&mesh));
+    v->position = Vector();
+    v->index = nVertices;
 
-		e->index = nEdges + i;
-		he->index = nHalfEdges + 2*i;
-		flip->index = nHalfEdges + 2*i + 1;
+    // insert new halfedges, edges and faces
+    for (int i = 0; i < n; i++) {
+        HalfEdgeIter bHe = boundaryHalfEdges[i];
+        HalfEdgeIter bHePrev = bHe->prev();
 
-		e->isCuttable = false;
-		he->onBoundary = false;
-		flip->onBoundary = false;
+        // insert new halfedges and update connectivity
+        HalfEdgeIter he = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
+        he->onBoundary = false;
+        he->index = nHalfEdges + 2*i;
 
-		e->setHalfEdge(he);
-		he->setEdge(e);
-		flip->setEdge(e);
-		he->setFlip(flip);
-		flip->setFlip(he);
-	}
+        HalfEdgeIter flip = mesh.halfEdges.emplace(mesh.halfEdges.end(), HalfEdge(&mesh));
+        flip->onBoundary = false;
+        flip->index = nHalfEdges + 2*i + 1;
 
-	for (int i = 0; i < n - 2; i++) {
-		FaceIter f = mesh.faces.emplace(mesh.faces.end(), Face(&mesh));
-		f->fillsHole = true;
-		f->index = nFaces + i;
+        bHe->onBoundary = false;
+        bHe->setPrev(he);
+        he->setNext(bHe);
+        he->setFlip(flip);
+        bHePrev->setNext(flip);
+        flip->setPrev(bHePrev);
+        flip->setFlip(he);
 
-		for (int j = 0; j < 3; j++) {
-			CornerIter c = mesh.corners.emplace(mesh.corners.end(), Corner(&mesh));
-			c->index = nCorners + 3*i + j;
-		}
-	}
+        // insert new edge and update connectivity
+        EdgeIter e = mesh.edges.emplace(mesh.edges.end(), Edge(&mesh));
+        e->isCuttable = false;
+        e->index = nEdges + i;
 
-	// update connectivity
-	VertexIter rootVertex = boundaryHalfEdges[0]->vertex();
-	for (int i = 0; i < n; i++) {
-		HalfEdgeIter he = boundaryHalfEdges[i];
+        e->setHalfEdge(he);
+        he->setEdge(e);
+        flip->setEdge(e);
 
-		if (n == 3) {
-			FaceIter newF = mesh.faces.begin() + nFaces;
-			CornerIter newC = mesh.corners.begin() + nCorners + i;
+        // insert new face and update connectivity
+        FaceIter f = mesh.faces.emplace(mesh.faces.end(), Face(&mesh));
+        f->fillsHole = true;
+        f->index = nFaces + i;
 
-			he->onBoundary = false;
+        f->setHalfEdge(bHe);
+        bHe->setFace(f);
+        he->setFace(f);
 
-			newF->setHalfEdge(he);
-			he->setFace(newF);
+        // update vertex connectivity
+        v->position += bHe->vertex()->position;
+        v->setHalfEdge(he);
+        he->setVertex(v);
+        flip->setVertex(bHe->vertex());
+    }
 
-			newC->setHalfEdge(he);
-			he->setCorner(newC);
+    v->position /= n;
 
-		} else {
-			if (i == 0) {
-				HalfEdgeIter next = he->next();
-				HalfEdgeIter newHe = mesh.halfEdges.begin() + nHalfEdges;
-				FaceIter newF = mesh.faces.begin() + nFaces;
-				CornerIter newC1 = mesh.corners.begin() + nCorners;
-				CornerIter newC2 = mesh.corners.begin() + nCorners + 1;
-				CornerIter newC3 = mesh.corners.begin() + nCorners + 2;
+    // insert corners and update remaining connectivity
+    for (int i = 0; i < n; i++) {
+        HalfEdgeIter bHe = boundaryHalfEdges[i];
+        HalfEdgeIter bHePrev = bHe->prev();
+        HalfEdgeIter bHeNext = bHe->next();
 
-				he->onBoundary = false;
-				next->onBoundary = false;
+        // insert new corners and update connectivity
+        CornerIter c1 = mesh.corners.emplace(mesh.corners.end(), Corner(&mesh));
+        CornerIter c2 = mesh.corners.emplace(mesh.corners.end(), Corner(&mesh));
+        CornerIter c3 = mesh.corners.emplace(mesh.corners.end(), Corner(&mesh));
+        c1->index = nCorners + 3*i;
+        c2->index = nCorners + 3*i + 1;
+        c3->index = nCorners + 3*i + 2;
 
-				he->setPrev(newHe);
-				next->setNext(newHe);
-				newHe->setNext(he);
-				newHe->setPrev(next);
+        c1->setHalfEdge(bHe);
+        c2->setHalfEdge(bHeNext);
+        c3->setHalfEdge(bHePrev);
+        bHe->setCorner(c1);
+        bHeNext->setCorner(c2);
+        bHePrev->setCorner(c3);
 
-				newF->setHalfEdge(he);
-				he->setFace(newF);
-				next->setFace(newF);
-				newHe->setFace(newF);
-
-				newC3->setHalfEdge(he);
-				newC1->setHalfEdge(next);
-				newC2->setHalfEdge(newHe);
-				he->setCorner(newC3);
-				next->setCorner(newC1);
-				newHe->setCorner(newC2);
-
-				newHe->setVertex(next->flip()->vertex());
-
-			} else if (i > 1 && i < n - 2) {
-				HalfEdgeIter newHe1 = mesh.halfEdges.begin() + (nHalfEdges + 2*(i - 2) + 1);
-				HalfEdgeIter newHe2 = mesh.halfEdges.begin() + (nHalfEdges + 2*(i - 2) + 2);
-				FaceIter newF = mesh.faces.begin() + (nFaces + i - 1);
-				CornerIter newC1 = mesh.corners.begin() + (nCorners + 3*(i - 1));
-				CornerIter newC2 = mesh.corners.begin() + (nCorners + 3*(i - 1) + 1);
-				CornerIter newC3 = mesh.corners.begin() + (nCorners + 3*(i - 1) + 2);
-
-				he->onBoundary = false;
-
-				he->setNext(newHe2);
-				newHe2->setNext(newHe1);
-				newHe1->setNext(he);
-				he->setPrev(newHe1);
-				newHe1->setPrev(newHe2);
-				newHe2->setPrev(he);
-
-				newF->setHalfEdge(he);
-				he->setFace(newF);
-				newHe1->setFace(newF);
-				newHe2->setFace(newF);
-
-				newC3->setHalfEdge(he);
-				newC1->setHalfEdge(newHe2);
-				newC2->setHalfEdge(newHe1);
-				he->setCorner(newC3);
-				newHe2->setCorner(newC1);
-				newHe1->setCorner(newC2);
-
-				newHe1->setVertex(rootVertex);
-				newHe2->setVertex(he->flip()->vertex());
-
-			} else if (i == n - 1) {
-				HalfEdgeIter prev = he->prev();
-				HalfEdgeIter newHe = mesh.halfEdges.begin() + (nHalfEdges + 2*(i - 3) + 1);
-				FaceIter newF = mesh.faces.begin() + (nFaces + i - 2);
-				CornerIter newC1 = mesh.corners.begin() + (nCorners + 3*(i - 2));
-				CornerIter newC2 = mesh.corners.begin() + (nCorners + 3*(i - 2) + 1);
-				CornerIter newC3 = mesh.corners.begin() + (nCorners + 3*(i - 2) + 2);
-
-				he->onBoundary = false;
-				prev->onBoundary = false;
-
-				he->setNext(newHe);
-				prev->setPrev(newHe);
-				newHe->setNext(prev);
-				newHe->setPrev(he);
-
-				newF->setHalfEdge(he);
-				he->setFace(newF);
-				prev->setFace(newF);
-				newHe->setFace(newF);
-
-				newC3->setHalfEdge(he);
-				newC1->setHalfEdge(newHe);
-				newC2->setHalfEdge(prev);
-				he->setCorner(newC3);
-				newHe->setCorner(newC1);
-				prev->setCorner(newC2);
-
-				newHe->setVertex(rootVertex);
-			}
-		}
-	}
+        // update remaining connectivity
+        bHeNext->setFace(bHe->face());
+        bHeNext->setNext(bHePrev);
+        bHePrev->setPrev(bHeNext);
+    }
 }
 
 } // namespace bff

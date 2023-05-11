@@ -30,6 +30,9 @@ public:
 	// checks if this vertex is isolated
 	bool isIsolated() const;
 
+	// checks if this vertex is inside a hole
+	bool insideHole() const;
+
 	// returns degree
 	int degree() const;
 
