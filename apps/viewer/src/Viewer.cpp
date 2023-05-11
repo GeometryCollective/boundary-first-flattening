@@ -730,18 +730,33 @@ void Viewer::initBFF()
 			initSpline();
 			if (!state->surfaceIsClosed) {
 				// parameterize automatically for surfaces that are not closed
-				flattenWithTargetBoundary(BoundaryType::automatic);
+				removeVertexHandles();
+				DenseMatrix u(state->bff->data->bN);
+				state->bff->flatten(u, true);
+				mesh->projectUvsToPcaAxis();
 
 			} else {
 				// parameterize with cones for closed surfaces
 				int S = std::min(8, (int)mesh->vertices.size() - state->bff->data->bN);
 				if (S > 0) {
 					placeCones(S);
-					flattenWithCones();
+					if (state->handles.size() > 0) {
+						if (state->surfaceIsClosed) normalizeConeAngles();
+						if (cutSurface) updateCut();
+						state->bff->flattenWithCones(state->coneAngles, cutSurface);
+
+						// update
+						cutSurface = false;
+						mapIsDirty = false;
+						state->editBoundary = false;
+						if (state->mappedToSphere) cameras[1]->reset();
+						state->mappedToSphere = false;
+					}
 				}
 			}
 		}
 
+		update();
 		updateInstructionText();
 		updatePlotLabel();
 	}
