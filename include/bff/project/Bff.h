@@ -133,11 +133,11 @@ private:
 	// assigns indices to wedges
 	void indexWedges();
 
-	// computes integrated gaussian and geodesic curvatures K and k
-	void computeIntegratedCurvatures();
-
 	// computes boundary edge lengths l
 	void computeBoundaryLengths();
+
+	// computes integrated gaussian and geodesic curvatures K and k
+	void computeIntegratedCurvatures();
 
 	// builds zero neumann laplace matrix A
 	void buildLaplace();

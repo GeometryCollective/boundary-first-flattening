@@ -775,6 +775,16 @@ void BFFData::indexWedges()
 	N = iN + bN;
 }
 
+void BFFData::computeBoundaryLengths()
+{
+	l = DenseMatrix(bN);
+	for (WedgeCIter w: mesh.cutBoundary()) {
+		int i = bIndex[w];
+
+		l(i) = length(w->halfEdge()->next()->edge());
+	}
+}
+
 void BFFData::computeIntegratedCurvatures()
 {
 	// compute integrated gaussian curvature
@@ -793,16 +803,6 @@ void BFFData::computeIntegratedCurvatures()
 		int i = bIndex[w];
 
 		k(i) = exteriorAngle(w);
-	}
-}
-
-void BFFData::computeBoundaryLengths()
-{
-	l = DenseMatrix(bN);
-	for (WedgeCIter w: mesh.cutBoundary()) {
-		int i = bIndex[w];
-
-		l(i) = length(w->halfEdge()->next()->edge());
 	}
 }
 
@@ -836,11 +836,11 @@ void BFFData::init()
 	// assign indices to wedges
 	indexWedges();
 
-	// compute integrated gaussian and geodesic curvatures
-	computeIntegratedCurvatures();
-
 	// computes boundary edge lengths
 	computeBoundaryLengths();
+
+	// compute integrated gaussian and geodesic curvatures
+	computeIntegratedCurvatures();
 
 	// build laplace matrix and extract submatrices
 	buildLaplace();
