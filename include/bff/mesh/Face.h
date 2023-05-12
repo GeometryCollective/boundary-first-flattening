@@ -21,18 +21,6 @@ public:
 	// sets mesh
 	void setMesh(Mesh *mesh);
 
-	// returns face normal
-	Vector normal(bool normalize = true) const;
-
-	// returns face area
-	double area() const;
-
-	// returns face centroid in uv plane
-	Vector centroidUV() const;
-
-	// returns face area in uv plane
-	double areaUV() const;
-
 	// checks if this face is real
 	bool isReal() const;
 

@@ -104,7 +104,7 @@ void Mesh::projectUvsToPcaAxis()
 	int nUvs = 0;
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
-			Vector centroid = f->centroidUV();
+			Vector centroid = centroidUV(f);
 
 			cm += centroid;
 			nUvs++;
@@ -123,7 +123,7 @@ void Mesh::projectUvsToPcaAxis()
 	double a = 0, b = 0, c = 0;
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
-			Vector centroid = f->centroidUV();
+			Vector centroid = centroidUV(f);
 
 			a += centroid.x*centroid.x;
 			b += centroid.x*centroid.y;
@@ -147,17 +147,17 @@ void Mesh::projectUvsToPcaAxis()
 
 double Mesh::areaRatio() const
 {
-	double area = 0.0;
-	double areaUV = 0.0;
+	double totalArea = 0.0;
+	double totalAreaUV = 0.0;
 	for (FaceCIter f = faces.begin(); f != faces.end(); f++) {
 		if (f->isReal() && !f->fillsHole) {
-			area += f->area();
-			areaUV += f->areaUV();
+			totalArea += area(f);
+			totalAreaUV += areaUV(f);
 		}
 	}
 
-	if (std::isinf(areaUV) || std::isnan(areaUV)) return 1.0;
-	return areaUV > 0.0 ? area/areaUV : 1.0;
+	if (std::isinf(totalAreaUV) || std::isnan(totalAreaUV)) return 1.0;
+	return totalAreaUV > 0.0 ? totalArea/totalAreaUV : 1.0;
 }
 
 CutPtrSet Mesh::cutBoundary()

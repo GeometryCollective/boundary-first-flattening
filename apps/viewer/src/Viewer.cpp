@@ -642,7 +642,7 @@ void Viewer::initRenderMeshes()
 					HalfEdgeCIter h = f->halfEdge();
 					do {
 						VertexCIter v = h->vertex();
-						Vector normal = v->normal();
+						Vector normal = bff::normal(v);
 						for (int k = 0; k < 3; k++) {
 							modelStates[i].renderMeshes[0]->positions->buffer[index + j][k] = v->position[k];
 							modelStates[i].renderMeshes[0]->colors->buffer[index + j][k] = white[k];
@@ -1051,7 +1051,7 @@ void Viewer::updateCut()
 		if (e->onCut || e->onGenerator) {
 			HalfEdgeCIter he = e->halfEdge();
 
-			Vector n = 0.5*(he->face()->normal() + he->flip()->face()->normal());
+			Vector n = 0.5*(bff::normal(he->face()) + bff::normal(he->flip()->face()));
 			Vector a = he->vertex()->position + 0.001*n;
 			Vector b = he->flip()->vertex()->position + 0.001*n;
 			Vector u = b - a;
@@ -1228,19 +1228,19 @@ void Viewer::addKnot(WedgeIter w)
 	if (w->knot == state->spline.knots.end()) {
 		double L = 0.0;
 		for (WedgeCIter w: mesh->cutBoundary()) {
-			L += w->halfEdge()->next()->edge()->length();
+			L += length(w->halfEdge()->next()->edge());
 		}
 
 		double l = 0.0;
 		for (WedgeCIter ww: mesh->cutBoundary()) {
 			if (w == ww) break;
-			l += ww->halfEdge()->next()->edge()->length();
+			l += length(ww->halfEdge()->next()->edge());
 		}
 
 		double s = 2*M_PI*l/L;
 		w->knot = state->spline.addKnot(s, state->spline.evaluate(s));
 		const Vector& uv = w->uv;
-		Vector scaledT = 0.25*exp(w->scaling())*w->tangent();
+		Vector scaledT = 0.25*exp(scaling(w))*tangent(w);
 
 		addSphere(state->splineHandles, glm::vec3(uv.x, uv.y, uv.z), orange);
 		addLine(state->splineLines, orange, 0.005, uv.x, uv.y, uv.x + scaledT.x, uv.y + scaledT.y, uv.z);
@@ -1573,7 +1573,7 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 	// set boundary data from spline
 	double L = 0.0;
 	for (WedgeCIter w: mesh->cutBoundary()) {
-		L += w->halfEdge()->next()->edge()->length();
+		L += length(w->halfEdge()->next()->edge());
 	}
 
 	double l = 0.0;
@@ -1584,11 +1584,11 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 		double offset = state->spline.evaluate(s);
 		if (!givenScaleFactors) {
 			// offset in curvature is the difference between offsets in angles
-			offset = state->spline.evaluate(2*M_PI*(l + w->halfEdge()->next()->edge()->length())/L) - offset;
+			offset = state->spline.evaluate(2*M_PI*(l + length(w->halfEdge()->next()->edge()))/L) - offset;
 		}
 
 		boundaryData(i) = state->targetData(i) + offset;
-		l += w->halfEdge()->next()->edge()->length();
+		l += length(w->halfEdge()->next()->edge());
 	}
 
 	if (givenScaleFactors) {
@@ -1605,7 +1605,7 @@ void Viewer::flattenWithSplineBoundary(bool givenScaleFactors, bool updateZoom)
 	for (int i = 0; i < (int)state->knots.size(); i++) {
 		WedgeIter w = state->knots[i];
 		const Vector& uv = w->uv;
-		Vector scaledT = 0.25*exp(w->scaling())*w->tangent();
+		Vector scaledT = 0.25*exp(scaling(w))*tangent(w);
 		glm::vec3 color = w == state->selectedKnot ? orange : yellow;
 
 		updateSphere(state->splineHandles[i], glm::vec3(uv.x, uv.y, uv.z), color);

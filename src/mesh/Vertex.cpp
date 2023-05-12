@@ -96,49 +96,4 @@ int Vertex::degree() const
 	return k;
 }
 
-Vector Vertex::normal() const
-{
-	Vector n;
-	HalfEdgeCIter h = halfEdge();
-	do {
-		if (!h->onBoundary) n += h->face()->normal(false)*h->next()->corner()->angle();
-
-		h = h->flip()->next();
-	} while (h != halfEdge());
-
-	n.normalize();
-
-	return n;
-}
-
-double Vertex::angleDefect() const
-{
-	double sum = 0.0;
-	if (onBoundary()) return sum;
-
-	HalfEdgeCIter h = halfEdge();
-	do {
-		sum += h->next()->corner()->angle();
-
-		h = h->flip()->next();
-	} while (h != halfEdge());
-
-	return 2*M_PI - sum;
-}
-
-double Vertex::exteriorAngle() const
-{
-	double sum = 0.0;
-	if (!onBoundary()) return sum;
-
-	HalfEdgeCIter h = halfEdge();
-	do {
-		if (!h->onBoundary) sum += h->next()->corner()->angle();
-
-		h = h->flip()->next();
-	} while (h != halfEdge());
-
-	return M_PI - sum;
-}
-
 } // namespace bff

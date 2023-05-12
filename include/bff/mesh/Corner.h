@@ -37,21 +37,8 @@ public:
 	// sets mesh
 	void setMesh(Mesh *mesh);
 
-	// returns the angle (in radians) at this corner
-	double angle() const;
-
 	// checks if this corner is real
 	bool isReal() const;
-
-	// Note: wedge must lie on the (possibly cut) boundary
-	// computes the exterior angle at this wedge
-	double exteriorAngle() const;
-
-	// computes the scaling at this wedge
-	double scaling() const;
-
-	// computes the tangent at this wedge
-	Vector tangent() const;
 
 	// uv coordinates
 	Vector uv;

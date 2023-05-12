@@ -29,7 +29,7 @@ void Cutter::cut(const std::vector<VertexIter>& cones, Mesh& mesh)
 			do {
 				EdgeCIter e = vHe->edge();
 				if (!e->onBoundary() && e->isCuttable) {
-					pq.push(VertexEntry(e->length(), vHe->flip()->vertex(), vHe));
+					pq.push(VertexEntry(length(e), vHe->flip()->vertex(), vHe));
 				}
 
 				vHe = vHe->flip()->next();
@@ -47,7 +47,7 @@ void Cutter::cut(const std::vector<VertexIter>& cones, Mesh& mesh)
 		HalfEdgeIter he = cones[i]->halfEdge();
 		do {
 			if (he->edge()->isCuttable) {
-				pq.push(VertexEntry(he->edge()->length(), he->flip()->vertex(), he));
+				pq.push(VertexEntry(length(he->edge()), he->flip()->vertex(), he));
 			}
 
 			he = he->flip()->next();
@@ -97,7 +97,7 @@ void Cutter::cut(const std::vector<VertexIter>& cones, Mesh& mesh)
 			HalfEdgeIter vHe = v1->halfEdge();
 			do {
 				if (vHe->edge()->isCuttable) {
-					pq.push(VertexEntry(vHe->edge()->length() + weight,
+					pq.push(VertexEntry(length(vHe->edge()) + weight,
 										vHe->flip()->vertex(), vHe));
 				}
 

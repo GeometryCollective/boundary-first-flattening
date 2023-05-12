@@ -40,19 +40,6 @@ void Edge::setMesh(Mesh *mesh_)
 	mesh = mesh_;
 }
 
-double Edge::length() const
-{
-	const Vector& a = halfEdge()->vertex()->position;
-	const Vector& b = halfEdge()->next()->vertex()->position;
-
-	return (b - a).norm();
-}
-
-double Edge::cotan() const
-{
-	return 0.5*(halfEdge()->cotan() + halfEdge()->flip()->cotan());
-}
-
 bool Edge::onBoundary() const
 {
 	return halfEdge()->onBoundary || halfEdge()->flip()->onBoundary;

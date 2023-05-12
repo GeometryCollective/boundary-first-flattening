@@ -113,20 +113,4 @@ void HalfEdge::setMesh(Mesh *mesh_)
 	mesh = mesh_;
 }
 
-double HalfEdge::cotan() const
-{
-	if (onBoundary) return 0.0;
-
-	const Vector& a = vertex()->position;
-	const Vector& b = next()->vertex()->position;
-	const Vector& c = prev()->vertex()->position;
-
-	Vector u = a - c;
-	Vector v = b - c;
-
-	double w = dot(u, v)/cross(u, v).norm();
-	if (std::isinf(w) || std::isnan(w)) w = 0.0;
-	return w;
-}
-
 } // namespace bff

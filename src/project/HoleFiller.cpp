@@ -41,17 +41,17 @@ int HoleFiller::longestBoundaryLoop(double& loopLength,
 	boundaryHalfEdges.resize(boundaries.size());
 
 	for (BoundaryCIter b = boundaries.begin(); b != boundaries.end(); b++) {
-		double length = 0;
+		double l = 0;
 		HalfEdgeIter he = b->halfEdge();
 		do {
 			boundaryHalfEdges[index].emplace_back(he);
-			length += he->edge()->length();
+			l += length(he->edge());
 
 			he = he->next();
 		} while (he != b->halfEdge());
 
-		if (length > loopLength) {
-			loopLength = length;
+		if (l > loopLength) {
+			loopLength = l;
 			longestLoop = index;
 		}
 

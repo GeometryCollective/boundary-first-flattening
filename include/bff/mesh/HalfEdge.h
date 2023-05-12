@@ -61,9 +61,6 @@ public:
 	// sets mesh
 	void setMesh(Mesh *mesh);
 
-	// returns the cotan weight associated with this halfedge
-	double cotan() const;
-
 	// boolean flag to indicate if halfedge is on the boundary
 	bool onBoundary;
 

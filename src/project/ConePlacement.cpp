@@ -22,11 +22,11 @@ int ConePlacement::initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh)
 
 		for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 			if (v->insideHole()) continue;
-			double angleDefect = v->angleDefect();
-			bool isCandidateCone = mesh.eulerCharacteristic() > 0 ? curvature < angleDefect :
-																	curvature > angleDefect;
+			
+			double defect = angleDefect(v);
+			bool isCandidateCone = mesh.eulerCharacteristic() > 0 ? curvature < defect : curvature > defect;
 			if (isCandidateCone) {
-				curvature = angleDefect;
+				curvature = defect;
 				cone = v;
 			}
 		}

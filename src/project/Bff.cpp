@@ -473,20 +473,6 @@ int sample(const std::vector<Vector>& gamma,
 	return i;
 }
 
-double angle(const Vector& a, const Vector& b, const Vector& c) {
-	Vector u = b - a;
-	u.normalize();
-
-	Vector v = c - b;
-	v.normalize();
-
-	double theta = atan2(v.y, v.x) - atan2(u.y, u.x);
-	while (theta >= M_PI) theta -= 2*M_PI;
-	while (theta < -M_PI) theta += 2*M_PI;
-
-	return theta;
-}
-
 bool BFF::flattenToShape(const std::vector<Vector>& gamma)
 {
 	int n = (int)gamma.size(); // number of vertices in target curve
@@ -598,8 +584,8 @@ void BFF::centerMobius()
 		// compute face centroids and areas
 		double totalArea = 0.0;
 		for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
-			centroids[f] = f->centroidUV();
-			areas[f] = f->areaUV();
+			centroids[f] = centroidUV(f);
+			areas[f] = areaUV(f);
 			totalArea += areas[f];
 		}
 
@@ -797,7 +783,7 @@ void BFFData::computeIntegratedCurvatures()
 		if (!v->onBoundary()) {
 			int i = index[v->wedge()];
 
-			K(i) = v->angleDefect();
+			K(i) = angleDefect(v);
 		}
 	}
 
@@ -806,7 +792,7 @@ void BFFData::computeIntegratedCurvatures()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		k(i) = w->exteriorAngle();
+		k(i) = exteriorAngle(w);
 	}
 }
 
@@ -816,7 +802,7 @@ void BFFData::computeBoundaryLengths()
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		l(i) = w->halfEdge()->next()->edge()->length();
+		l(i) = length(w->halfEdge()->next()->edge());
 	}
 }
 
@@ -829,7 +815,7 @@ void BFFData::buildLaplace()
 			do {
 				int i = index[he->next()->wedge()];
 				int j = index[he->prev()->wedge()];
-				double w = 0.5*he->cotan();
+				double w = 0.5*cotan(he);
 
 				T.add(i, i, w);
 				T.add(j, j, w);

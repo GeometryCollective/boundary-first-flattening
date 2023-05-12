@@ -21,12 +21,6 @@ public:
 	// sets mesh
 	void setMesh(Mesh *mesh);
 
-	// returns edge length
-	double length() const;
-
-	// returns cotan weight associated with this edge
-	double cotan() const;
-
 	// checks if this edge is on the boundary
 	bool onBoundary() const;
 

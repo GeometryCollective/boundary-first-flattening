@@ -36,15 +36,6 @@ public:
 	// returns degree
 	int degree() const;
 
-	// returns angle weighted average of adjacent face normals
-	Vector normal() const;
-
-	// returns 2π minus sum of incident angles. Note: only valid for interior vertices
-	double angleDefect() const;
-
-	// returns exterior angle. Note: only valid for boundary vertices
-	double exteriorAngle() const;
-
 	// position
 	Vector position;
 

@@ -137,9 +137,9 @@ Vector Distortion::computeQuasiConformalError(const Model& model)
 			} while(he != f->halfEdge());
 
 			double qc = bff::computeQuasiConformalError(p, q);
-			double area = f->area();
-			totalQc += qc*area;
-			totalArea += area;
+			double a = area(f);
+			totalQc += qc*a;
+			totalArea += a;
 
 			// clamp distortion to range [1, 1.5]
 			distortion[i][f] = std::max(1.0, std::min(1.5, qc));
@@ -713,9 +713,9 @@ Vector Distortion::computeAreaScaling(const std::vector<Face>& faces)
 		double u = bff::computeAreaScaling(p, q);
 		maxU = std::max(maxU, u);
 		minU = std::min(minU, u);
-		double area = f->area();
-		totalU += u*area;
-		totalArea += area;
+		double a = area(f);
+		totalU += u*a;
+		totalArea += a;
 	}
 
 	return Vector(minU, maxU, totalU/totalArea);
@@ -750,9 +750,9 @@ Vector Distortion::computeAreaScaling(const Model& model)
 			double u = bff::computeAreaScaling(p, q);
 			maxU = std::max(maxU, u);
 			minU = std::min(minU, u);
-			double area = f->area();
-			totalU += u*area;
-			totalArea += area;
+			double a = area(f);
+			totalU += u*a;
+			totalArea += a;
 
 			distortion[i][f] = u;
 		}

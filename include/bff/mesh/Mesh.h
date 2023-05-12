@@ -1,10 +1,6 @@
 #pragma once
 
-#include "bff/mesh/HalfEdge.h"
-#include "bff/mesh/Vertex.h"
-#include "bff/mesh/Edge.h"
-#include "bff/mesh/Face.h"
-#include "bff/mesh/Corner.h"
+#include "bff/mesh/GeometryUtils.h"
 #include "bff/mesh/CutIterator.h"
 
 namespace bff {
