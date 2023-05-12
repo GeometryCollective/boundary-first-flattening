@@ -20,7 +20,8 @@ public:
 private:
 	// initializes the set of cones based on whether the mesh has a boundary
 	// or its euler characteristic is non zero
-	static int initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh);
+	static int initializeConeSet(const DenseMatrix& K, const WedgeData<int>& index,
+								 VertexData<uint8_t>& isCone, Mesh& mesh);
 
 	// collects cone and non-cone indices
 	static void separateConeIndices(std::vector<int>& s, std::vector<int>& n,

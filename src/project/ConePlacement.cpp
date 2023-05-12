@@ -3,7 +3,8 @@
 
 namespace bff {
 
-int ConePlacement::initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh)
+int ConePlacement::initializeConeSet(const DenseMatrix& K, const WedgeData<int>& index,
+									 VertexData<uint8_t>& isCone, Mesh& mesh)
 {
 	int cones = 0;
 	if (mesh.boundaries.size() > 0) {
@@ -22,11 +23,11 @@ int ConePlacement::initializeConeSet(VertexData<uint8_t>& isCone, Mesh& mesh)
 
 		for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 			if (v->insideHole()) continue;
-			
-			double defect = angleDefect(v);
-			bool isCandidateCone = mesh.eulerCharacteristic() > 0 ? curvature < defect : curvature > defect;
+			int i = index[v->wedge()];
+
+			bool isCandidateCone = mesh.eulerCharacteristic() > 0 ? curvature < K(i) : curvature > K(i);
 			if (isCandidateCone) {
-				curvature = defect;
+				curvature = K(i);
 				cone = v;
 			}
 		}
@@ -207,7 +208,7 @@ bool ConePlacement::useCpmsStrategy(int S, VertexData<uint8_t>& isCone,
 									Mesh& mesh)
 {
 	// initialize cone set
-	int cones = initializeConeSet(isCone, mesh);
+	int cones = initializeConeSet(K, index, isCone, mesh);
 	if (mesh.boundaries.size() == 0) S -= cones;
 
 	// compute target angles
@@ -237,7 +238,7 @@ bool ConePlacement::useCetmStrategy(int S, VertexData<uint8_t>& isCone,
 									const WedgeData<int>& index, Mesh& mesh)
 {
 	// initialize cone set
-	int cones = initializeConeSet(isCone, mesh);
+	int cones = initializeConeSet(K, index, isCone, mesh);
 	if (mesh.boundaries.size() == 0) S -= cones;
 
 	// compute scale factors
