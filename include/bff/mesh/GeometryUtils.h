@@ -33,14 +33,6 @@ inline double length(EdgeCIter e) {
 	return (b - a).norm();
 }
 
-// returns cotan weight associated with an edge
-inline double cotan(EdgeCIter e) {
-	HalfEdgeCIter h = e->halfEdge();
-	HalfEdgeCIter flip = h->flip();
-
-	return 0.5*(cotan(h) + cotan(flip));
-}
-
 // returns face normal
 inline Vector normal(FaceCIter f, bool normalize = true) {
 	if (!f->isReal()) return Vector();
@@ -181,21 +173,6 @@ inline double angleDefect(VertexCIter v) {
 	} while (h != v->halfEdge());
 
 	return 2*M_PI - sum;
-}
-
-// returns exterior angle to a vertex; Note: only valid for boundary vertices
-inline double exteriorAngle(VertexCIter v) {
-	double sum = 0.0;
-	if (!v->onBoundary()) return sum;
-
-	HalfEdgeCIter h = v->halfEdge();
-	do {
-		if (!h->onBoundary) sum += angle(h->next()->corner());
-
-		h = h->flip()->next();
-	} while (h != v->halfEdge());
-
-	return M_PI - sum;
 }
 
 // returns the angle in the plane between two line segments
