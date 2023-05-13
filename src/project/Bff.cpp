@@ -775,25 +775,65 @@ void BFFData::indexWedges()
 	N = iN + bN;
 }
 
-void BFFData::computeBoundaryLengths()
+void BFFData::computeEdgeLengths(EdgeData<double>& edgeLengths)
 {
+	// compute edge lengths
+	double lengthSum = 0.0;
+	for (EdgeCIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
+		edgeLengths[e] = length(e);
+		lengthSum += edgeLengths[e];
+	}
+
+	double meanEdge = lengthSum/mesh.edges.size();
+	double mollifyDelta = meanEdge*1e-6;
+
+	// compute the mollify epsilon
+	double mollifyEpsilon = 0.0;
+	for (HalfEdgeCIter h = mesh.halfEdges.begin(); h != mesh.halfEdges.end(); h++) {
+		if (!h->onBoundary) {
+			double lij = edgeLengths[h->edge()];
+			double ljk = edgeLengths[h->next()->edge()];
+			double lki = edgeLengths[h->prev()->edge()];
+
+			double epsilon = lki - lij - ljk + mollifyDelta;
+			mollifyEpsilon = std::max(mollifyEpsilon, epsilon);
+		}
+	}
+
+	// apply the offset
+	for (EdgeCIter e = mesh.edges.begin(); e != mesh.edges.end(); e++) {
+		edgeLengths[e] += mollifyEpsilon;
+	}
+
+	// set boundary edge lengths
 	l = DenseMatrix(bN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
 
-		l(i) = length(w->halfEdge()->next()->edge());
+		l(i) = edgeLengths[w->halfEdge()->next()->edge()];
 	}
 }
 
-void BFFData::computeIntegratedCurvatures()
+void BFFData::computeIntegratedCurvatures(const EdgeData<double>& edgeLengths)
 {
 	// compute integrated gaussian curvature
 	K = DenseMatrix(iN);
 	for (VertexCIter v = mesh.vertices.begin(); v != mesh.vertices.end(); v++) {
 		if (!v->onBoundary()) {
 			int i = index[v->wedge()];
+			double angleSum = 0.0;
 
-			K(i) = angleDefect(v);
+			HalfEdgeCIter h = v->halfEdge();
+			do {
+				double lij = edgeLengths[h->edge()];
+				double ljk = edgeLengths[h->next()->edge()];
+				double lki = edgeLengths[h->prev()->edge()];
+				angleSum += cornerAngle(lij, ljk, lki);
+
+				h = h->flip()->next();
+			} while (h != v->halfEdge());
+
+			K(i) = 2*M_PI - angleSum;
 		}
 	}
 
@@ -801,28 +841,45 @@ void BFFData::computeIntegratedCurvatures()
 	k = DenseMatrix(bN);
 	for (WedgeCIter w: mesh.cutBoundary()) {
 		int i = bIndex[w];
+		double angleSum = 0.0;
 
-		k(i) = exteriorAngle(w);
+		HalfEdgeCIter h = w->halfEdge()->prev();
+		do {
+			double lij = edgeLengths[h->edge()];
+			double ljk = edgeLengths[h->next()->edge()];
+			double lki = edgeLengths[h->prev()->edge()];
+			angleSum += cornerAngle(lij, ljk, lki);
+			if (h->edge()->onCut) break;
+
+			h = h->flip()->next();
+		} while (!h->onBoundary);
+
+		k(i) = M_PI - angleSum;
 	}
 }
 
-void BFFData::buildLaplace()
+void BFFData::buildLaplace(const EdgeData<double>& edgeLengths)
 {
 	Triplet T(N, N);
 	for (FaceCIter f = mesh.faces.begin(); f != mesh.faces.end(); f++) {
 		if (f->isReal()) {
 			HalfEdgeCIter he = f->halfEdge();
 			do {
-				int i = index[he->next()->wedge()];
-				int j = index[he->prev()->wedge()];
-				double w = 0.5*cotan(he);
+				HalfEdgeCIter next = he->next();
+				HalfEdgeCIter prev = he->prev();
+				int i = index[next->wedge()];
+				int j = index[prev->wedge()];
+				double lij = edgeLengths[he->edge()];
+				double ljk = edgeLengths[next->edge()];
+				double lki = edgeLengths[prev->edge()];
+				double w = 0.5*halfEdgeCotan(lij, ljk, lki);
 
 				T.add(i, i, w);
 				T.add(j, j, w);
 				T.add(i, j, -w);
 				T.add(j, i, -w);
 
-				he = he->next();
+				he = next;
 			} while (he != f->halfEdge());
 		}
 	}
@@ -837,13 +894,14 @@ void BFFData::init()
 	indexWedges();
 
 	// computes boundary edge lengths
-	computeBoundaryLengths();
+	EdgeData<double> edgeLengths(mesh, 0.0);
+	computeEdgeLengths(edgeLengths);
 
 	// compute integrated gaussian and geodesic curvatures
-	computeIntegratedCurvatures();
+	computeIntegratedCurvatures(edgeLengths);
 
 	// build laplace matrix and extract submatrices
-	buildLaplace();
+	buildLaplace(edgeLengths);
 	Aii = A.submatrix(0, iN, 0, iN);
 	Aib = A.submatrix(0, iN, iN, N);
 	Abb = A.submatrix(iN, N, iN, N);

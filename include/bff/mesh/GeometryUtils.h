@@ -190,4 +190,29 @@ inline double angle(const Vector& a, const Vector& b, const Vector& c) {
 	return theta;
 }
 
+// returns face area, computed directly from edge lengths
+inline double faceArea(double lij, double ljk, double lki) {
+	double s = (lij + ljk + lki)/2.0;
+	double arg = s*(s - lij)*(s - ljk)*(s - lki);
+	arg = std::max(0.0, arg);
+	double area = std::sqrt(arg);
+
+	return area;
+}
+
+// returns halfedge cotan weight, computed directly from edge lengths
+inline double halfEdgeCotan(double lij, double ljk, double lki) {
+	double area = faceArea(lij, ljk, lki);
+	double cotan = (-lij*lij + ljk*ljk + lki*lki)/(4.0*area);
+
+	return cotan;
+}
+
+// returns corner angle (in radians), computed directly from edge lengths
+inline double cornerAngle(double lij, double ljk, double lki) {
+	double q = (lij*lij + lki*lki - ljk*ljk)/(2.0*lij*lki);
+
+	return acos(std::max(-1.0, std::min(1.0, q)));
+}
+
 } // namespace bff

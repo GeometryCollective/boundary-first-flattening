@@ -133,14 +133,14 @@ private:
 	// assigns indices to wedges
 	void indexWedges();
 
-	// computes boundary edge lengths l
-	void computeBoundaryLengths();
+	// computes edge lengths
+	void computeEdgeLengths(EdgeData<double>& edgeLengths);
 
 	// computes integrated gaussian and geodesic curvatures K and k
-	void computeIntegratedCurvatures();
+	void computeIntegratedCurvatures(const EdgeData<double>& edgeLengths);
 
 	// builds zero neumann laplace matrix A
-	void buildLaplace();
+	void buildLaplace(const EdgeData<double>& edgeLengths);
 
 	// computes integrated curvatures and boundary lengths, and builds and
 	// prefactors laplace matrix
