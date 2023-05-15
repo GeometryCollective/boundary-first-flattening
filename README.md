@@ -190,7 +190,7 @@ Some optional flags:
 * `--nCones=N_CONES` Use the specified number of cone singularities to reduce area distortion (these are chosen automatically).
 * `--normalizeUVs` Scale all UVs so that they are in the range [0,1] x [0,1].
 * `--writeOnlyUVs` Use the vertex flag 'v' in the [OBJ format](https://en.wikipedia.org/wiki/Wavefront_.obj_file) to store UVs (the 'vt' flag is used by default).
-* `--padding=PADDING` A multiplicative factor to control the amount of padding between UV islands in the texture atlas (default value is 1 indicating no padding).
+* `--scaling=SCALING` A multiplicative scale factor applied to each UV island in the texture atlas (default value is 1 indicating no scaling).
 * `--mapToSphere` For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane. (See below for more detail.)
 * `--flattenToDisk` For a topological disk, maps to the unit circular disk. (See below for more detail.)
 

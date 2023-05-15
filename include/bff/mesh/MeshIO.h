@@ -29,10 +29,10 @@ public:
 	// writes model and its UVs to file
 	static bool write(const std::string& fileName, Model& model,
 					  const std::vector<uint8_t>& isSurfaceMappedToSphere,
-					  bool normalizeUvs, bool writeOnlyUvs, double padding);
+					  bool normalizeUvs, bool writeOnlyUvs, double scaling);
 
 	// bin packs model UV islands
-	static void packUvs(Model& model, double padding,
+	static void packUvs(Model& model, double scaling,
 						const std::vector<uint8_t>& isSurfaceMappedToSphere,
 						std::vector<Vector>& originalUvIslandCenters,
 						std::vector<Vector>& newUvIslandCenters,

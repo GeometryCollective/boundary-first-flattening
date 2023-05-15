@@ -18,7 +18,7 @@ void printUsage(const std::string& programName)
 			  << "[--mapToSphere] "
 			  << "[--normalizeUVs] "
 			  << "[--writeOnlyUVs]"
-			  << "[--padding=PADDING]"
+			  << "[--scaling=SCALING]"
 			  << std::endl;
 }
 
@@ -39,7 +39,7 @@ bool parseArg(const std::string& arg, const std::string& searchStr, std::string&
 
 void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string& outputPath,
 			   int& nCones, bool& flattenToDisk, bool& mapToSphere, bool& normalizeUVs,
-			   bool& writeOnlyUVs, double& padding)
+			   bool& writeOnlyUVs, double& scaling)
 {
 	if (argc < 3) {
 		// input and/or output path not specified
@@ -51,7 +51,7 @@ void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string
 		inputPath = argv[1];
 		outputPath = argv[2];
 		std::string nConesStr;
-		std::string paddingStr;
+		std::string scalingStr;
 
 		for (int i = 3; i < argc; i++) {
 			if (parseArg(argv[i], "--nCones=", nConesStr)) nCones = std::stoi(nConesStr);
@@ -59,7 +59,7 @@ void parseArgs(int argc, const char *argv[], std::string& inputPath, std::string
 			if (doesArgExist(argv[i], "--mapToSphere")) mapToSphere = true;
 			if (doesArgExist(argv[i], "--normalizeUVs")) normalizeUVs = true;
 			if (doesArgExist(argv[i], "--writeOnlyUVs")) writeOnlyUVs = true;
-			if (parseArg(argv[i], "--padding=", paddingStr)) padding = std::stod(paddingStr);
+			if (parseArg(argv[i], "--scaling=", scalingStr)) scaling = std::stod(scalingStr);
 		}
 	}
 
@@ -167,7 +167,7 @@ void flatten(Model& model, const std::vector<uint8_t>& isSurfaceClosed,
 
 void writeModelUVs(const std::string& outputPath, Model& model,
 				   const std::vector<uint8_t>& isSurfaceClosed, bool mapToSphere,
-				   bool normalizeUVs, bool writeOnlyUVs, double padding)
+				   bool normalizeUVs, bool writeOnlyUVs, double scaling)
 {
 	int nMeshes = model.size();
 	std::vector<uint8_t> isSurfaceMappedToSphere(nMeshes, 0);
@@ -177,7 +177,7 @@ void writeModelUVs(const std::string& outputPath, Model& model,
 		}
 	}
 
-	if (!MeshIO::write(outputPath, model, isSurfaceMappedToSphere, normalizeUVs, writeOnlyUVs, padding)) {
+	if (!MeshIO::write(outputPath, model, isSurfaceMappedToSphere, normalizeUVs, writeOnlyUVs, scaling)) {
 		std::cerr << "Unable to write file: " << outputPath << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -192,9 +192,9 @@ int main(int argc, const char *argv[]) {
 	bool mapToSphere = false;
 	bool normalizeUVs = false;
 	bool writeOnlyUVs = false;
-	double padding = 1.0;
+	double scaling = 1.0;
 	parseArgs(argc, argv, inputPath, outputPath, nCones, flattenToDisk,
-			  mapToSphere, normalizeUVs, writeOnlyUVs, padding);
+			  mapToSphere, normalizeUVs, writeOnlyUVs, scaling);
 
 	// load model
 	Model model;
@@ -215,7 +215,7 @@ int main(int argc, const char *argv[]) {
 
 	// write model uvs to output path
 	writeModelUVs(outputPath, model, isSurfaceClosed, mapToSphere,
-				  normalizeUVs, writeOnlyUVs, padding);
+				  normalizeUVs, writeOnlyUVs, scaling);
 
 	return 0;
 }

@@ -50,7 +50,7 @@ bool attemptPacking(int boxLength, double unitsPerInt,
 	return true;
 }
 
-void BinPacking::pack(const Model& model, double padding,
+void BinPacking::pack(const Model& model, double scaling,
 					  const std::vector<uint8_t>& isSurfaceMappedToSphere,
 					  std::vector<Vector>& originalUvIslandCenters,
 					  std::vector<Vector>& newUvIslandCenters,
@@ -78,7 +78,7 @@ void BinPacking::pack(const Model& model, double padding,
 		}
 
 		// compute the ratio of the surface areas of the mesh and flattened mesh
-		double lengthRatio = std::sqrt(model[i].areaRatio())*padding;
+		double lengthRatio = std::sqrt(model[i].areaRatio())*scaling;
 
 		// scale UVs by radius and compute bounds
 		for (WedgeCIter w = model[i].wedges().begin(); w != model[i].wedges().end(); w++) {
