@@ -111,6 +111,7 @@
                            <li><b>v1.3</b> (August 2019) &mdash; Adds support for tighter bin packing; ensures vertex ordering is preserved; more error logging and bug fixes.</li>
                            <li><b>v1.4</b> (June 2020) &mdash; Improved spherical parameterization; bin packing related bugfixes and more efficient loading of models with many components.</li>
 						   <li><b>v1.5</b> (March 2023) &mdash; Updated dependencies; restructured project to avoid include conflict; option to export UVs as mesh positions in OBJ file.</li>
+						   <li><b>v1.6</b> (May 2023) &mdash; Support for non-manifold geometry; increased robustness to low quality triangulations; improved hole filling, packing efficiency and GUI load times; USD support.</li>
                         </ul>
 
 			<h1 id="tutorial">Tutorial</h1>
@@ -119,7 +120,7 @@
 
 			<p>BFF should be fairly intuitive to use, so go ahead and give it a try! If you find you still have questions, the tutorial below may provide some useful guidance. (<em>Warning:</em> As with most tutorials, this one may not be in sync with the latest software version. Read at your own risk! ;-))</p>
 
-			<p>BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ format, and produces a flattened mesh (also in OBJ format). Meshes with (and without) boundary, holes, handles, multiple components and <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">non-manifold connectivity</a> are supported. Meshes that do not have disk or sphere topology will be automatically cut for flattening.</p>
+			<p>BFF can be run either from the command line, which provides automatic parameterization and some basic operations, or in an interactive GUI, which provides additional operations and editing capabilities.  Either tool loads a polygon mesh in OBJ or USD format, and produces a flattened mesh (also in OBJ or USD format). Meshes with (and without) boundary, holes, handles, multiple components and <a href="http://15462.courses.cs.cmu.edu/fall2017/lecture/meshesandmanifolds/slide_013">non-manifold connectivity</a> are supported. Meshes that do not have disk or sphere topology will be automatically cut for flattening.</p>
 
 			<p align="center"><img src="imgs/tutorial/bff_meshsupport.jpg" width="750" height="237.34"></p>
 			<p align="center"><img src="imgs/tutorial/bff_multiplecomponents.gif" width="500" height="250"></p>
@@ -267,7 +268,7 @@
 				<div class="highlight"><pre class="highlight"><code>git clone https://github.com/GeometryCollective/boundary-first-flattening.git
 cd boundary-first-flattening &amp;&amp; git submodule update --init --recursive
 mkdir build &amp;&amp; cd build &amp;&amp; cmake ..
-make -j 4
+make -j4
 </code></pre></div>
 			</div>
 
@@ -281,7 +282,14 @@ make -j 4
 				<li>OpenGL (version 4.1 or higher)</li>
 				<li><a href="http://glm.g-truc.net/0.9.8/index.html">OpenGL Mathematics (GLM)</a> (included but not required for command line application)</li>
 				<li><a href="https://github.com/wjakob/nanogui">Nanogui</a> (included but not required for command line application)</li>
+				<li><a href="https://www.pixar.com/usd">USD</a>(optional). To use the USD file format, provide the path to the USD install directory on your machine as input to cmake:</li>
 			</ol>
+
+			<div class="highlighter-rouge">
+				<div class="highlight"><pre class="highlight"><code>
+					cmake -D USD_DIR=[PATH_TO_USD_DIR] ..
+				</code></pre></div>
+			 </div>
 
 			<h3 id="usingcode">Command line interface</h3>
 
@@ -298,7 +306,7 @@ Some optional flags:
 <ul>
    <li> <tt>--nCones=N_CONES</tt> Use the specified number of cone singularities to reduce area distortion (these are chosen automatically).</li>
    <li> <tt>--normalizeUVs</tt> Scale all UVs so that they are in the range [0,1] x [0,1].</li>
-   <li> <tt>--writeOnlyUVs</tt> Use the vertex flag 'v' in the <a href="https://en.wikipedia.org/wiki/Wavefront_.obj_file">OBJ format</a> to store UVs (the 'vt' flag is used by default).</li>
+   <li> <tt>--writeOnlyUVs</tt> Use the vertex flag 'v' in the <a href="https://en.wikipedia.org/wiki/Wavefront_.obj_file">OBJ format</a> to store UVs (the 'vt' flag is used by default for OBJs, and primvars for USD files).</li>
    <li> <tt>--scaling</tt> A multiplicative scale factor applied to each UV island in the texture atlas (default value is 1 indicating no scaling).</li>
    <li> <tt>--mapToSphere</tt> For a genus-0 surface (no holes, handles, or boundary), computes a flattening over the unit sphere rather than the plane. (See below for more detail.)</li>
    <li> <tt>--flattenToDisk</tt> For a topological disk, maps to the unit circular disk. (See below for more detail.)</li>
