@@ -2,12 +2,13 @@
 
 #define _USE_MATH_DEFINES
 
+#include <cmath>
+#include <math.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
 #include <algorithm>
 #include <iostream>
-#include <cmath>
 #include "bff/linear-algebra/Vector.h"
 
 namespace bff {
