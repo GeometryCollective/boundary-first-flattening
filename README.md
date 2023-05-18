@@ -180,7 +180,7 @@ The GUI version also requires some additional dependencies:
 
 The command line and GUI applications both optionally support Pixar's [USD](https://www.pixar.com/usd) file format. To use this file format, provide the path to the USD install directory on your machine as input to cmake:
 ```
-cmake -D USD_DIR=[PATH_TO_USD_DIR] ..
+cmake -D BFF_USD_DIR=[PATH_TO_USD_DIR] ..
 ```
 
 ## Command Line Interface
