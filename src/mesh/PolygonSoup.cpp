@@ -40,12 +40,13 @@ void VertexAdjacencyMaps::insert(int nV, std::vector<std::pair<int, int>>& verte
 	vertexPairs.resize(std::distance(vertexPairs.begin(), end));
 
 	// update map
-	if (vertexPairs.size() > 0) {
+	int nVertexPairs = (int)vertexPairs.size();
+	if (nVertexPairs > 0) {
 		int cV = (int)offsets.size() - 1;
 		int j = 0;
 
 		for (int i = cV; i < nV; i++) {
-			while (i == vertexPairs[j].first) {
+			while (j < nVertexPairs && i == vertexPairs[j].first) {
 				data.emplace_back(vertexPairs[j].second);
 				j++;
 			}
@@ -114,13 +115,14 @@ void EdgeFaceAdjacencyMap::insert(const VertexAdjacencyMaps& vertexAdjacency,
 	std::sort(edgeFacePairs.begin(), edgeFacePairs.end());
 
 	// update map
-	if (edgeFacePairs.size() > 0) {
+	int nEdgeFacePairs = (int)edgeFacePairs.size();
+	if (nEdgeFacePairs > 0) {
 		int nE = vertexAdjacency.getEdgeCount();
 		int cE = (int)offsets.size() - 1;
 		int j = 0;
 
 		for (int i = cE; i < nE; i++) {
-			while (i == edgeFacePairs[j].first) {
+			while (j < nEdgeFacePairs && i == edgeFacePairs[j].first) {
 				data.emplace_back(edgeFacePairs[j].second);
 				isAdjacentFace.emplace_back(1);
 				j++;
