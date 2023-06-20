@@ -145,6 +145,63 @@ void Mesh::projectUvsToPcaAxis()
 	}
 }
 
+void Mesh::orientUvsToMinimizeBoundingBox(int nRotations)
+{
+	// precompute rotations
+	double maxRotation = M_PI;
+	double minInf = -std::numeric_limits<double>::infinity();
+	double maxInf = std::numeric_limits<double>::infinity();
+	std::vector<Vector> boxMin(nRotations, Vector(maxInf, maxInf));
+	std::vector<Vector> boxMax(nRotations, Vector(minInf, minInf));
+
+	std::vector<Vector> rotations(nRotations);
+	for (int i = 0; i < nRotations; i++) {
+		double theta = (maxRotation*i)/nRotations;
+		rotations[i] = Vector(std::cos(theta), std::sin(theta));
+	}
+
+	// try all rotations
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		if (w->isReal()) {
+			const Vector& uv = w->uv;
+
+			for (int i = 0; i < nRotations; i++) {
+				double cosTheta = rotations[i].x;
+				double sinTheta = rotations[i].y;
+				Vector uvRotated(cosTheta*uv.x - sinTheta*uv.y,
+								 sinTheta*uv.x + cosTheta*uv.y);
+				boxMin[i].x = std::min(boxMin[i].x, uvRotated.x);
+				boxMin[i].y = std::min(boxMin[i].y, uvRotated.y);
+				boxMax[i].x = std::max(boxMax[i].x, uvRotated.x);
+				boxMax[i].y = std::max(boxMax[i].y, uvRotated.y);
+			}
+		}
+	}
+
+	// find the best rotation
+	Vector bestRotation;
+	double minScore = std::numeric_limits<double>::infinity();
+	for (int i = 0; i < nRotations; i++) {
+		Vector extent = boxMax[i] - boxMin[i];
+		if (extent.y < minScore) {
+			minScore = extent.y;
+			bestRotation = rotations[i];
+		}
+	}
+
+	// apply best rotation
+	double cosTheta = bestRotation.x;
+	double sinTheta = bestRotation.y;
+	for (WedgeIter w = wedges().begin(); w != wedges().end(); w++) {
+		if (w->isReal()) {
+			const Vector& uv = w->uv;
+			Vector uvRotated(cosTheta*uv.x - sinTheta*uv.y,
+							 sinTheta*uv.x + cosTheta*uv.y);
+			w->uv = uvRotated;
+		}
+	}
+}
+
 double Mesh::areaRatio() const
 {
 	double totalArea = 0.0;

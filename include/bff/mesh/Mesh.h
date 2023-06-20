@@ -22,6 +22,9 @@ public:
 	// projects UVs to PCA axis
 	void projectUvsToPcaAxis();
 
+	// orients UVs to minimize bounding box size
+	void orientUvsToMinimizeBoundingBox(int nRotations);
+
 	// computes the ratio of the surface areas of the mesh and flattened mesh
 	double areaRatio() const;
 

@@ -534,7 +534,7 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	std::vector<uint8_t> isCuttableModelEdge(soup.vertexAdjacency.getEdgeCount(), 1);
 	bool didSplitNonManifoldVertices = soup.splitNonManifoldVertices();
 	if (removedIsolatedVertices || didSplitNonManifoldVertices) {
-		// for simplicity, allow uncuttable edges to be cut during flattening since 
+		// for simplicity, allow uncuttable edges to be cut during flattening since
 		// connectivity is being changed in any case when vertices are removed or split
 		isCuttableModelEdge.resize(soup.vertexAdjacency.getEdgeCount(), 1);
 
@@ -556,7 +556,7 @@ bool MeshIO::buildModel(const std::vector<std::pair<int, int>>& uncuttableEdges,
 	std::vector<PolygonSoup> soups;
 	std::vector<std::vector<uint8_t>> isCuttableSoupEdge;
 	separateComponents(soup, nComponents, faceComponent, isCuttableModelEdge,
-					   soups, isCuttableSoupEdge, model.modelToMeshMap, 
+					   soups, isCuttableSoupEdge, model.modelToMeshMap,
 					   model.meshToModelMap);
 
 	// build halfedge meshes
@@ -609,7 +609,7 @@ void MeshIO::packUvs(Model& model, double scaling,
 {
 	if (model.size() > 1) {
 		for (int i = 0; i < model.size(); i++) {
-			model[i].projectUvsToPcaAxis();
+			model[i].orientUvsToMinimizeBoundingBox(6);
 		}
 	}
 
