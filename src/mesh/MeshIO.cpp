@@ -609,7 +609,9 @@ void MeshIO::packUvs(Model& model, double scaling,
 {
 	if (model.size() > 1) {
 		for (int i = 0; i < model.size(); i++) {
-			model[i].orientUvsToMinimizeBoundingBox(6);
+			if (!isSurfaceMappedToSphere[i]) {
+				model[i].orientUvsToMinimizeBoundingBox(6);
+			}
 		}
 	}
 
