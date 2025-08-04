@@ -264,8 +264,8 @@ inline void Triplet::add(size_t i, size_t j, double x)
 {
 	if (data->nnz == capacity) increaseCapacity();
 
-	((size_t *)data->i)[data->nnz] = i;
-	((size_t *)data->j)[data->nnz] = j;
+	((int64_t *)data->i)[data->nnz] = i;
+	((int64_t *)data->j)[data->nnz] = j;
 	((double *)data->x)[data->nnz] = x;
 	data->nnz++;
 }
@@ -280,8 +280,8 @@ inline void Triplet::increaseCapacity()
 	// create triplet with increased capacity
 	capacity *= 2;
 	cholmod_triplet *newData = cholmod_l_allocate_triplet(m, n, capacity, 0, CHOLMOD_REAL, common);
-	memcpy(newData->i, data->i, data->nzmax*sizeof(size_t));
-	memcpy(newData->j, data->j, data->nzmax*sizeof(size_t));
+	memcpy(newData->i, data->i, data->nzmax*sizeof(int64_t));
+	memcpy(newData->j, data->j, data->nzmax*sizeof(int64_t));
 	memcpy(newData->x, data->x, data->nzmax*sizeof(double));
 	newData->nnz = data->nnz;
 
